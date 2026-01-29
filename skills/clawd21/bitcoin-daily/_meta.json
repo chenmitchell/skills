@@ -1,0 +1,11 @@
+{
+  "owner": "clawd21",
+  "slug": "bitcoin-daily",
+  "displayName": "Bitcoin Daily",
+  "latest": {
+    "version": "1.1.0",
+    "publishedAt": 1769716282889,
+    "commit": null
+  },
+  "history": []
+}

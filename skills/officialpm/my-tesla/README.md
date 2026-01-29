@@ -18,11 +18,11 @@ Set `TESLA_EMAIL` and run:
 TESLA_EMAIL="you@email.com" python3 scripts/tesla.py auth
 ```
 
-This uses a browser-based login flow and stores tokens locally in `~/.tesla_cache.json`.
+This uses a browser-based login flow and stores tokens locally in `~/.tesla_cache.json` (best-effort chmod `0600`).
 
 Optional defaults:
 - `MY_TESLA_DEFAULT_CAR` — default vehicle display name (overrides `default-car` setting)
-- `python3 scripts/tesla.py default-car "Name"` stores a local default in `~/.my_tesla.json`
+- `python3 scripts/tesla.py default-car "Name"` stores a local default in `~/.my_tesla.json` (best-effort chmod `0600`)
 
 ## Usage
 
@@ -30,6 +30,10 @@ Optional defaults:
 # List vehicles (shows which one is default)
 python3 scripts/tesla.py list
 python3 scripts/tesla.py list --json   # machine-readable, privacy-safe
+
+# Version
+python3 scripts/tesla.py version
+python3 scripts/tesla.py --version
 
 # Pick a car (optional)
 # --car accepts: exact name, partial name (substring match), or a 1-based index from `list`
@@ -45,6 +49,7 @@ python3 scripts/tesla.py summary --no-wake   # don't wake a sleeping car
 
 # One-screen report (chat friendly, more detail)
 # Includes battery/charging/climate + charge port/cable + (when available) TPMS tire pressures.
+# When actively charging, also shows charging power details when available (kW / V / A).
 python3 scripts/tesla.py report
 python3 scripts/tesla.py report --no-wake
 
@@ -65,6 +70,10 @@ python3 scripts/tesla.py --car "My Model 3" lock
 # Climate (status is read-only)
 python3 scripts/tesla.py climate status
 python3 scripts/tesla.py climate status --no-wake
+python3 scripts/tesla.py climate on
+python3 scripts/tesla.py climate off
+python3 scripts/tesla.py climate defrost on
+python3 scripts/tesla.py climate defrost off
 python3 scripts/tesla.py climate temp 72      # default: °F
 python3 scripts/tesla.py climate temp 22 --celsius
 python3 scripts/tesla.py charge limit 80 --yes   # 50–100
@@ -83,7 +92,12 @@ python3 scripts/tesla.py trunk frunk --yes
 python3 scripts/tesla.py windows vent  --yes
 python3 scripts/tesla.py windows close --yes
 
-# Charge port door (safety gated)
+# Charge port door
+python3 scripts/tesla.py charge-port status
+python3 scripts/tesla.py charge-port status --no-wake
+python3 scripts/tesla.py charge-port status --json
+
+# Charge port door open/close (safety gated)
 python3 scripts/tesla.py charge-port open  --yes
 python3 scripts/tesla.py charge-port close --yes
 
@@ -106,6 +120,61 @@ python3 scripts/tesla.py tires --no-wake
 python3 scripts/tesla.py openings
 python3 scripts/tesla.py openings --no-wake
 python3 scripts/tesla.py openings --json
+
+# Mileage tracking (odometer) — local SQLite
+python3 scripts/tesla.py mileage init
+python3 scripts/tesla.py mileage record --no-wake --auto-wake-after-hours 24
+python3 scripts/tesla.py mileage status
+python3 scripts/tesla.py mileage export --format csv > mileage.csv
+python3 scripts/tesla.py mileage export --format json > mileage.json
+```
+
+## Mileage tracking (hourly)
+
+This feature records each vehicle’s **odometer miles** to a **local SQLite database** so we can build analytics later.
+
+Defaults:
+- DB path: `~/.my_tesla/mileage.sqlite` (override with `MY_TESLA_MILEAGE_DB` or `mileage --db ...`)
+- Wake behavior: **no wake by default**. The recorder will only allow waking a car **if it hasn’t recorded mileage in 24h**.
+
+### Quick start
+```bash
+python3 scripts/tesla.py mileage init
+python3 scripts/tesla.py mileage record --no-wake --auto-wake-after-hours 24
+python3 scripts/tesla.py mileage status
+```
+
+### Run every hour (macOS launchd example)
+Create `~/Library/LaunchAgents/com.mytesla.mileage.plist`:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key><string>com.mytesla.mileage</string>
+    <key>StartInterval</key><integer>3600</integer>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/usr/bin/python3</string>
+      <string>/ABS/PATH/TO/scripts/tesla.py</string>
+      <string>mileage</string>
+      <string>record</string>
+      <string>--no-wake</string>
+      <string>--auto-wake-after-hours</string><string>24</string>
+      <string>--json</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>TESLA_EMAIL</key><string>you@email.com</string>
+    </dict>
+    <key>StandardOutPath</key><string>~/.my_tesla/mileage.log</string>
+    <key>StandardErrorPath</key><string>~/.my_tesla/mileage.err.log</string>
+  </dict>
+</plist>
+```
+Load it:
+```bash
+launchctl load -w ~/Library/LaunchAgents/com.mytesla.mileage.plist
 ```
 
 ## Tests

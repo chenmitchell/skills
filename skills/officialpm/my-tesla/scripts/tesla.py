@@ -14,10 +14,46 @@ import argparse
 import json
 import os
 import sys
+import sqlite3
+import time
+from datetime import datetime, timezone
 from pathlib import Path
+
+# Keep the repo clean: don't write __pycache__/ bytecode files when running the CLI.
+# (Also helps keep private repos from accumulating noisy artifacts.)
+sys.dont_write_bytecode = True
 
 CACHE_FILE = Path.home() / ".tesla_cache.json"
 DEFAULTS_FILE = Path.home() / ".my_tesla.json"
+SKILL_DIR = Path(__file__).resolve().parent.parent
+
+
+def _invocation(extra: str = "") -> str:
+    """Return a copy/pastable invocation string for help/error messages.
+
+    Use the absolute path to this script so the suggestion works even when the
+    current working directory is not the repo root.
+    """
+    prog = str(Path(__file__).resolve())
+    return f"python3 {prog}{(' ' + extra) if extra else ''}"
+
+
+def read_skill_version() -> str:
+    """Read the skill version from VERSION.txt/VERSION in the repo.
+
+    ClawdHub ignores extensionless files like `VERSION`, so published artifacts
+    also include `VERSION.txt`. Prefer VERSION.txt when present.
+    """
+    for name in ("VERSION.txt", "VERSION"):
+        p = SKILL_DIR / name
+        try:
+            if p.exists():
+                v = p.read_text().strip()
+                if v:
+                    return v
+        except Exception:
+            continue
+    return "(unknown)"
 
 
 def resolve_email(args, prompt: bool = True) -> str:
@@ -36,7 +72,7 @@ def require_email(args) -> str:
     if not email:
         print(
             "❌ Missing Tesla email. Set TESLA_EMAIL or pass --email\n"
-            "   Example: TESLA_EMAIL=\"you@email.com\" python3 scripts/tesla.py list",
+            f"   Example: TESLA_EMAIL=\"you@email.com\" {_invocation('list')}",
             file=sys.stderr,
         )
         sys.exit(2)
@@ -58,7 +94,11 @@ def get_tesla(email: str):
     if not tesla.authorized:
         tesla.fetch_token()
         print("✅ Authenticated successfully!")
-    
+
+    # Best-effort: keep the local OAuth cache file private.
+    if CACHE_FILE.exists():
+        _chmod_0600(CACHE_FILE)
+
     return tesla
 
 
@@ -72,8 +112,19 @@ def load_defaults():
     return {}
 
 
+def _chmod_0600(path: Path):
+    """Best-effort: set file permissions to user read/write only."""
+    try:
+        path.chmod(0o600)
+    except Exception:
+        # Non-POSIX FS or permission error; ignore.
+        pass
+
+
 def save_defaults(obj: dict):
+    # Defaults can include human-readable vehicle names; keep them private.
     DEFAULTS_FILE.write_text(json.dumps(obj, indent=2) + "\n")
+    _chmod_0600(DEFAULTS_FILE)
 
 
 def resolve_default_car_name():
@@ -195,7 +246,7 @@ def wake_vehicle(vehicle, allow_wake: bool = True) -> bool:
         return True
     except Exception as e:
         print(
-            f"❌ Failed to wake vehicle (state was: {state}). Try again, or run: python3 scripts/tesla.py wake\n"
+            f"❌ Failed to wake vehicle (state was: {state}). Try again, or run: {_invocation('wake')}\n"
             f"   Details: {e}",
             file=sys.stderr,
         )
@@ -250,7 +301,7 @@ def cmd_list(args):
     if default_name:
         print(f"Default car: {default_name}")
     else:
-        print("Default car: (none) — set with: python3 scripts/tesla.py default-car \"Name\"")
+        print(f"Default car: (none) — set with: {_invocation('default-car \"Name\"')}")
 
 
 def _c_to_f(c):
@@ -386,7 +437,23 @@ def _report(vehicle, data):
         suffix = f" ({', '.join(extra)})" if extra else ""
         lines.append(f"Charging: {charging_state}{suffix}")
 
-    # Charge port / cable state
+        # When actively charging, show power details if available.
+        # This is useful to sanity-check a slow/fast charge session at a glance.
+        if charging_state == 'Charging':
+            p = charge.get('charger_power')
+            v = charge.get('charger_voltage')
+            a = charge.get('charger_actual_current')
+            bits = []
+            if p is not None:
+                bits.append(f"{p} kW")
+            if v is not None:
+                bits.append(f"{v}V")
+            if a is not None:
+                bits.append(f"{a}A")
+            if bits:
+                lines.append(f"Charging power: {' '.join(bits)}")
+
+# Charge port / cable state
     cpd = charge.get('charge_port_door_open')
     if cpd is not None:
         lines.append(f"Charge port door: {_fmt_bool(cpd, 'Open', 'Closed')}")
@@ -518,7 +585,7 @@ def _ensure_online_or_exit(vehicle, allow_wake: bool):
     name = vehicle.get('display_name', 'Vehicle')
     print(
         f"ℹ️ {name} is currently '{state}'. Skipping wake because --no-wake was set.\n"
-        "   Re-run without --no-wake, or run: python3 scripts/tesla.py wake",
+        f"   Re-run without --no-wake, or run: {_invocation('wake')}",
         file=sys.stderr,
     )
     sys.exit(3)
@@ -627,18 +694,22 @@ def cmd_unlock(args):
 
 
 def cmd_climate(args):
-    """Control climate."""
+    """Control climate.
+
+    Actions:
+    - status (read-only)
+    - on/off
+    - temp <value> [--celsius|--fahrenheit]
+    - defrost <on|off> (max defrost / preconditioning)
+    """
     tesla = get_tesla(require_email(args))
     vehicle = get_vehicle(tesla, args.car)
 
-    # Read-only action can skip waking the car.
-    allow_wake = True
     if args.action == 'status':
+        # Read-only action can skip waking the car.
         allow_wake = not getattr(args, 'no_wake', False)
+        _ensure_online_or_exit(vehicle, allow_wake=allow_wake)
 
-    _ensure_online_or_exit(vehicle, allow_wake=allow_wake)
-
-    if args.action == 'status':
         data = vehicle.get_vehicle_data()
         climate = data.get('climate_state', {})
 
@@ -670,7 +741,7 @@ def cmd_climate(args):
             print(f"Setpoint: driver {driver or '(unknown)'} | passenger {passenger or '(unknown)'}")
         return
 
-    # Mutating actions
+    # Mutating actions (wake is allowed)
     wake_vehicle(vehicle)
 
     if args.action == 'on':
@@ -694,6 +765,16 @@ def cmd_climate(args):
         temp_c = (value - 32) * 5 / 9 if in_f else value
         vehicle.command('CHANGE_CLIMATE_TEMPERATURE_SETTING', driver_temp=temp_c, passenger_temp=temp_c)
         print(f"🌡️ {vehicle['display_name']} temperature set to {value:g}°{'F' if in_f else 'C'}")
+    elif args.action == 'defrost':
+        if args.value is None or str(args.value).strip().lower() not in ('on', 'off'):
+            raise ValueError("Missing defrost value. Use: climate defrost on|off")
+
+        on = str(args.value).strip().lower() == 'on'
+        vehicle.command('SET_PRECONDITIONING_MAX', on=on)
+        print(f"🧊 {vehicle['display_name']} max defrost {('enabled' if on else 'disabled')}")
+    else:
+        raise ValueError(f"Unknown action: {args.action}")
+
 
 
 def cmd_charge(args):
@@ -1088,11 +1169,52 @@ def cmd_flash(args):
     print(f"💡 {vehicle['display_name']} flashed lights!")
 
 
+def _charge_port_status_json(vehicle, data: dict) -> dict:
+    """Small, privacy-safe charge port status object."""
+    charge = (data or {}).get('charge_state', {})
+    return {
+        'display_name': (vehicle or {}).get('display_name'),
+        'state': (vehicle or {}).get('state'),
+        'charge_port_door_open': charge.get('charge_port_door_open'),
+        'charge_port_latch': charge.get('charge_port_latch'),
+        'conn_charge_cable': charge.get('conn_charge_cable'),
+        'charging_state': charge.get('charging_state'),
+    }
+
+
 def cmd_charge_port(args):
-    """Open/close the charge port door (requires --yes)."""
-    require_yes(args, 'charge-port')
+    """Charge port operations.
+
+    - status: read-only (supports --no-wake)
+    - open/close: requires --yes
+    """
     tesla = get_tesla(require_email(args))
     vehicle = get_vehicle(tesla, args.car)
+
+    if args.action == 'status':
+        _ensure_online_or_exit(vehicle, allow_wake=not getattr(args, 'no_wake', False))
+        data = vehicle.get_vehicle_data()
+        out = _charge_port_status_json(vehicle, data)
+
+        if getattr(args, 'json', False):
+            # Keep this privacy-safe + stable.
+            print(json.dumps(out, indent=2))
+            return
+
+        print(f"🔌 {vehicle.get('display_name')}")
+        print(f"   State: {vehicle.get('state')}")
+        if out.get('charge_port_door_open') is not None:
+            print(f"   Port door open: {_fmt_bool(out.get('charge_port_door_open'))}")
+        if out.get('charge_port_latch') is not None:
+            print(f"   Port latch: {out.get('charge_port_latch')}")
+        if out.get('conn_charge_cable') is not None:
+            print(f"   Cable: {out.get('conn_charge_cable')}")
+        if out.get('charging_state') is not None:
+            print(f"   Charging: {out.get('charging_state')}")
+        return
+
+    # open/close
+    require_yes(args, 'charge-port')
     wake_vehicle(vehicle)
 
     if args.action == 'open':
@@ -1118,6 +1240,291 @@ def cmd_summary(args):
     """One-line status summary."""
     args.summary = True
     return cmd_status(args)
+
+
+# ----------------------------
+# Mileage tracking (SQLite)
+# ----------------------------
+
+MILEAGE_DIR = Path.home() / ".my_tesla"
+MILEAGE_DB_DEFAULT = MILEAGE_DIR / "mileage.sqlite"
+
+
+def resolve_mileage_db_path(args=None) -> Path:
+    """Resolve mileage DB path.
+
+    Priority:
+    1) --db (for mileage commands)
+    2) MY_TESLA_MILEAGE_DB env var
+    3) ~/.my_tesla/mileage.sqlite
+    """
+    if args is not None and getattr(args, "db", None):
+        return Path(getattr(args, "db")).expanduser()
+    env = os.environ.get("MY_TESLA_MILEAGE_DB")
+    if env and env.strip():
+        return Path(env.strip()).expanduser()
+    return MILEAGE_DB_DEFAULT
+
+
+def _db_connect(path: Path):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(path))
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA foreign_keys=ON;")
+    return conn
+
+
+def mileage_init_db(path: Path):
+    conn = _db_connect(path)
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS mileage_points (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              ts_utc INTEGER NOT NULL,
+              vehicle_id TEXT,
+              vehicle_name TEXT,
+              odometer_mi REAL,
+              state TEXT,
+              source TEXT,
+              note TEXT
+            );
+            """
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mileage_points_vehicle_ts ON mileage_points(vehicle_id, ts_utc);"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mileage_points_ts ON mileage_points(ts_utc);"
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _vehicle_identity(vehicle) -> tuple[str, str]:
+    vid = vehicle.get("id_s") or str(vehicle.get("vehicle_id") or "")
+    name = vehicle.get("display_name") or "Vehicle"
+    return (vid, name)
+
+
+def mileage_last_success_ts(conn, vehicle_id: str) -> int | None:
+    cur = conn.execute(
+        "SELECT ts_utc FROM mileage_points WHERE vehicle_id=? AND odometer_mi IS NOT NULL ORDER BY ts_utc DESC LIMIT 1",
+        (vehicle_id,),
+    )
+    row = cur.fetchone()
+    return int(row[0]) if row else None
+
+
+def mileage_insert_point(
+    conn,
+    *,
+    ts_utc: int,
+    vehicle_id: str,
+    vehicle_name: str,
+    odometer_mi: float | None,
+    state: str | None,
+    source: str,
+    note: str | None = None,
+):
+    conn.execute(
+        """
+        INSERT INTO mileage_points(ts_utc, vehicle_id, vehicle_name, odometer_mi, state, source, note)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (ts_utc, vehicle_id, vehicle_name, odometer_mi, state, source, note),
+    )
+
+
+def _fmt_dt(ts_utc: int) -> str:
+    dt = datetime.fromtimestamp(ts_utc, tz=timezone.utc)
+    return dt.strftime("%Y-%m-%d %H:%M UTC")
+
+
+def cmd_mileage(args):
+    """Mileage tracking commands."""
+    db_path = resolve_mileage_db_path(args)
+
+    if args.action == "init":
+        mileage_init_db(db_path)
+        print(f"✅ Mileage DB ready: {db_path}")
+        return
+
+    # record/status/export require DB
+    mileage_init_db(db_path)
+
+    if args.action == "record":
+        tesla = get_tesla(require_email(args))
+        vehicles = tesla.vehicle_list()
+        if not vehicles:
+            print("❌ No vehicles found on this account", file=sys.stderr)
+            sys.exit(1)
+
+        ts = int(time.time())
+        allow_any_wake = not getattr(args, "no_wake", False)
+        wake_after_hours = float(getattr(args, "auto_wake_after_hours", 24.0) or 24.0)
+        wake_after_sec = int(wake_after_hours * 3600)
+
+        results = []
+
+        conn = _db_connect(db_path)
+        try:
+            for v in vehicles:
+                vid, name = _vehicle_identity(v)
+                state = v.get("state")
+
+                # Determine if we should allow waking based on last successful capture.
+                last_ts = mileage_last_success_ts(conn, vid) if vid else None
+                too_old = last_ts is None or (ts - last_ts) >= wake_after_sec
+
+                allow_wake = allow_any_wake and bool(too_old)
+
+                # Try to avoid waking unless threshold exceeded.
+                if not wake_vehicle(v, allow_wake=allow_wake):
+                    mileage_insert_point(
+                        conn,
+                        ts_utc=ts,
+                        vehicle_id=vid,
+                        vehicle_name=name,
+                        odometer_mi=None,
+                        state=state,
+                        source="skip",
+                        note=(
+                            f"skipped (state={state}); no_wake={getattr(args,'no_wake',False)}; "
+                            f"last_ok={_fmt_dt(last_ts) if last_ts else 'never'}"
+                        ),
+                    )
+                    results.append({
+                        "vehicle": name,
+                        "vehicle_id": vid,
+                        "state": state,
+                        "recorded": False,
+                        "reason": "asleep_or_offline",
+                        "last_success_ts_utc": last_ts,
+                        "woke": False,
+                    })
+                    continue
+
+                # Online now.
+                data = v.get_vehicle_data()
+                vs = data.get("vehicle_state", {})
+                odo = vs.get("odometer")
+
+                mileage_insert_point(
+                    conn,
+                    ts_utc=ts,
+                    vehicle_id=vid,
+                    vehicle_name=name,
+                    odometer_mi=float(odo) if odo is not None else None,
+                    state=v.get("state"),
+                    source="vehicle_data",
+                    note=None,
+                )
+
+                results.append({
+                    "vehicle": name,
+                    "vehicle_id": vid,
+                    "state": v.get("state"),
+                    "recorded": odo is not None,
+                    "odometer_mi": float(odo) if odo is not None else None,
+                    "woke": bool(allow_wake and state != 'online'),
+                })
+
+            conn.commit()
+        finally:
+            conn.close()
+
+        if args.json:
+            print(json.dumps({"db": str(db_path), "ts_utc": ts, "results": results}, indent=2))
+            return
+
+        ok = sum(1 for r in results if r.get("recorded"))
+        print(f"✅ Recorded mileage: {ok}/{len(results)} vehicles")
+        for r in results:
+            if r.get("recorded"):
+                print(f"- {r['vehicle']}: {r.get('odometer_mi'):.1f} mi")
+            else:
+                print(f"- {r['vehicle']}: skipped ({r.get('reason')})")
+        return
+
+    if args.action == "status":
+        conn = _db_connect(db_path)
+        try:
+            cur = conn.execute(
+                """
+                SELECT vehicle_name, vehicle_id, ts_utc, odometer_mi
+                FROM mileage_points
+                WHERE odometer_mi IS NOT NULL
+                ORDER BY ts_utc DESC
+                """
+            )
+            rows = cur.fetchall()
+        finally:
+            conn.close()
+
+        # latest per vehicle
+        latest = {}
+        for name, vid, ts, odo in rows:
+            if vid not in latest:
+                latest[vid] = {"vehicle": name, "vehicle_id": vid, "ts_utc": int(ts), "odometer_mi": float(odo)}
+
+        out = {"db": str(db_path), "vehicles": list(latest.values())}
+        if args.json:
+            print(json.dumps(out, indent=2))
+            return
+
+        print(f"Mileage DB: {db_path}")
+        if not latest:
+            print("No mileage points recorded yet. Run: " + _invocation("mileage record"))
+            return
+        for v in out["vehicles"]:
+            print(f"- {v['vehicle']}: {v['odometer_mi']:.1f} mi (last: {_fmt_dt(v['ts_utc'])})")
+        return
+
+    if args.action == "export":
+        fmt = getattr(args, "format", "csv")
+        conn = _db_connect(db_path)
+        try:
+            cur = conn.execute(
+                "SELECT ts_utc, vehicle_id, vehicle_name, odometer_mi, state, source, note FROM mileage_points ORDER BY ts_utc ASC"
+            )
+            rows = cur.fetchall()
+        finally:
+            conn.close()
+
+        if fmt == "json":
+            items = [
+                {
+                    "ts_utc": int(ts),
+                    "vehicle_id": vid,
+                    "vehicle": name,
+                    "odometer_mi": odo,
+                    "state": state,
+                    "source": source,
+                    "note": note,
+                }
+                for (ts, vid, name, odo, state, source, note) in rows
+            ]
+            print(json.dumps({"db": str(db_path), "items": items}, indent=2))
+            return
+
+        # csv
+        import csv
+        w = csv.writer(sys.stdout)
+        w.writerow(["ts_utc", "vehicle_id", "vehicle", "odometer_mi", "state", "source", "note"])
+        for (ts, vid, name, odo, state, source, note) in rows:
+            w.writerow([int(ts), vid, name, odo, state, source, note or ""])
+        return
+
+    raise ValueError(f"Unknown mileage action: {args.action}")
+
+
+def cmd_version(args):
+    """Print the installed skill version."""
+    # Keep output simple for scripts.
+    print(read_skill_version())
 
 
 def cmd_default_car(args):
@@ -1160,13 +1567,22 @@ def main():
         ),
     )
     
-    subparsers = parser.add_subparsers(dest="command", required=True)
-    
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="Print skill version and exit",
+    )
+
+    subparsers = parser.add_subparsers(dest="command")
+
     # Auth
     subparsers.add_parser("auth", help="Authenticate with Tesla")
-    
+
     # List
     subparsers.add_parser("list", help="List all vehicles")
+
+    # Version
+    subparsers.add_parser("version", help="Print skill version")
     
     # Status
     status_parser = subparsers.add_parser("status", help="Get vehicle status")
@@ -1185,14 +1601,32 @@ def main():
     default_parser = subparsers.add_parser("default-car", help="Set/show default vehicle name")
     default_parser.add_argument("name", nargs="?", help="Vehicle display name to set as default")
     
+    # Mileage tracking (odometer)
+    mileage_parser = subparsers.add_parser("mileage", help="Record odometer mileage to a local SQLite DB")
+    mileage_parser.add_argument("action", choices=["init", "record", "status", "export"], help="init|record|status|export")
+    mileage_parser.add_argument("--json", action="store_true", help="Output JSON (record/status only)")
+    mileage_parser.add_argument("--db", help="Path to the SQLite DB (default: ~/.my_tesla/mileage.sqlite)")
+    mileage_parser.add_argument("--no-wake", action="store_true", help="Do not wake sleeping cars")
+    mileage_parser.add_argument(
+        "--auto-wake-after-hours",
+        type=float,
+        default=24.0,
+        help="If a car hasn't recorded mileage in this many hours, allow waking it (default: 24)",
+    )
+    mileage_parser.add_argument("--format", choices=["csv", "json"], default="csv", help="For export: csv|json")
+
     # Lock/unlock
     subparsers.add_parser("lock", help="Lock the vehicle")
     subparsers.add_parser("unlock", help="Unlock the vehicle")
     
     # Climate
     climate_parser = subparsers.add_parser("climate", help="Climate control")
-    climate_parser.add_argument("action", choices=["status", "on", "off", "temp"])
-    climate_parser.add_argument("value", nargs="?", help="Temperature value (temp only)")
+    climate_parser.add_argument("action", choices=["status", "on", "off", "temp", "defrost"])
+    climate_parser.add_argument(
+        "value",
+        nargs="?",
+        help="For 'temp': temperature value. For 'defrost': on|off.",
+    )
     climate_parser.add_argument("--no-wake", action="store_true", help="(status only) Do not wake the car")
     temp_units = climate_parser.add_mutually_exclusive_group()
     temp_units.add_argument("--fahrenheit", "-f", action="store_true", help="Temperature value is in °F (default)")
@@ -1244,17 +1678,30 @@ def main():
     subparsers.add_parser("flash", help="Flash the lights")
 
     # Charge port
-    charge_port_parser = subparsers.add_parser("charge-port", help="Open/close the charge port door (requires --yes)")
-    charge_port_parser.add_argument("action", choices=["open", "close"], help="Action to perform")
+    charge_port_parser = subparsers.add_parser(
+        "charge-port",
+        help="Charge port status (read-only) or open/close (requires --yes)",
+    )
+    charge_port_parser.add_argument("action", choices=["status", "open", "close"], help="status|open|close")
+    charge_port_parser.add_argument("--no-wake", action="store_true", help="(status only) Do not wake the car")
 
     # Wake
     subparsers.add_parser("wake", help="Wake up the vehicle")
     
     args = parser.parse_args()
-    
+
+    if getattr(args, "version", False):
+        cmd_version(args)
+        return
+
+    if not getattr(args, "command", None):
+        parser.print_help(sys.stderr)
+        sys.exit(2)
+
     commands = {
         "auth": cmd_auth,
         "list": cmd_list,
+        "version": cmd_version,
         "status": cmd_status,
         "summary": cmd_summary,
         "report": cmd_report,
@@ -1274,8 +1721,9 @@ def main():
         "charge-port": cmd_charge_port,
         "wake": cmd_wake,
         "default-car": cmd_default_car,
+        "mileage": cmd_mileage,
     }
-    
+
     try:
         commands[args.command](args)
     except Exception as e:

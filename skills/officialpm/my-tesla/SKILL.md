@@ -24,9 +24,9 @@ TESLA_EMAIL="you@email.com" python3 {baseDir}/scripts/tesla.py auth
 
 This opens a Tesla login URL. Log in, then paste the callback URL back into the CLI.
 
-- Token cache: `~/.tesla_cache.json` (local only)
+- Token cache: `~/.tesla_cache.json` (local only; best-effort chmod `0600`)
 - Optional: set `MY_TESLA_DEFAULT_CAR` to a vehicle display name to pick a default car via env var
-- Or persist a local default with: `python3 {baseDir}/scripts/tesla.py default-car "Name"` (writes `~/.my_tesla.json`)
+- Or persist a local default with: `python3 {baseDir}/scripts/tesla.py default-car "Name"` (writes `~/.my_tesla.json`; best-effort chmod `0600`)
 
 ## Commands
 
@@ -34,6 +34,10 @@ This opens a Tesla login URL. Log in, then paste the callback URL back into the 
 # List vehicles
 python3 {baseDir}/scripts/tesla.py list
 python3 {baseDir}/scripts/tesla.py list --json   # machine-readable, privacy-safe
+
+# Version
+python3 {baseDir}/scripts/tesla.py version
+python3 {baseDir}/scripts/tesla.py --version
 
 # Pick a car (optional)
 # --car accepts: exact name, partial name (substring match), or a 1-based index from `list`
@@ -75,6 +79,8 @@ python3 {baseDir}/scripts/tesla.py climate status
 python3 {baseDir}/scripts/tesla.py climate status --no-wake
 python3 {baseDir}/scripts/tesla.py climate on
 python3 {baseDir}/scripts/tesla.py climate off
+python3 {baseDir}/scripts/tesla.py climate defrost on
+python3 {baseDir}/scripts/tesla.py climate defrost off
 python3 {baseDir}/scripts/tesla.py climate temp 72      # default: °F
 python3 {baseDir}/scripts/tesla.py climate temp 22 --celsius
 
@@ -120,7 +126,19 @@ python3 {baseDir}/scripts/tesla.py sentry status --no-wake
 python3 {baseDir}/scripts/tesla.py sentry on  --yes
 python3 {baseDir}/scripts/tesla.py sentry off --yes
 
-# Charge port door (safety gated)
+# Charge port door
+python3 {baseDir}/scripts/tesla.py charge-port status
+python3 {baseDir}/scripts/tesla.py charge-port status --no-wake
+python3 {baseDir}/scripts/tesla.py charge-port status --json
+
+# Mileage tracking (odometer) — local SQLite
+python3 {baseDir}/scripts/tesla.py mileage init
+python3 {baseDir}/scripts/tesla.py mileage record --no-wake --auto-wake-after-hours 24
+python3 {baseDir}/scripts/tesla.py mileage status
+python3 {baseDir}/scripts/tesla.py mileage export --format csv
+python3 {baseDir}/scripts/tesla.py mileage export --format json
+
+# Charge port door open/close (safety gated)
 python3 {baseDir}/scripts/tesla.py charge-port open  --yes
 python3 {baseDir}/scripts/tesla.py charge-port close --yes
 

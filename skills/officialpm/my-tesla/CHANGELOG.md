@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.1.48 — 2026-01-29
+- Security: set best-effort `0600` permissions on local token cache (`~/.tesla_cache.json`) and defaults (`~/.my_tesla.json`).
+- Reliability: add unit test for defaults file permission behavior.
+
+## 0.1.47 — 2026-01-29
+- Reliability: make `tests/` a package that disables Python bytecode writing, so running tests won’t create `__pycache__/` in the repo.
+
+## 0.1.46 — 2026-01-29
+- Fix: `mileage record` now supports `--json` (subcommand flag) so hourly cron runs can log machine-readable output.
+
+## 0.1.45 — 2026-01-29
+- New capability: add `mileage` tracking (local SQLite) to record odometer miles across **all cars**.
+  - Default behavior: `--no-wake` style (skip sleeping cars)
+  - Auto-wake policy: allow waking a car only if it hasn’t recorded mileage in **24 hours**.
+  - Includes `init`, `record`, `status`, and `export` commands.
+- Docs: added a quick-start + an hourly `launchd` example.
+- Tests: added unit tests for mileage DB helpers + record skip behavior.
+
+## 0.1.44 — 2026-01-29
+- New capability: add `climate defrost on|off` (max defrost / preconditioning).
+- Reliability: add unit tests for the new defrost command wiring.
+
+## 0.1.43 — 2026-01-29
+- Reliability: prevent Python from writing `__pycache__/` bytecode when running the CLI (keeps the repo clean).
+
+## 0.1.42 — 2026-01-29
+- UX: `report` now includes charging power details (kW / V / A) when the car is actively charging.
+- Reliability: add unit test coverage for the new report output.
+
+## 0.1.41 — 2026-01-29
+- UX: improve error/help messages by printing a copy/pastable invocation that works outside the repo (uses the script’s absolute path).
+
+## 0.1.40 — 2026-01-29
+- New capability (safe): add `charge-port status` (read-only) with `--no-wake` + `--json`.
+- Reliability: add unit test coverage for the new charge port status formatter.
+
+## 0.1.39 — 2026-01-29
+- UX: add `version` / `--version` so you can quickly confirm the installed skill version.
+
 ## 0.1.38 — 2026-01-29
 - UX: `list --json` now outputs a privacy-safe, machine-readable vehicle list (no VINs).
 

@@ -1,7 +1,38 @@
 ---
 name: just-fucking-cancel
-description: Analyze bank transaction CSVs to find recurring charges, categorize subscriptions, and cancel what you don't need. Use when user says "cancel subscriptions", "audit subscriptions", "find recurring charges", or "what am I paying for". Supports Apple Card, Chase, Mint, and generic CSV formats. Outputs interactive HTML audit with copy-to-cancel workflow.
+description: "Find and cancel unwanted subscriptions by analyzing bank transactions. Detects recurring charges, calculates annual waste, and helps you cancel with direct URLs and browser automation. Use when: 'cancel subscriptions', 'audit subscriptions', 'find recurring charges', 'what am I paying for', 'save money', 'subscription cleanup', 'stop wasting money'. Supports CSV import (Apple Card, Chase, Amex, Citi, Bank of America, Capital One, Mint, Copilot) OR Plaid API for automatic transaction pull. Outputs interactive HTML audit with one-click cancel workflow. Pairs with Plaid integration for real-time transaction access without CSV exports."
 attribution: Originally created by rohunvora (https://github.com/rohunvora/just-fucking-cancel)
+tags:
+  - subscriptions
+  - cancel
+  - money
+  - savings
+  - finance
+  - personal-finance
+  - budgeting
+  - recurring-charges
+  - bank-transactions
+  - csv-analysis
+  - subscription-audit
+  - subscription-management
+  - plaid
+  - fintech
+  - money-saving
+  - expense-tracking
+  - dark-patterns
+  - consumer-rights
+  - automation
+  - browser-automation
+  - apple-card
+  - chase
+  - amex
+  - mint
+  - copilot
+  - bank-of-america
+  - capital-one
+  - citi
+  - credit-card
+  - debit-card
 ---
 
 # just-fucking-cancel
@@ -15,11 +46,25 @@ Analyze transactions, categorize subscriptions, generate HTML audit, help cancel
 
 ## Workflow
 
-### 1. Get Transaction CSV
+### 1. Get Transactions
+
+**Option A: Plaid API (recommended — no CSV needed)**
+
+If the user has Plaid connected (check for Plaid integration/API access):
+1. Pull last 6-12 months of transactions via Plaid Transactions API
+2. All accounts are automatically included — no manual export needed
+3. Skip straight to Step 2
+
+**Option B: CSV Upload**
+
 Ask user for bank/card CSV export. Common sources:
 - Apple Card: Wallet → Card Balance → Export
 - Chase: Accounts → Download activity → CSV
-- Mint: Transactions → Export
+- Amex: Statements & Activity → Download → CSV
+- Citi: Account Details → Download Transactions
+- Bank of America: Activity → Download → CSV
+- Capital One: Transactions → Download
+- Mint / Copilot: Transactions → Export
 
 ### 2. Analyze Recurring Charges
 Read CSV, identify recurring patterns:

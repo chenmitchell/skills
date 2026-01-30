@@ -3,9 +3,15 @@
   "slug": "xiaohongshu-mcp",
   "displayName": "Xiaohongshu MCP",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1769786561057,
-    "commit": "https://github.com/clawdbot/skills/commit/b0cb9d9a0b447a9ac327cb9d341af21e451368ce"
+    "version": "1.0.2",
+    "publishedAt": 1769790144231,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1769786561057,
+      "commit": "https://github.com/clawdbot/skills/commit/b0cb9d9a0b447a9ac327cb9d341af21e451368ce"
+    }
+  ]
 }

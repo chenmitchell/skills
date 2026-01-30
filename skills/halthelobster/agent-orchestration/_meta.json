@@ -3,9 +3,15 @@
   "slug": "agent-orchestration",
   "displayName": "Agent Orchestration",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1769775366300,
-    "commit": "https://github.com/clawdbot/skills/commit/8daa02b594a6240a40067870271834ae94aad19e"
+    "version": "2.1.0",
+    "publishedAt": 1769807046681,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1769775366300,
+      "commit": "https://github.com/clawdbot/skills/commit/8daa02b594a6240a40067870271834ae94aad19e"
+    }
+  ]
 }

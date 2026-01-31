@@ -1,0 +1,11 @@
+{
+  "owner": "thegovind",
+  "slug": "azure-storage-blob-py",
+  "displayName": "Azure Storage Blob Py",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1769871049258,
+    "commit": null
+  },
+  "history": []
+}

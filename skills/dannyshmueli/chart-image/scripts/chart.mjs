@@ -41,6 +41,7 @@ function parseArgs(args) {
     color: '#e63946',
     svg: false,
     showChange: false,
+    sparkline: false,
   };
   
   for (let i = 0; i < args.length; i++) {
@@ -68,7 +69,31 @@ function parseArgs(args) {
       case '--focus-recent': opts.focusRecent = parseInt(next) || 4; i++; break;
       case '--dark': opts.dark = true; break;
       case '--show-values': opts.showValues = true; break;
+      case '--sparkline': opts.sparkline = true; break;
+      case '--stacked': opts.stacked = true; break;
+      case '--color-field': opts.colorField = next; i++; break;
+      case '--series-field': opts.seriesField = next; i++; break;
+      case '--open-field': opts.openField = next; i++; break;
+      case '--high-field': opts.highField = next; i++; break;
+      case '--low-field': opts.lowField = next; i++; break;
+      case '--close-field': opts.closeField = next; i++; break;
+      case '--donut': opts.donut = true; break;
+      case '--category-field': opts.categoryField = next; i++; break;
+      case '--volume-field': opts.volumeField = next; i++; break;
+      case '--volume-color': opts.volumeColor = next; i++; break;
+      case '--annotations': opts.annotations = JSON.parse(next); i++; break;
+      case '--color-value-field': opts.colorValueField = next; i++; break;
+      case '--y-category-field': opts.yCategoryField = next; i++; break;
+      case '--color-scheme': opts.colorScheme = next; i++; break;
     }
+  }
+  
+  // Sparkline mode: tiny inline chart, no axes/labels
+  if (opts.sparkline) {
+    opts.width = opts.width === 600 ? 80 : opts.width;  // Default 80 unless specified
+    opts.height = opts.height === 300 ? 20 : opts.height;  // Default 20 unless specified
+    opts.noAxes = true;
+    opts.title = null;  // No title for sparklines
   }
   
   return opts;
@@ -115,7 +140,494 @@ function buildSpec(opts) {
     bar: { type: 'bar', color: theme.accent },
     area: { type: 'area', color: theme.accent, opacity: 0.7, line: { color: theme.accent } },
     point: { type: 'point', color: theme.accent, size: 100 },
+    candlestick: null, // Handled separately as composite chart
   };
+  
+  // Pie/donut chart
+  if (opts.type === 'pie' || opts.type === 'donut' || opts.donut) {
+    const catField = opts.categoryField || opts.xField || 'category';
+    const valField = opts.yField || 'value';
+    const innerRadius = (opts.type === 'donut' || opts.donut) ? Math.min(opts.width, opts.height) * 0.2 : 0;
+    
+    const pieSpec = {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      width: opts.width,
+      height: opts.height,
+      background: theme.bg,
+      padding: { left: 10, right: 10, top: 10, bottom: 10 },
+      data: { values: opts.data },
+      mark: { 
+        type: 'arc', 
+        innerRadius: innerRadius,
+        stroke: theme.bg,
+        strokeWidth: 2
+      },
+      encoding: {
+        theta: { field: valField, type: 'quantitative', stack: true },
+        color: {
+          field: catField,
+          type: 'nominal',
+          title: opts.xTitle || catField,
+          scale: { scheme: opts.dark ? 'category20' : 'category10' },
+          legend: { labelColor: theme.text, titleColor: theme.text }
+        },
+        order: { field: valField, type: 'quantitative', sort: 'descending' }
+      },
+      config: {
+        font: 'Helvetica, Arial, sans-serif',
+        title: { fontSize: 16, fontWeight: 'bold', color: theme.text },
+        view: { stroke: null }
+      }
+    };
+    
+    if (opts.title) {
+      pieSpec.title = { text: opts.title, anchor: 'middle', color: theme.text };
+    }
+    
+    // Add labels if showValues
+    if (opts.showValues) {
+      pieSpec.layer = [
+        { mark: { type: 'arc', innerRadius: innerRadius, stroke: theme.bg, strokeWidth: 2 } },
+        { 
+          mark: { type: 'text', radius: Math.min(opts.width, opts.height) * 0.35, fontSize: 12, fontWeight: 'bold' },
+          encoding: {
+            text: { field: valField, type: 'quantitative' },
+            color: { value: theme.text }
+          }
+        }
+      ];
+      // Move common encodings to top level when using layers
+      pieSpec.encoding = {
+        theta: { field: valField, type: 'quantitative', stack: true },
+        color: {
+          field: catField,
+          type: 'nominal',
+          title: opts.xTitle || catField,
+          scale: { scheme: opts.dark ? 'category20' : 'category10' },
+          legend: { labelColor: theme.text, titleColor: theme.text }
+        },
+        order: { field: valField, type: 'quantitative', sort: 'descending' }
+      };
+      delete pieSpec.mark;
+    }
+    
+    return pieSpec;
+  }
+  
+  // Heatmap chart (rect marks with color encoding)
+  if (opts.type === 'heatmap') {
+    // Expects data with x, y, and value fields
+    // x = columns (e.g., day of week, hour)
+    // y = rows (e.g., week number, category)
+    // value = intensity (color)
+    const xField = opts.xField || 'x';
+    const yField = opts.yCategoryField || opts.yField || 'y';
+    const valueField = opts.colorValueField || 'value';
+    
+    // Choose color scheme based on data type and theme
+    // Common schemes: blues, greens, reds, viridis, magma, inferno, plasma
+    let colorScheme = opts.colorScheme || (opts.dark ? 'viridis' : 'blues');
+    
+    const heatmapSpec = {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      width: opts.width,
+      height: opts.height,
+      background: theme.bg,
+      padding: { left: 10, right: 10, top: 10, bottom: 10 },
+      data: { values: opts.data },
+      mark: { 
+        type: 'rect',
+        stroke: theme.bg,
+        strokeWidth: 1
+      },
+      encoding: {
+        x: {
+          field: xField,
+          type: 'ordinal',
+          title: opts.xTitle || xField,
+          axis: { labelAngle: -45, labelColor: theme.text, titleColor: theme.text, domainColor: theme.grid }
+        },
+        y: {
+          field: yField,
+          type: 'ordinal',
+          title: opts.yTitle || yField,
+          axis: { labelColor: theme.text, titleColor: theme.text, domainColor: theme.grid }
+        },
+        color: {
+          field: valueField,
+          type: 'quantitative',
+          title: valueField,
+          scale: { scheme: colorScheme },
+          legend: { 
+            labelColor: theme.text, 
+            titleColor: theme.text,
+            gradientLength: 150
+          }
+        }
+      },
+      config: {
+        font: 'Helvetica, Arial, sans-serif',
+        title: { fontSize: 16, fontWeight: 'bold', color: theme.text },
+        axis: { 
+          labelFontSize: 11, 
+          titleFontSize: 13
+        },
+        view: { stroke: null }
+      }
+    };
+    
+    if (opts.title) {
+      heatmapSpec.title = { text: opts.title, anchor: 'start', color: theme.text };
+    }
+    
+    // Add value labels if showValues
+    if (opts.showValues) {
+      heatmapSpec.layer = [
+        { mark: { type: 'rect', stroke: theme.bg, strokeWidth: 1 } },
+        { 
+          mark: { 
+            type: 'text', 
+            fontSize: 10,
+            fontWeight: 'bold'
+          },
+          encoding: {
+            text: { field: valueField, type: 'quantitative' },
+            color: {
+              condition: {
+                test: `datum['${valueField}'] > 50`,  // Light text on dark cells
+                value: theme.bg === '#ffffff' ? '#ffffff' : '#1a1a2e'
+              },
+              value: theme.text
+            }
+          }
+        }
+      ];
+      // Move encodings to top level for layers
+      heatmapSpec.encoding = {
+        x: heatmapSpec.encoding.x,
+        y: heatmapSpec.encoding.y,
+        color: heatmapSpec.encoding.color
+      };
+      delete heatmapSpec.mark;
+    }
+    
+    return heatmapSpec;
+  }
+  
+  // Candlestick chart (OHLC) - composite of rule + bar marks
+  if (opts.type === 'candlestick') {
+    // Expects data with: x, open, high, low, close fields
+    const openField = opts.openField || 'open';
+    const highField = opts.highField || 'high';
+    const lowField = opts.lowField || 'low';
+    const closeField = opts.closeField || 'close';
+    
+    // Add computed "bullish" field to data
+    const dataWithDirection = opts.data.map(d => ({
+      ...d,
+      _bullish: d[closeField] >= d[openField]
+    }));
+    
+    const candleSpec = {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      width: opts.width,
+      height: opts.height,
+      background: theme.bg,
+      padding: { left: 10, right: 10, top: 10, bottom: 10 },
+      data: { values: dataWithDirection },
+      layer: [
+        // Wick (high-low line)
+        {
+          mark: { type: 'rule', strokeWidth: 1 },
+          encoding: {
+            x: { field: opts.xField, type: 'ordinal', axis: { labelAngle: -45 } },
+            y: { field: lowField, type: 'quantitative', title: 'Price' },
+            y2: { field: highField },
+            color: {
+              condition: { test: 'datum._bullish', value: theme.positive },
+              value: theme.negative
+            }
+          }
+        },
+        // Body (open-close bar)
+        {
+          mark: { type: 'bar', width: { band: 0.6 } },
+          encoding: {
+            x: { field: opts.xField, type: 'ordinal' },
+            y: { field: openField, type: 'quantitative' },
+            y2: { field: closeField },
+            color: {
+              condition: { test: 'datum._bullish', value: theme.positive },
+              value: theme.negative
+            }
+          }
+        }
+      ],
+      config: {
+        font: 'Helvetica, Arial, sans-serif',
+        title: { fontSize: 16, fontWeight: 'bold', color: theme.text },
+        axis: { 
+          labelFontSize: 11, 
+          titleFontSize: 13, 
+          gridColor: theme.grid,
+          labelColor: theme.text,
+          titleColor: theme.text,
+          domainColor: theme.grid
+        },
+        view: { stroke: null }
+      }
+    };
+    
+    if (opts.title) {
+      candleSpec.title = { text: opts.title, anchor: 'start', color: theme.text };
+    }
+    
+    if (opts.yDomain) {
+      candleSpec.layer[0].encoding.y.scale = { domain: opts.yDomain };
+      candleSpec.layer[1].encoding.y.scale = { domain: opts.yDomain };
+    }
+    
+    return candleSpec;
+  }
+  
+  // Stacked bar chart
+  if (opts.stacked && opts.colorField) {
+    const stackedSpec = {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      width: opts.width,
+      height: opts.height,
+      background: theme.bg,
+      padding: { left: 10, right: 10, top: 10, bottom: 10 },
+      data: { values: opts.data },
+      mark: { type: 'bar' },
+      encoding: {
+        x: {
+          field: opts.xField,
+          type: 'ordinal',
+          title: opts.xTitle || opts.xField,
+          axis: { labelAngle: -45 }
+        },
+        y: {
+          field: opts.yField,
+          type: 'quantitative',
+          title: opts.yTitle || opts.yField,
+          stack: 'zero'
+        },
+        color: {
+          field: opts.colorField,
+          type: 'nominal',
+          title: opts.colorField,
+          scale: { scheme: 'category10' }
+        }
+      },
+      config: {
+        font: 'Helvetica, Arial, sans-serif',
+        title: { fontSize: 16, fontWeight: 'bold', color: theme.text },
+        axis: { 
+          labelFontSize: 11, 
+          titleFontSize: 13, 
+          gridColor: theme.grid,
+          labelColor: theme.text,
+          titleColor: theme.text,
+          domainColor: theme.grid
+        },
+        legend: {
+          labelColor: theme.text,
+          titleColor: theme.text
+        },
+        view: { stroke: null }
+      }
+    };
+    
+    if (opts.title) {
+      stackedSpec.title = { text: opts.title, anchor: 'start', color: theme.text };
+    }
+    
+    return stackedSpec;
+  }
+  
+  // Multi-series line chart
+  if (opts.seriesField && opts.type === 'line') {
+    const multiSpec = {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      width: opts.width,
+      height: opts.height,
+      background: theme.bg,
+      padding: { left: 10, right: 10, top: 10, bottom: 10 },
+      data: { values: opts.data },
+      mark: { type: 'line', point: true, strokeWidth: 2 },
+      encoding: {
+        x: {
+          field: opts.xField,
+          type: 'ordinal',
+          title: opts.xTitle || opts.xField,
+          axis: { labelAngle: -45 }
+        },
+        y: {
+          field: opts.yField,
+          type: 'quantitative',
+          title: opts.yTitle || opts.yField,
+          scale: opts.yDomain ? { domain: opts.yDomain } : {}
+        },
+        color: {
+          field: opts.seriesField,
+          type: 'nominal',
+          title: opts.seriesField,
+          scale: { scheme: 'category10' }
+        }
+      },
+      config: {
+        font: 'Helvetica, Arial, sans-serif',
+        title: { fontSize: 16, fontWeight: 'bold', color: theme.text },
+        axis: { 
+          labelFontSize: 11, 
+          titleFontSize: 13, 
+          gridColor: theme.grid,
+          labelColor: theme.text,
+          titleColor: theme.text,
+          domainColor: theme.grid
+        },
+        legend: {
+          labelColor: theme.text,
+          titleColor: theme.text
+        },
+        view: { stroke: null }
+      }
+    };
+    
+    if (opts.title) {
+      multiSpec.title = { text: opts.title, anchor: 'start', color: theme.text };
+    }
+    
+    return multiSpec;
+  }
+  
+  // Volume overlay (dual-axis chart with price line + volume bars)
+  if (opts.volumeField && opts.data) {
+    const volumeColor = opts.volumeColor || (opts.dark ? '#4a5568' : '#cbd5e0');
+    
+    // Apply focusRecent if specified
+    let chartData = opts.data;
+    if (opts.focusRecent && chartData.length > opts.focusRecent) {
+      chartData = chartData.slice(-opts.focusRecent);
+    }
+    
+    // Calculate Y domain for price if focusChange
+    let priceYDomain = opts.yDomain;
+    if (opts.focusChange && chartData.length >= 2) {
+      const values = chartData.map(d => d[opts.yField]);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const range = max - min;
+      const padding = range * 0.5;
+      priceYDomain = [Math.max(0, Math.floor(min - padding)), Math.ceil(max + padding)];
+    }
+    
+    // Calculate change annotation
+    let changeText = opts.annotation || null;
+    if (opts.showChange && chartData.length >= 2) {
+      const first = chartData[0][opts.yField];
+      const last = chartData[chartData.length - 1][opts.yField];
+      const change = last - first;
+      const sign = change >= 0 ? '+' : '';
+      changeText = `${sign}${change.toFixed(1)}%`;
+    }
+    
+    const volumeSpec = {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      width: opts.width,
+      height: opts.height,
+      background: theme.bg,
+      padding: { left: 10, right: 50, top: 10, bottom: 10 },  // Extra right padding for 2nd axis
+      data: { values: chartData },
+      layer: [
+        // Volume bars (behind, on secondary y-axis)
+        {
+          mark: { type: 'bar', color: volumeColor, opacity: 0.4 },
+          encoding: {
+            x: {
+              field: opts.xField,
+              type: 'ordinal',
+              axis: { labelAngle: -45, title: opts.xTitle || opts.xField }
+            },
+            y: {
+              field: opts.volumeField,
+              type: 'quantitative',
+              axis: {
+                title: 'Volume',
+                orient: 'right',
+                titleColor: volumeColor,
+                labelColor: volumeColor,
+                gridColor: 'transparent'  // No grid lines for volume
+              },
+              scale: { zero: true }
+            }
+          }
+        },
+        // Price line (front, on primary y-axis)
+        {
+          mark: { type: 'line', point: true, color: theme.accent, strokeWidth: 2 },
+          encoding: {
+            x: { field: opts.xField, type: 'ordinal' },
+            y: {
+              field: opts.yField,
+              type: 'quantitative',
+              axis: {
+                title: opts.yTitle || opts.yField,
+                orient: 'left',
+                gridColor: theme.grid
+              },
+              scale: priceYDomain ? { domain: priceYDomain } : {}
+            }
+          }
+        }
+      ],
+      resolve: {
+        scale: { y: 'independent' }  // Key: independent Y scales for dual axis
+      },
+      config: {
+        font: 'Helvetica, Arial, sans-serif',
+        title: { fontSize: 16, fontWeight: 'bold', color: theme.text },
+        axis: { 
+          labelFontSize: 11, 
+          titleFontSize: 13, 
+          labelColor: theme.text,
+          titleColor: theme.text,
+          domainColor: theme.grid
+        },
+        view: { stroke: null }
+      }
+    };
+    
+    // Add change annotation if requested
+    if (changeText && chartData.length >= 1) {
+      const lastPoint = chartData[chartData.length - 1];
+      const isNegative = changeText.startsWith('-');
+      
+      volumeSpec.layer.push({
+        mark: {
+          type: 'text',
+          align: 'left',
+          dx: 8,
+          dy: -8,
+          fontSize: 18,
+          fontWeight: 'bold',
+          color: isNegative ? theme.positive : theme.negative
+        },
+        encoding: {
+          x: { datum: lastPoint[opts.xField] },
+          y: { datum: lastPoint[opts.yField] },
+          text: { value: changeText }
+        }
+      });
+    }
+    
+    if (opts.title) {
+      volumeSpec.title = { text: opts.title, anchor: 'start', color: theme.text };
+    }
+    
+    return volumeSpec;
+  }
   
   // Calculate change if requested
   let changeText = opts.annotation || null;
@@ -238,6 +750,92 @@ function buildSpec(opts) {
     }
   }
   
+  // Add timeline annotations (vertical lines with labels)
+  // Format: --annotations '[{"x":"10:00","label":"Event 1"},{"x":"14:00","label":"Event 2"}]'
+  if (opts.annotations && Array.isArray(opts.annotations) && opts.data) {
+    const annotationColor = opts.dark ? '#fbbf24' : '#d97706';  // Amber color for visibility
+    
+    for (const ann of opts.annotations) {
+      const xVal = ann.x || ann[opts.xField];
+      const label = ann.label || ann.text || '';
+      
+      // Find Y value at this X point for positioning (or use middle of Y range)
+      const dataPoint = opts.data.find(d => d[opts.xField] === xVal);
+      const yValues = opts.data.map(d => d[opts.yField]);
+      const yMin = Math.min(...yValues);
+      const yMax = Math.max(...yValues);
+      const yPos = dataPoint ? dataPoint[opts.yField] : (yMin + yMax) / 2;
+      
+      // Vertical rule line
+      layers.push({
+        mark: {
+          type: 'rule',
+          color: annotationColor,
+          strokeWidth: 2,
+          strokeDash: [4, 4]  // Dashed line
+        },
+        encoding: {
+          x: { datum: xVal }
+        }
+      });
+      
+      // Label above the line
+      if (label) {
+        layers.push({
+          mark: {
+            type: 'text',
+            align: 'center',
+            baseline: 'bottom',
+            dy: -5,
+            fontSize: 11,
+            fontWeight: 'bold',
+            color: annotationColor
+          },
+          encoding: {
+            x: { datum: xVal },
+            y: { value: 10 },  // Near top of chart
+            text: { value: label }
+          }
+        });
+      }
+    }
+  }
+  
+  // Sparkline mode: minimal spec, no axes
+  if (opts.sparkline || opts.noAxes) {
+    const sparkSpec = {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      width: opts.width,
+      height: opts.height,
+      background: opts.sparkline ? 'transparent' : theme.bg,
+      padding: 0,
+      autosize: { type: 'fit', contains: 'padding' },
+      data: { values: opts.data },
+      mark: { 
+        type: 'line', 
+        color: theme.accent, 
+        strokeWidth: opts.sparkline ? 1.5 : 2 
+      },
+      encoding: {
+        x: {
+          field: opts.xField,
+          type: 'ordinal',
+          axis: null  // No axis
+        },
+        y: {
+          field: opts.yField,
+          type: 'quantitative',
+          axis: null,  // No axis
+          scale: opts.yDomain ? { domain: opts.yDomain } : { zero: false }
+        }
+      },
+      config: {
+        view: { stroke: null }
+      }
+    };
+    return sparkSpec;
+  }
+
   const spec = {
     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
     width: opts.width,

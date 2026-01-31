@@ -1,6 +1,9 @@
 ---
 name: chart-image
 description: Generate publication-quality chart images from data. Supports line, bar, area, and point charts. Use when visualizing data, creating graphs, plotting time series, or generating chart images for reports/alerts. Designed for Fly.io/VPS deployments - no native compilation, no Puppeteer, no browser required. Pure Node.js with prebuilt binaries.
+provides:
+  - capability: chart-generation
+    methods: [lineChart, barChart, areaChart]
 ---
 
 # Chart Image Generator
@@ -88,6 +91,54 @@ node /data/clawd/skills/chart-image/scripts/chart.mjs \
 | `--show-values` | Label min/max peak points | false |
 | `--dark` | Dark mode theme | false |
 | `--svg` | Output SVG instead of PNG | false |
+| `--sparkline` | Tiny inline chart (80x20, no axes) | false |
+| `--stacked` | Stacked bar chart (requires --color-field) | false |
+| `--color-field` | Field name for stack categories | - |
+| `--series-field` | Field for multi-series line charts | - |
+
+## Multi-Series Line Charts
+
+Compare multiple trends on one chart:
+
+```bash
+node chart.mjs \
+  --type line \
+  --series-field "market" \
+  --data '[{"x":"Jan","y":10,"market":"A"},{"x":"Jan","y":15,"market":"B"},{"x":"Feb","y":12,"market":"A"},{"x":"Feb","y":18,"market":"B"}]' \
+  --title "Comparison" \
+  --output multi.png
+```
+
+Each unique value in `--series-field` becomes a separate colored line with legend.
+
+## Stacked Bar Charts
+
+Visualize breakdowns by category:
+
+```bash
+node chart.mjs \
+  --type bar \
+  --stacked \
+  --color-field "category" \
+  --data '[{"x":"Mon","y":10,"category":"Work"},{"x":"Mon","y":5,"category":"Personal"}]' \
+  --title "Hours by Category" \
+  --output stacked.png
+```
+
+Data needs three fields: x (groups), y (values), and the color-field (stack categories).
+
+## Sparklines (inline mini-charts)
+
+Tiny charts for embedding in text summaries:
+
+```bash
+node chart.mjs \
+  --sparkline \
+  --data '[{"x":"1","y":10},{"x":"2","y":15},{"x":"3","y":12}]' \
+  --output spark.png
+```
+
+Sparklines are 80x20 by default (override with `--width` / `--height`), transparent background, no axes.
 
 ## Theme Selection
 

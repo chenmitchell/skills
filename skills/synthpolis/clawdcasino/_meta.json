@@ -3,9 +3,15 @@
   "slug": "clawdcasino",
   "displayName": "Clawd Casino",
   "latest": {
-    "version": "1.4.0",
-    "publishedAt": 1769897537268,
-    "commit": "https://github.com/clawdbot/skills/commit/8dc62273b91df991cde312575c065af095c7ae63"
+    "version": "1.4.1",
+    "publishedAt": 1769905013708,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.4.0",
+      "publishedAt": 1769897537268,
+      "commit": "https://github.com/clawdbot/skills/commit/8dc62273b91df991cde312575c065af095c7ae63"
+    }
+  ]
 }

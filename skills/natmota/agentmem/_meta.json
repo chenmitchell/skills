@@ -3,9 +3,15 @@
   "slug": "agentmem",
   "displayName": "AgentMem",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1769958892384,
-    "commit": "https://github.com/clawdbot/skills/commit/f43b8635174e354094b5466800583a5938c14c4a"
+    "version": "2.1.2",
+    "publishedAt": 1769986151163,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1769958892384,
+      "commit": "https://github.com/clawdbot/skills/commit/f43b8635174e354094b5466800583a5938c14c4a"
+    }
+  ]
 }

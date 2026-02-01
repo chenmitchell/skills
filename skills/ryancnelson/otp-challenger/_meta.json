@@ -1,13 +1,18 @@
 {
   "owner": "ryancnelson",
   "slug": "otp-challenger",
-  "displayName": "otp-challenger",
+  "displayName": "Otp Challenger",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1769905389018,
-    "commit": "https://github.com/clawdbot/skills/commit/53b92a3af24b326cba7412ffca87bc6a0b1ea8a9"
+    "version": "1.0.4",
+    "publishedAt": 1769967638480,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1769905389018,
+      "commit": "https://github.com/clawdbot/skills/commit/53b92a3af24b326cba7412ffca87bc6a0b1ea8a9"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1769901810255,

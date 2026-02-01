@@ -1,0 +1,11 @@
+{
+  "owner": "magnum-opus-v1",
+  "slug": "wpclaw-lite",
+  "displayName": "WPClaw Lite (WordPress/WooCommerce connector)",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1769904543773,
+    "commit": null
+  },
+  "history": []
+}

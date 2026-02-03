@@ -25,7 +25,7 @@ curl -s -X POST 'https://gateway.maton.ai/slack/api/chat.postMessage' \
 ## Base URL
 
 ```
-https://gateway.maton.ai/slack/api/{method}
+https://gateway.maton.ai/slack/{method}
 ```
 
 The gateway proxies requests to `slack.com` and automatically injects your OAuth token.
@@ -46,7 +46,7 @@ export MATON_API_KEY="YOUR_API_KEY"
 
 ### Getting Your API Key
 
-1. Sign in at [maton.ai](https://maton.ai)
+1. Sign in or create an account at [maton.ai](https://maton.ai)
 2. Go to [maton.ai/settings](https://maton.ai/settings)
 3. Copy your API key
 
@@ -83,8 +83,11 @@ curl -s -X GET 'https://ctrl.maton.ai/connections/{connection_id}' \
   "connection": {
     "connection_id": "21fd90f9-5935-43cd-b6c8-bde9d915ca80",
     "status": "ACTIVE",
+    "creation_time": "2025-12-08T07:20:53.488460Z",
+    "last_updated_time": "2026-01-31T20:03:32.593153Z",
     "url": "https://connect.maton.ai/?session_token=...",
-    "app": "slack"
+    "app": "slack",
+    "metadata": {}
   }
 }
 ```
@@ -98,16 +101,19 @@ curl -s -X DELETE 'https://ctrl.maton.ai/connections/{connection_id}' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```
 
-### Using Multiple Connections
+### Specifying Connection
 
-If you have multiple Slack workspaces connected, specify which to use:
+If you have multiple Slack connections, specify which one to use with the `Maton-Connection` header:
 
 ```bash
 curl -s -X POST 'https://gateway.maton.ai/slack/api/chat.postMessage' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
-  -H 'Maton-Connection: {connection_id}' \
-  -d '{"channel": "C0123456", "text": "Hello!"}'
+  -H 'Maton-Connection: 21fd90f9-5935-43cd-b6c8-bde9d915ca80' \
+  -H 'Content-Type: application/json' \
+  -d '{"channel": "C0123456789", "text": "Hello!"}'
 ```
+
+If omitted, the gateway uses the default (oldest) active connection.
 
 ## API Reference
 

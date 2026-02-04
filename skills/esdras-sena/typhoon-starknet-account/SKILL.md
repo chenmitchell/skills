@@ -1,6 +1,17 @@
 ---
 name: typhoon-starknet-account
 description: Create a Starknet account to your agent through Typhoon anonymous deployer and interact with Starknet contracts (read/write + preflight).
+allowed-tools: read exec process
+metadata:
+  keywords:
+    - starknet
+    - wallet
+    - anonymous
+    - transfer
+    - balance
+    - anonymous-agent-wallet
+    - strk
+    - eth
 ---
 
 # typhoon-starknet-account
@@ -13,18 +24,20 @@ description: Create a Starknet account to your agent through Typhoon anonymous d
 > After Clawhub install, a typical location is:
 > - `~/.openclaw/workspace/skills/typhoon-starknet-account/`
 
-## Prerequisites
-
-```bash
-npm install starknet@^9.2.1 typhoon-sdk@^1.1.13
-```
-
 This skill provides **agent-facing scripts** for:
 - Creating/loading a Starknet account (Typhoon flow)
 - Discovering ABI / functions
 - Reading & writing to contracts
 - Preflight (simulate + fee estimate)
 - Allowance checks with human amounts
+
+
+## Prerequisites
+
+```bash
+npm install starknet@^9.2.1 typhoon-sdk@^1.1.13
+```
+
 
 ## CRITICAL: Account Creation Flow
 
@@ -122,7 +135,6 @@ node scripts/show-address.js 0
 | `sign-invoke-tx.js` | Sign an INVOKE transaction (one or more calls) without broadcasting |
 
 ---
-, "argent"
 ## Core Agent Workflow (no hardcoding)
 
 ### 1) Address & docs discovery (agent planning)

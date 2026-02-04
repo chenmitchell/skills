@@ -1,0 +1,11 @@
+{
+  "owner": "lstpsche",
+  "slug": "gog-calendar",
+  "displayName": "Google Calendar (via gogcli)",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1770157121546,
+    "commit": null
+  },
+  "history": []
+}

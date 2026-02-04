@@ -51,7 +51,7 @@ If no campaign name or ID was given, call this first, then ask the user: "Which 
 
 ### Single Lead (Sync)
 
-Generate a sequence for one lead. Waits for completion, returns emails directly. **The request can take 3–5 minutes** (AI research + generation); use a client timeout of at least **300 seconds (5 min)** or **600 seconds (10 min)**. Do not use a 120s timeout or the response will be cut off.
+Generate an email sequence for one lead (3–5 emails per lead). Waits for completion, returns the sequence directly. **The request can take 3–5 minutes** (AI research + generation); use a client timeout of at least **300 seconds (5 min)** or **600 seconds (10 min)**. Do not use a 120s timeout or the response will be cut off.
 ```
 POST https://app.machfive.io/api/v1/campaigns/{campaign_id}/generate
 Authorization: Bearer {MACHFIVE_API_KEY}
@@ -70,6 +70,7 @@ Or use `X-API-Key: {MACHFIVE_API_KEY}` header.
     "linkedin_url": "https://linkedin.com/in/johnsmith"
   },
   "options": {
+    "list_name": "Q1 Outreach",
     "email_count": 3,
     "email_signature": "Best,\nYour Name",
     "approved_ctas": ["Direct Meeting CTA", "Lead Magnet CTA"]
@@ -81,7 +82,7 @@ Or use `X-API-Key: {MACHFIVE_API_KEY}` header.
 ```json
 {
   "lead_id": "lead_xyz789",
-  "sequence_id": "uuid",
+  "list_id": "uuid",
   "sequence": [
     { "step": 1, "subject": "...", "body": "..." },
     { "step": 2, "subject": "...", "body": "..." },
@@ -91,9 +92,11 @@ Or use `X-API-Key: {MACHFIVE_API_KEY}` header.
 }
 ```
 
+**Recovery:** The response includes `list_id`. If the request times out or the response is truncated, you can still get the result: call **GET /api/v1/lists/{list_id}** to confirm status, then **GET /api/v1/lists/{list_id}/export?format=json** to retrieve the sequence.
+
 ### Batch (Async)
 
-Generate sequences for multiple leads. **Returns immediately** (202) with `sequence_id`; processing runs in the background. View results in the MachFive UI when done (no poll endpoint yet).
+Generate email sequences for multiple leads (one list; each lead gets a sequence). **Returns immediately** (202) with `list_id`; processing runs in the background. To get results: poll list status, then call export.
 ```
 POST https://app.machfive.io/api/v1/campaigns/{campaign_id}/generate-batch
 Authorization: Bearer {MACHFIVE_API_KEY}
@@ -108,7 +111,7 @@ Or use `X-API-Key: {MACHFIVE_API_KEY}` header.
     { "name": "Jane Doe", "email": "jane@beta.com", "company": "Beta Inc", "title": "Director Sales" }
   ],
   "options": {
-    "sequence_name": "Q1 Outreach Batch",
+    "list_name": "Q1 Outreach Batch",
     "email_count": 3
   }
 }
@@ -117,12 +120,50 @@ Or use `X-API-Key: {MACHFIVE_API_KEY}` header.
 **Response (202):**
 ```json
 {
-  "sequence_id": "uuid",
+  "list_id": "uuid",
   "status": "processing",
   "leads_count": 2,
-  "message": "Batch accepted. View results in MachFive UI."
+  "message": "Batch accepted. Poll list status or open in UI."
 }
 ```
+
+### List lead lists
+
+List lead lists in the workspace. Optional query: `campaign_id`, `status` (`processing` | `completed` | `failed`), `limit` (default 50, max 100), `offset`.
+```
+GET https://app.machfive.io/api/v1/lists
+GET https://app.machfive.io/api/v1/lists?campaign_id={campaign_id}&status=completed&limit=20
+Authorization: Bearer {MACHFIVE_API_KEY}
+```
+
+**Response (200):** `{ "lists": [ { "id", "campaign_id", "custom_name", "processing_status", "created_at", "completed_at" }, ... ] }`. Order is `created_at` desc.
+
+### List status (poll)
+
+Poll until the list is done. Use the `list_id` from generate or generate-batch.
+```
+GET https://app.machfive.io/api/v1/lists/{list_id}
+Authorization: Bearer {MACHFIVE_API_KEY}
+```
+
+**Response (200):** `id`, `campaign_id`, `custom_name`, `processing_status` (`processing` | `completed` | `failed`), `created_at`, `updated_at`. When `processing_status === 'completed'`: `leads_count`, `emails_created`, `completed_at`. When `failed`: `failed_at`. **404** if list not found or not in workspace.
+
+Poll every 10–30 seconds until `processing_status === 'completed'` or `failed`. If `failed`, the list cannot be exported; retry by submitting a new batch.
+
+### List export (get results)
+
+After status is `completed`, fetch the processed output. **CSV** (default) or **JSON**.
+```
+GET https://app.machfive.io/api/v1/lists/{list_id}/export?format=csv
+GET https://app.machfive.io/api/v1/lists/{list_id}/export?format=json
+Authorization: Bearer {MACHFIVE_API_KEY}
+```
+
+- **format=csv** (default): Returns the processed CSV (same as UI download), with `Content-Disposition: attachment; filename="MachFive-{list_id}.csv"`.
+- **format=json**: Returns `{ "leads": [ { "email": "...", "sequence": [ { "step": 1, "subject": "...", "body": "..." }, ... ] }, ... ] }`.
+- **409** if list is not yet completed (poll GET /lists/:id first). **404** if list not found or not in workspace.
+
+**Batch flow:** POST generate-batch → 202 + list_id → poll GET /lists/:id until `processing_status === 'completed'` → GET /lists/:id/export?format=csv or json → return result to user.
 
 ## Lead Fields
 
@@ -139,8 +180,8 @@ Or use `X-API-Key: {MACHFIVE_API_KEY}` header.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `sequence_name` | string | Auto | Display name in MachFive UI |
-| `email_count` | number | 3 | Emails per sequence (1-5) |
+| `list_name` | string | Auto | Display name for this list in MachFive UI |
+| `email_count` | number | 3 | Emails per lead (1-5) |
 | `email_signature` | string | None | Signature appended to emails |
 | `campaign_angle` | string | None | Context for personalization |
 | `approved_ctas` | array | From campaign | CTAs to use (omit to use campaign defaults) |
@@ -152,7 +193,8 @@ Or use `X-API-Key: {MACHFIVE_API_KEY}` header.
 | 401 | UNAUTHORIZED | Invalid or missing API key |
 | 402 | INSUFFICIENT_CREDITS | Out of credits |
 | 403 | FORBIDDEN | Campaign not in your workspace |
-| 404 | NOT_FOUND | Campaign doesn't exist |
+| 404 | NOT_FOUND | Campaign or list doesn't exist |
+| 409 | NOT_READY | Export called before list completed (poll GET /lists/:id first) |
 
 ## Usage Examples
 

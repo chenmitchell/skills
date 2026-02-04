@@ -3,11 +3,16 @@
   "slug": "cold-email",
   "displayName": "MachFive Cold Email",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1770091162684,
-    "commit": "https://github.com/clawdbot/skills/commit/d3504bc3e5067b43c0748ea275fa3197ec8420c9"
+    "version": "1.0.3",
+    "publishedAt": 1770155953933,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1770091162684,
+      "commit": "https://github.com/clawdbot/skills/commit/d3504bc3e5067b43c0748ea275fa3197ec8420c9"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770081853594,

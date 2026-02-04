@@ -1,0 +1,11 @@
+{
+  "owner": "ricardodantas",
+  "slug": "podman-browser",
+  "displayName": "podman-browser",
+  "latest": {
+    "version": "1.2.1",
+    "publishedAt": 1770156513577,
+    "commit": null
+  },
+  "history": []
+}

@@ -1,16 +1,34 @@
 ---
 name: openclaw-mem
-version: 1.2.0
-description: "Keep your agent fast and smart. Auto-journals history to keep the context window clean and efficient."
+version: 2.1.0
+description: "Session-first memory curator for OpenClaw. Keeps RAM clean, recall precise, and durable knowledge safe."
 ---
 
-# OpenClaw Memory Librarian
+# OpenClaw Memory Curator
 
-A background librarian that turns messy daily logs into concise knowledge, saving tokens while preserving important context.
+A **session-first memory system** for OpenClaw.
+
+It exists for one reason:
+**important knowledge must survive session compaction without bloating the context window.**
+
+---
+
+## TL;DR (for humans)
+
+- Session memory = temporary (RAM)
+- Disk = source of truth
+- **Decisions & preferences → `MEMORY.md`**
+- **Daily work → `memory/YYYY-MM-DD.md`**
+- This skill saves durable knowledge **before compaction**
+- Retrieval always happens via `memory_search` → `memory_get`
+
+If something matters later, **write it to disk**.
+
+---
 
 > ⚠️ **CRITICAL REQUIREMENT**
 >
-> You **MUST** enable session memory in your OpenClaw configuration for this skill to work.
+> Session memory indexing must be enabled.
 
 ## Enable Session Memory
 
@@ -19,126 +37,179 @@ A background librarian that turns messy daily logs into concise knowledge, savin
 clawdbot config set agents.defaults.memorySearch.experimental.sessionMemory true
 ```
 
-**JSON (`~/.openclaw/openclaw.json`)**
+**JSON**
 ```json
 {
   "agents": {
     "defaults": {
       "memorySearch": {
-        "experimental": {
-          "sessionMemory": true
-        }
+        "experimental": { "sessionMemory": true },
+        "sources": ["memory", "sessions"]
       }
     }
   }
 }
 ```
 
-> Without this, the agent cannot access past session context to generate summaries.
+---
+
+## Mental Model (read this once)
+
+OpenClaw memory has **three layers**. Confusion usually comes from mixing them up.
+
+### 1. Session Memory (RAM)
+- Lives in the current conversation
+- Automatically compacted
+- Indexed for retrieval
+- **Never reliable long-term**
+
+👉 Treat as short-term thinking space.
 
 ---
 
-## Workflow
+### 2. Daily Logs (`memory/YYYY-MM-DD.md`)
+- Append-only
+- What happened today
+- Commands, edits, short-lived issues
 
-1. **Read** recent daily logs (`memory/YYYY-MM-DD.md`)
-2. **Summarize** valuable information into a monthly journal (`memory/journal/YYYY-MM.md`)
-3. **Prune** raw logs older than 14 days
+👉 Treat as a work log, not a knowledge base.
 
 ---
 
-## Journaling Strategy
+### 3. Long-Term Memory (`MEMORY.md`)
+- Curated
+- Small
+- High-signal only
+- Indexed and retrievable
 
-When summarizing logs, do **NOT** copy the chat. Extract the **signal**.
+👉 Treat as facts the agent must not forget.
 
-### Journal Structure (`memory/journal/YYYY-MM.md`)
+---
+
+## When to Write Memory (simple rules)
+
+### Write to `MEMORY.md` if it would still be true next week.
+Examples:
+- Decisions
+- Preferences
+- Invariants
+- Policies
+
+### Write to daily logs if it helps understand today.
+Examples:
+- Refactors
+- Experiments
+- Temporary blockers
+
+If unsure: **write to daily log first**, promote later.
+
+---
+
+## Pre-Compaction Flush (why this exists)
+
+Before OpenClaw compacts the session, it triggers a **silent reminder**.
+
+This skill uses that moment as a **Save Game checkpoint**.
+
+### What happens:
+1. Durable knowledge is extracted
+2. Daily notes are written to today’s log
+3. Durable items are promoted to `MEMORY.md`
+4. Agent replies `NO_REPLY` (user never sees this)
+
+This prevents knowledge loss without interrupting you.
+
+---
+
+## Durable Memory Format (`MEMORY.md`)
+
+Use IDs and tags so search works reliably.
 
 ```markdown
-## YYYY-MM-DD Summary
+## DEC-2026-02-04-01
+type: decision
+area: memory
 
-### 🧠 Decisions
-- [Decision]
+Decision:
+Session memory is retrieval-only. Disk is the source of truth.
 
-### 🛠️ Changes
-- Installed: [Tool/Skill]
-- Configured: [Setting]
-- Refactored: [File]
-
-### 🚫 Blockers & Errors
-- [Problem] → [Solution]
-
-### 💡 Insights
-- [Lesson learned]
-- [User preference discovered]
+Reason:
+Session compaction is lossy. Disk memory is stable.
 ```
 
-> ### 🧹 Noise Filter Rules
->
-> **IGNORE**
-> - Greetings, confirmations
-> - Short-lived errors fixed immediately
->
-> **KEEP**
-> - Final outcomes
-> - Architectural decisions
-> - New capabilities
-> - Security-relevant changes
->
-> **LINK**
-> - Always link relevant files (e.g. `skills/openclaw-mem/SKILL.md`)
+### ID prefixes
+- `DEC` – Decisions
+- `PREF` – Preferences
+- `FACT` – Durable facts
+- `POLICY` – Rules / invariants
 
 ---
 
-## Retention Policy (The Pruner)
+## Retrieval Strategy (how agents should recall)
 
-After journaling is complete and verified:
+1. Use `memory_search` (max ~6 results)
+2. Pick the best 1–2 hits
+3. Use `memory_get` with line ranges
+4. Inject the minimum text required
 
-> - Identify `memory/YYYY-MM-DD.md` files older than 14 days
-> - **DELETE** them to free context space
-> - Safety check: ensure the date is actually >14 days in the past
-
----
-
-## Automation & Best Practices
-
-### Recommended Cron Schedule
-
-Run daily (e.g. at **04:30 AM**) to keep memory clean automatically.
-
-```json
-{
-  "name": "Daily Memory Librarian",
-  "schedule": { "kind": "cron", "expr": "30 4 * * *", "tz": "Europe/Berlin" },
-  "payload": {
-    "kind": "agentTurn",
-    "message": "Run openclaw-mem to organize daily logs into the monthly journal and prune old raw files."
-  },
-  "sessionTarget": "isolated"
-}
-```
+This keeps context small and precise.
 
 ---
 
-## Daily Reset Workflow
+## Agent Playbook (rules for agents)
 
-The librarian runs in an **isolated background session**.
-
-**Best Practice**
-1. Librarian runs at night (cleans files on disk)
-2. You type `/reset` in the morning
-   - Clears RAM context
-   - Reloads compact journal instead of raw logs
-   - Result: fresh context, low token usage, full long-term memory
+- Prefer disk over RAM
+- Prefer `MEMORY.md` over daily logs for facts
+- Use search before asking the user again
+- Never copy raw chat into memory
+- Write memory explicitly, do not assume it sticks
 
 ---
 
-## Usage
+## Anti-Patterns (do not do these)
 
-**Run full cycle**
-```
-Run openclaw-mem to organize my logs.
-```
+- ❌ Copy chat transcripts into memory
+- ❌ Store secrets or credentials
+- ❌ Treat daily logs as long-term memory
+- ❌ Overwrite memory files instead of appending
+- ❌ Store speculation as fact
 
-**Summarize only (no delete)**
-```
-Run openclaw-mem but keep the raw files.
-```
+---
+
+## Privacy Rules
+
+- Never store secrets (API keys, tokens, passwords)
+- Ignore anything inside `<private>...</private>`
+- If sensitive info exists: store only **that it exists**, not the value
+
+---
+
+## Retention & Cleanup
+
+Default: **no deletion**
+
+- Disk is cheap
+- Recall quality is expensive
+
+Optional:
+- Move old daily logs to `memory/archive/YYYY-MM/`
+- Only prune after durable knowledge is verified
+
+---
+
+## Usage (human-friendly)
+
+Examples that work well:
+- “Store this as a durable decision.”
+- “This is a preference, remember it.”
+- “Write this to today’s log.”
+
+---
+
+## Design Philosophy
+
+- Disk is truth
+- RAM is convenience
+- Retrieval beats retention
+- Fewer tokens > more tokens
+- Memory should earn its place

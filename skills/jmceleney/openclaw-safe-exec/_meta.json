@@ -1,0 +1,11 @@
+{
+  "owner": "jmceleney",
+  "slug": "openclaw-safe-exec",
+  "displayName": "Safe Exec Wrapper",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1770287619129,
+    "commit": null
+  },
+  "history": []
+}

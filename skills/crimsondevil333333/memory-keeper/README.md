@@ -43,7 +43,7 @@ These tests cover copying defaults, logging entries, and gracefully handling git
 When you’re ready to deliver a release, package the skill:
 
 ```bash
-python3 /home/pi/.npm-global/lib/node_modules/openclaw/skills/skill-creator/scripts/package_skill.py skills/memory-keeper
+python3 $(npm root -g)/openclaw/skills/skill-creator/scripts/package_skill.py skills/memory-keeper
 ```
 
 Share the resulting `memory-keeper.skill` file via ClawHub or GitHub releases.

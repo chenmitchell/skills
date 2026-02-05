@@ -1,35 +1,80 @@
-# Clawdbot Cost Tracker
+# OpenClaw Cost Tracker
 
-Track **accurate** Clawdbot API costs from session JSONL files.
+Accurately track OpenClaw usage costs with detailed reports by date and model.
+
+## Features
+
+- ✅ Precisely parse API call costs from OpenClaw session logs
+- ✅ Group costs by model type
+- ✅ Support daily, weekly, and monthly reports
+- ✅ Display cost changes (increase/decrease percentage)
+- ✅ Compatible with macOS and Linux
+- ✅ Beautiful Discord output format
+- ✅ Can be set up as automated cron tasks
 
 ## Installation
 
+1. Make sure you have the required dependencies:
+   ```bash
+   # macOS
+   brew install jq
+
+   # Ubuntu/Debian
+   apt install jq bc
+   ```
+
+2. Set script execution permissions:
+   ```bash
+   chmod +x scripts/cost_report.sh
+   ```
+
+## Usage
+
 ```bash
-clawdhub install clawdbot-cost-tracker
+# Today's cost report
+npm start
+
+# Or run the script directly
+./scripts/cost_report.sh --today
+
+# Yesterday's cost report
+./scripts/cost_report.sh --yesterday
+
+# Weekly cost report
+./scripts/cost_report.sh --week
+
+# Date range report
+./scripts/cost_report.sh --from 2026-01-01 --to 2026-01-31
+
+# Generate Discord format report
+./scripts/cost_report.sh --today --format discord
+
+# Generate JSON format report
+./scripts/cost_report.sh --today --format json
 ```
 
-## Quick Start
+## Automated Reports (Cron)
 
-```bash
-# Get all daily costs
-bash scripts/extract-cost.sh
+See the `config/cron-examples.json` file to learn how to set up automated report tasks. Use OpenClaw's cron functionality to easily set up daily/weekly cost reports.
 
-# Yesterday's cost
-bash scripts/extract-cost.sh --yesterday
+## Calculation Method
 
-# Specific date
-bash scripts/extract-cost.sh --date 2026-01-30
+This tool extracts accurate API call cost data directly from OpenClaw session log files, ensuring precise and reliable report results:
 
-# JSON output
-bash scripts/extract-cost.sh --json
-```
+1. Scan all session JSONL files for records on the target date
+2. Use jq to parse the `message.usage.cost.total` field in each record
+3. Group by model and calculate totals
+4. Avoid data duplication or loss issues caused by session compaction
 
-## ⚠️ Important Note
+## Notes
 
-This skill reads **actual API costs** from session JSONL files (`usage.cost.total`), not estimated token counts.
+- Ensure you have read permissions for the OpenClaw sessions directory
+- Processing large session files may take longer
+- If costs are 0, it may be because the API provider did not provide cost data
 
-The `sessions_list` API's `totalTokens` field is **not suitable** for cost tracking - it represents current context window size and resets after compaction.
+## Technical Details
 
-## Documentation
-
-See [SKILL.md](./SKILL.md) for full documentation.
+- Uses jq to parse JSON data
+- Compatible with macOS and Linux date handling
+- Supports cost calculations grouped by model
+- Chinese-style color indicators for changes (🔴up / 🟢down)

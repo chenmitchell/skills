@@ -1,0 +1,11 @@
+{
+  "owner": "mavremu",
+  "slug": "radix-explorer",
+  "displayName": "Radix Explorer",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1770302658609,
+    "commit": null
+  },
+  "history": []
+}

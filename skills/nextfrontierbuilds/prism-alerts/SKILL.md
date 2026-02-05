@@ -1,12 +1,15 @@
 ---
 name: prism-alerts
-description: Pump.fun token alerts using Strykr PRISM API. Get real-time notifications for new token launches, graduations, and volume spikes on Solana.
-version: 1.0.0
+description: Real-time Pump.fun token alerts for Solana traders. New launches, graduations, volume spikes. For trading bots, Discord, Telegram, AI agents.
+version: 1.1.1
+keywords: pumpfun, solana, memecoin, token-alerts, trading-bot, crypto-alerts, degen, solana-trading, real-time-alerts, ai, ai-agent, ai-coding, llm, cursor, claude, automation, defi, web3, openclaw, moltbot, vibe-coding, agentic
 ---
 
-# PRISM Pump.fun Alerts
+# Pump.fun Alert Bot
 
-Real-time alerts for Pump.fun token launches and graduations using Strykr PRISM's unique bonding curve data.
+**Never miss a launch.** Real-time alerts for Pump.fun token launches, graduations, and volume spikes on Solana.
+
+Built for trading bots, Discord alerts, and Telegram notifications. Powered by Strykr PRISM.
 
 ## Quick Usage
 

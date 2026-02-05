@@ -86,7 +86,6 @@ def queue_video(
     prompt: str,
     duration: str,
     image_url: str | None,
-    video_url: str | None,
     negative_prompt: str | None,
     aspect_ratio: str | None,
     resolution: str,
@@ -109,8 +108,6 @@ def queue_video(
 
     if image_url:
         payload["image_url"] = image_url
-    if video_url:
-        payload["video_url"] = video_url
     if negative_prompt:
         payload["negative_prompt"] = negative_prompt
     if aspect_ratio:
@@ -230,7 +227,6 @@ def complete_video(api_key: str, model: str, queue_id: str) -> bool:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Generate videos via Venice AI API.")
     ap.add_argument("--image", help="Source image (local path or URL)")
-    ap.add_argument("--video", help="Source video for video-to-video (local path or URL)")
     ap.add_argument("--prompt", help="Video description (1-2500 chars)")
     ap.add_argument("--model", default=DEFAULT_MODEL, help=f"Model ID (default: {DEFAULT_MODEL})")
     ap.add_argument("--duration", default="5s", help="Video duration (model-dependent, use --list-models to see options per model)")
@@ -310,8 +306,8 @@ def main() -> int:
         print("Error: --prompt is required", file=sys.stderr)
         return 2
 
-    if not args.image and not args.video:
-        print("Error: Either --image or --video is required", file=sys.stderr)
+    if not args.image:
+        print("Error: --image is required", file=sys.stderr)
         return 2
 
     # Validate model if not skipped
@@ -327,7 +323,6 @@ def main() -> int:
 
     # Resolve media URLs
     image_url = None
-    video_url = None
     audio_url = None
 
     try:
@@ -336,12 +331,6 @@ def main() -> int:
             image_url = resolve_media_url(args.image)
             if image_url.startswith("data:"):
                 print(f"  Encoded as data URL ({len(image_url) // 1024}KB)")
-
-        if args.video:
-            print(f"Loading video: {args.video}", flush=True)
-            video_url = resolve_media_url(args.video)
-            if video_url.startswith("data:"):
-                print(f"  Encoded as data URL ({len(video_url) // 1024}KB)")
 
         if args.audio_url:
             print(f"Loading audio: {args.audio_url}", flush=True)
@@ -371,7 +360,6 @@ def main() -> int:
             prompt=args.prompt,
             duration=args.duration,
             image_url=image_url,
-            video_url=video_url,
             negative_prompt=args.negative_prompt,
             aspect_ratio=args.aspect_ratio,
             resolution=args.resolution,
@@ -446,7 +434,6 @@ def main() -> int:
                 "resolution": args.resolution,
                 "audio": audio_param,
                 "source_image": args.image,
-                "source_video": args.video,
                 "generated_at": dt.datetime.now().isoformat(),
             }
             (out_dir / "metadata.json").write_text(

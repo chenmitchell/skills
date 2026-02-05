@@ -1,5 +1,5 @@
 ---
-name: clawstrike
+name: ClawdStrike
 description: "Security audit and threat model for OpenClaw gateway hosts. Use to verify OpenClaw configuration, exposure, skills/plugins, filesystem hygiene, and to produce an OK/VULNERABLE report with evidence and fixes."
 ---
 

@@ -1,171 +1,96 @@
-# K-Trendz Lightstick Trading Skill
+# K-Trendz Lightstick Trading
 
 Trade K-pop artist lightstick tokens on the K-Trendz bonding curve market.
 
-## Overview
+**Capability Summary:** Buy and sell K-pop fan tokens with real-time pricing, news signals, and bonding curve mechanics. Early buyers benefit from price appreciation as artist popularity grows.
 
-K-Trendz Lightsticks are digital fan tokens tied to K-pop artists. Unlike arbitrage markets, this is a **bonding curve** system where:
-- **Price increases with each purchase** (√supply formula)
-- **Artist popularity directly affects demand**
-- **Early buyers benefit from price appreciation**
+## Prerequisites
 
-## Trading Strategy Context
+Run `/ktrendz:setup` first to configure your API key:
 
-This is NOT an arbitrage market. Key principles:
-1. **Buy when trending** - Rising `trending_score` and recent news indicate growing demand
-2. **Buy early** - Lower `total_supply` means earlier position on the curve
-3. **Monitor external signals** - News headlines often precede on-platform activity
-4. **Hold during growth** - Bonding curve rewards patient holders
+- **K-Trendz API Key** (required): Contact K-Trendz team for provisioning
 
-## Available Tools
+You can also set via environment variable:
+- `KTRENDZ_API_KEY`
 
-### get_token_price
+## Quick Start
 
-Get current price and popularity signals for a token.
+```bash
+# Setup (one-time)
+/ktrendz:setup
 
-**Endpoint**: `POST /functions/v1/bot-get-token-price`
+# Check token price
+/ktrendz:price RIIZE
 
-**Headers**:
-```
-x-bot-api-key: YOUR_API_KEY
-Content-Type: application/json
+# Buy a token
+/ktrendz:buy RIIZE
+
+# Sell a token
+/ktrendz:sell RIIZE
 ```
 
-**Request**:
-```json
-{
-  "token_id": "7963681970480434413",
-  // OR
-  "artist_name": "RIIZE"
-}
+## 🎯 Decision Tree
+
+- **"What's the price of X?"** → `/ktrendz:price <artist>`
+- **"Should I buy X?"** → Check price + news signals first
+- **"Buy X token"** → `/ktrendz:buy <artist>`
+- **"Sell X token"** → `/ktrendz:sell <artist>`
+- **"What tokens are available?"** → See Available Tokens below
+
+## Main Commands
+
+### /ktrendz:setup
+
+Collects and validates API key, stores securely.
+
+```bash
+./scripts/setup.sh
 ```
 
-**Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "token_id": "7963681970480434413",
-    "artist_name": "RIIZE",
-    "current_price_usdc": 1.85,
-    "buy_cost_usdc": 1.91,
-    "sell_refund_usdc": 1.78,
-    "price_change_24h": "+5.2",
-    "total_supply": 42,
-    "trending_score": 1250,
-    "votes": 89,
-    "follower_count": 156,
-    "view_count": 2340,
-    "external_signals": {
-      "article_count_24h": 3,
-      "headlines": [
-        {"title": "RIIZE announces world tour dates", "url": "..."},
-        {"title": "New single breaks records", "url": "..."}
-      ],
-      "has_recent_news": true
-    },
-    "trading_context": {
-      "contract_address": "0xfe7791e3078FD183FD1c08dE2F1e4ab732024489",
-      "fee_structure": {
-        "buy_fee_percent": 3,
-        "sell_fee_percent": 2
-      }
-    }
-  }
-}
+### /ktrendz:price
+
+Get current price and trading signals for a token.
+
+```bash
+./scripts/price.sh RIIZE
 ```
 
-**Decision Factors**:
-| Field | Meaning | Buy Signal |
-|-------|---------|------------|
-| `trending_score` | On-platform engagement | Rising = bullish |
-| `price_change_24h` | Recent momentum | Positive = trend continuation |
-| `total_supply` | Holders count | Low = early opportunity |
-| `external_signals.article_count_24h` | News volume | High = increased attention |
-| `external_signals.has_recent_news` | Recent coverage | true = potential catalyst |
+**Output includes:**
+- Current price (USDC)
+- Buy cost / Sell refund
+- 24h price change
+- Trending score
+- Recent news signals
 
----
+**Decision Factors:**
 
-### buy_fanz_token
+| Signal | Meaning | Buy Signal |
+|--------|---------|------------|
+| `trending_score` rising | On-platform engagement up | ✅ Bullish |
+| `price_change_24h` positive | Recent momentum | ✅ Trend continuation |
+| `total_supply` low | Few holders | ✅ Early opportunity |
+| `has_recent_news` true | Media coverage | ✅ Potential catalyst |
+
+### /ktrendz:buy
 
 Purchase 1 lightstick token.
 
-**Endpoint**: `POST /functions/v1/bot-buy-token`
-
-**Headers**:
-```
-x-bot-api-key: YOUR_API_KEY
-Content-Type: application/json
+```bash
+./scripts/buy.sh RIIZE
 ```
 
-**Request**:
-```json
-{
-  "token_id": "7963681970480434413",
-  "max_slippage_percent": 5
-}
-```
-
-**Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "transaction_id": "abc123",
-    "tx_hash": "0x...",
-    "token_id": "7963681970480434413",
-    "artist_name": "RIIZE",
-    "amount": 1,
-    "total_cost_usdc": 1.91,
-    "remaining_daily_limit": 98.09
-  }
-}
-```
-
-**Constraints**:
+**Constraints:**
 - Maximum 1 token per transaction (bonding curve protection)
 - $100/day limit per agent
 - Same-block trades blocked (MEV protection)
 
----
-
-### sell_fanz_token
+### /ktrendz:sell
 
 Sell 1 lightstick token.
 
-**Endpoint**: `POST /functions/v1/bot-sell-token`
-
-**Headers**:
+```bash
+./scripts/sell.sh RIIZE
 ```
-x-bot-api-key: YOUR_API_KEY
-Content-Type: application/json
-```
-
-**Request**:
-```json
-{
-  "token_id": "7963681970480434413",
-  "min_slippage_percent": 5
-}
-```
-
-**Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "transaction_id": "def456",
-    "tx_hash": "0x...",
-    "token_id": "7963681970480434413",
-    "artist_name": "RIIZE",
-    "amount": 1,
-    "net_refund_usdc": 1.78,
-    "fee_usdc": 0.04
-  }
-}
-```
-
----
 
 ## Available Tokens
 
@@ -178,7 +103,14 @@ Content-Type: application/json
 | BTS | 9138265216282739420 |
 | All Day Project | 18115915419890895215 |
 
----
+## Trading Strategy
+
+This is a **bonding curve** market, not arbitrage:
+
+1. **Buy when trending** - Rising scores + news = growing demand
+2. **Buy early** - Lower supply = better curve position
+3. **Monitor signals** - News often precedes on-platform activity
+4. **Hold during growth** - Bonding curve rewards patient holders
 
 ## Fee Structure
 
@@ -187,65 +119,51 @@ Content-Type: application/json
 | Buy | 3% | 2% Artist Fund, 1% Platform |
 | Sell | 2% | Platform |
 
-**Round-trip cost**: 5%
-
----
-
-## Example Trading Logic
-
-```python
-# Pseudocode for news-driven trading
-
-def should_buy(token_data):
-    signals = token_data['external_signals']
-    
-    # Strong buy: Recent news + rising trend
-    if signals['has_recent_news'] and signals['article_count_24h'] >= 2:
-        if token_data['price_change_24h'] and float(token_data['price_change_24h']) > 0:
-            return True
-    
-    # Moderate buy: High trending score, low supply
-    if token_data['trending_score'] > 1000 and token_data['total_supply'] < 50:
-        return True
-    
-    return False
-
-def should_sell(token_data, purchase_price):
-    current_price = token_data['current_price_usdc']
-    
-    # Take profit at 10%+
-    if current_price > purchase_price * 1.10:
-        return True
-    
-    # Cut loss if no news and price dropping
-    signals = token_data['external_signals']
-    if not signals['has_recent_news']:
-        if token_data['price_change_24h'] and float(token_data['price_change_24h']) < -5:
-            return True
-    
-    return False
-```
-
----
+**Round-trip cost:** 5%
 
 ## Rate Limits
 
-- **Daily Volume**: $100 USD per agent
-- **Transaction Frequency**: Max 100 trades/day per agent
-- **Circuit Breaker**: Trading pauses if price moves >20% in 10 blocks
+- **Daily Volume:** $100 USD per agent
+- **Transaction Frequency:** Max 100 trades/day
+- **Circuit Breaker:** Pauses if price moves >20% in 10 blocks
 
----
+## Example Interactions
 
-## Base URL
+**User:** "What's RIIZE trading at?"
 
-```
-https://jguylowswwgjvotdcsfj.supabase.co/functions/v1/
-```
+**You:**
+1. Run `./scripts/price.sh RIIZE`
+2. Report: "RIIZE is at $1.85 (+5.2% 24h). Trending score 1250 with 3 recent news articles. Buy cost: $1.91"
 
----
+**User:** "Buy RIIZE for me"
 
-## Authentication
+**You:**
+1. Confirm: "Buy 1 RIIZE token for ~$1.91?"
+2. If yes, run `./scripts/buy.sh RIIZE`
+3. Report: "Purchased 1 RIIZE for $1.91. Tx: 0x..."
 
-Include your API key in the `x-bot-api-key` header for all requests.
+**User:** "Should I sell my IVE?"
 
-Contact K-Trendz team for API key provisioning.
+**You:**
+1. Run `./scripts/price.sh IVE`
+2. Check signals (price trend, news, trending score)
+3. Advise based on data
+
+## API Reference
+
+Base URL: `https://k-trendz.com/api/bot/`
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/token-price` | POST | Get price + signals |
+| `/buy` | POST | Purchase 1 token |
+| `/sell` | POST | Sell 1 token |
+
+## Files
+
+- `SKILL.md` - This file
+- `package.json` - Package metadata
+- `scripts/setup.sh` - API key configuration
+- `scripts/price.sh` - Get token price
+- `scripts/buy.sh` - Buy token
+- `scripts/sell.sh` - Sell token

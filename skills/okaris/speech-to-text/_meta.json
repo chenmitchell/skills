@@ -1,0 +1,11 @@
+{
+  "owner": "okaris",
+  "slug": "speech-to-text",
+  "displayName": "Speech To Text",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1770363545741,
+    "commit": null
+  },
+  "history": []
+}

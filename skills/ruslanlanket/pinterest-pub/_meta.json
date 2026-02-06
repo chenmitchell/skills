@@ -3,11 +3,16 @@
   "slug": "pinterest-pub",
   "displayName": "Pinterest pin publishing/reading, disk management, profile, analytics and automation. OAuth.",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1770107831894,
-    "commit": "https://github.com/clawdbot/skills/commit/e78de651ad1f5238a8d9bb242272daf8bdae9412"
+    "version": "1.0.2",
+    "publishedAt": 1770332007729,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1770107831894,
+      "commit": "https://github.com/clawdbot/skills/commit/e78de651ad1f5238a8d9bb242272daf8bdae9412"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770026071066,

@@ -1,7 +1,7 @@
 ---
 name: treeline
 description: Chat with your finances from Treeline Money. Query balances, spending, budgets, and transactions.
-version: 0.0.6
+version: 26.2.603
 user-invocable: true
 homepage: https://treeline.money
 metadata: {"clawdbot":{"emoji":"🌲"}}
@@ -16,8 +16,8 @@ metadata: {"clawdbot":{"emoji":"🌲"}}
 ## Quick Start
 
 ```bash
-# 1. Install the CLI
-curl -fsSL https://treeline.money/install.sh | sh
+# 1. Install the CLI (script is bundled with this skill)
+sh ./install.sh
 source ~/.zshrc  # or restart terminal
 
 # 2. Enable demo mode (sample data)
@@ -31,23 +31,27 @@ tl status
 
 ## First Time Setup
 
-> **For agents:** If `tl` commands fail with "command not found", guide the user through installation. Start with demo mode so they can try queries immediately.
+> **For agents:** If `tl` commands fail with "command not found", guide the user through installation using the bundled install scripts. Start with demo mode so they can try queries immediately.
+>
+> **Important:** Never run installation or setup commands without asking the user first. Present the command and wait for confirmation before executing.
 
 ### Installing the CLI
 
+The install scripts are bundled with this skill. They download the latest CLI binary from GitHub releases and add it to your PATH.
+
 Mac/Linux:
 ```bash
-curl -fsSL https://treeline.money/install.sh | sh
+sh ./install.sh
 ```
 
 Windows (PowerShell):
 ```powershell
-irm https://treeline.money/install.ps1 | iex
+.\install.ps1
 ```
 
 Verify with `tl --version`.
 
-**Optional:** Download the [desktop app](https://treeline.money/download) for CSV import and visual exploration.
+**Optional:** Download the [desktop app](https://treeline.money/download) for visual exploration of your data.
 
 ### Demo Mode
 
@@ -85,10 +89,24 @@ Demo data is separate from real data.
 3. Run `tl setup lunchflow <api-key>`
 4. Run `tl sync`
 
-**CSV Import** (free, requires desktop app)
+**CSV Import** (free, CLI or desktop app)
 1. Export transactions as CSV from bank website
-2. In Treeline app: drag file onto window or click Import
-3. Map columns and import
+2. Find the account to import into: `tl status --json` (grab the account name or UUID)
+3. Preview: `tl import export.csv --account "Checking" --dry-run`
+4. Import: `tl import export.csv --account "Checking"`
+
+Auto-detection handles most CSVs. If columns don't match, specify them:
+```bash
+tl import export.csv --account "Checking" \
+  --date-column "Trans Date" \
+  --amount-column "Amount" \
+  --description-column "Memo"
+```
+
+For European formats: `--number-format eu` (1.234,56) or `--number-format eu_space` (1 234,56).
+For credit cards where charges are positive: `--flip-signs`.
+For CSVs with separate debit/credit columns: `--debit-column "Debit" --credit-column "Credit"`.
+For CSVs with bank letterhead rows before the header: `--skip-rows 3`.
 
 ---
 
@@ -150,10 +168,16 @@ The `tl` CLI can do more than just queries:
 tl status              # Quick account summary with balances
 tl status --json       # Same, but JSON output
 
-tl query "SQL" --json  # Run any SQL query
+tl query "SQL" --json  # Run any SQL query (read-only by default)
+tl sql "SQL" --json    # Same as tl query (alias)
+tl query "SQL" --allow-writes  # Enable write operations (INSERT, UPDATE, DELETE)
 
 tl sync                # Sync accounts/transactions from bank integrations
 tl sync --dry-run      # Preview what would sync
+
+tl import FILE -a ACCOUNT          # Import transactions from CSV
+tl import FILE -a ACCOUNT --dry-run  # Preview import without applying
+tl import FILE -a ACCOUNT --json   # JSON output for scripting
 
 tl backup create       # Create a backup
 tl backup list         # List available backups
@@ -167,9 +191,61 @@ tl tag "groceries" --ids ID1,ID2  # Apply tags to transactions
 tl demo on|off         # Toggle demo mode (sample data)
 ```
 
+> **Note:** `tl query` and `tl sql` are identical — use whichever you prefer. The database is opened read-only by default. Use `--allow-writes` to enable write operations.
+
 **Use `tl status` for quick balance checks** — it's faster than a SQL query.
 
 **Use `tl compact` if the user mentions slow queries** — it optimizes the database.
+
+### CSV Import Details
+
+`tl import` auto-detects column mappings from CSV headers. Most bank CSVs work out of the box:
+
+```bash
+tl import bank_export.csv --account "Chase Checking"
+```
+
+The `--account` / `-a` flag accepts an account name (case-insensitive, substring match) or UUID.
+
+**Always preview first** with `--dry-run` to verify columns were detected correctly:
+
+```bash
+tl import bank_export.csv -a "Checking" --dry-run --json
+```
+
+**All import flags** (all optional except `--account`):
+
+| Flag | Purpose | Example |
+|------|---------|---------|
+| `--date-column` | Override date column | `--date-column "Post Date"` |
+| `--amount-column` | Override amount column | `--amount-column "Amt"` |
+| `--description-column` | Override description column | `--description-column "Memo"` |
+| `--debit-column` | Use debit column (instead of amount) | `--debit-column "Debit"` |
+| `--credit-column` | Use credit column (instead of amount) | `--credit-column "Credit"` |
+| `--balance-column` | Running balance (creates snapshots) | `--balance-column "Balance"` |
+| `--flip-signs` | Negate amounts (credit card CSVs) | `--flip-signs` |
+| `--debit-negative` | Negate positive debits | `--debit-negative` |
+| `--skip-rows N` | Skip N rows before header | `--skip-rows 3` |
+| `--number-format` | `us`, `eu`, or `eu_space` | `--number-format eu` |
+| `--profile NAME` | Load a saved profile | `--profile chase` |
+| `--save-profile NAME` | Save settings as profile | `--save-profile chase` |
+| `--dry-run` | Preview without importing | `--dry-run` |
+| `--json` | JSON output | `--json` |
+
+**Common patterns for agents:**
+
+```bash
+# Step 1: Find the account UUID
+tl status --json
+
+# Step 2: Preview import
+tl import transactions.csv -a "550e8400-e29b-41d4-a716-446655440000" --dry-run --json
+
+# Step 3: Execute import
+tl import transactions.csv -a "550e8400-e29b-41d4-a716-446655440000" --json
+```
+
+Duplicate transactions are automatically detected and skipped on re-import via fingerprinting.
 
 ---
 
@@ -184,7 +260,7 @@ If it exists, read it first — it contains user-specific knowledge:
 - Personal preferences
 
 **Learning new context:** When you discover something about the user's setup:
-1. For small observations, note them in CONTEXT.md silently
+1. For small observations, note them in CONTEXT.md and briefly mention what you saved
 2. For significant assumptions or corrections, ask: "Want me to save that to your Treeline context?"
 
 See the [User Context Pattern](#user-context-pattern) section at the end for the template.
@@ -425,6 +501,8 @@ GROUP BY c.category_id, c.name, c.expected
 | "Recent transactions" | Order by date DESC, limit |
 | "Savings?" | Filter accounts by name/type |
 | "Retirement?" | Filter by 401k, IRA, retirement keywords |
+| "Import CSV" / "Upload transactions" | Guide through `tl import` — preview first with `--dry-run` |
+| "Import from [bank name]" | Use `tl import` with appropriate flags for that bank's CSV format |
 
 ---
 
@@ -474,7 +552,7 @@ internal_transfer_tags: [transfer, savings, investment]
 ```
 
 **Maintenance:**
-- Update silently for small observations
+- Briefly mention updates for small observations
 - Ask before recording significant assumptions
 - Periodically validate against live data (accounts may close, tags may change)
 

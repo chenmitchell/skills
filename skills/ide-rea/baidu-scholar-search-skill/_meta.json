@@ -1,0 +1,11 @@
+{
+  "owner": "ide-rea",
+  "slug": "baidu-scholar-search-skill",
+  "displayName": "baidu scholar search",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1770488401414,
+    "commit": null
+  },
+  "history": []
+}

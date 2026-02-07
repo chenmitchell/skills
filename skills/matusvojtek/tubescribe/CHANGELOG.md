@@ -2,6 +2,36 @@
 
 All notable changes to TubeScribe.
 
+## [1.1.2] - 2026-02-06
+
+### Fixed
+- **Stale queue detection crash** — timezone-aware/naive datetime comparison caused TypeError, leaving queue permanently stuck
+- **Config file corruption** — `_save_kokoro_cache()` was writing internal wrapper keys (`_raw`, flat keys) back to config.json
+- **HTML table rendering** — all rows rendered as `<th>` headers; body rows now correctly use `<td>`
+- **XSS vulnerability in HTML output** — paragraph text was not escaped before inline formatting; `<script>` tags could pass through
+- **`--no-audio` CLI flag** — was defined but never wired up
+- **Empty title filenames** — videos with empty titles produced `.docx` filename; now falls back to video ID
+- **URL validation** — accepted any domain with `?v=` parameter; now validates YouTube domains only
+- **Comment HTML double-wrapping** — `<p align="right">` tags got wrapped in another `<p>`; raw HTML now passes through
+- **`safe_unescape()` fragility** — replaced encode/decode chain with `json.loads()` approach
+
+### Removed
+- **python-docx fallback** — was a half-broken DOCX generator; fallback chain is now pandoc → HTML (cleaner, better output)
+- **`set_current()` dead code** — was never called; queue uses `pop_from_queue()` instead
+- **`afconvert` dependency** — `say` now outputs WAV directly via `--data-format`; no intermediate AIFF conversion
+
+### Changed
+- **Built-in TTS** — simplified from `say` → AIFF → `afconvert` → WAV to just `say` → WAV directly
+- **Timestamps** — replaced `subprocess.run(["date"])` with native `datetime.now().astimezone().isoformat()`
+- **Queue file locking** — added `fcntl.flock()` advisory locking to prevent corruption from concurrent access
+- **Config cleanup** — removed stale flat keys from config.json
+
+### Added
+- **HTML blockquotes** — `> text` lines now render as `<blockquote>` blocks
+- **`sanitize_filename()` fallback parameter** — accepts video ID as fallback for empty titles
+
+---
+
 ## [1.1.1] - 2026-02-06
 
 - **Non-blocking async workflow** — Sub-agent handles entire pipeline (extract → process → DOCX → audio → cleanup)

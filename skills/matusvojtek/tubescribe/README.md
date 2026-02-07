@@ -123,6 +123,9 @@ Clear messages for common issues:
 ### Code Injection (Fixed in v1.1.0)
 Earlier development versions had a vulnerability where video text could be injected into dynamically executed Python code. This was fixed by properly escaping all text with `json.dumps()`.
 
+### Shell Commands
+The skill uses subprocess to call external CLI tools (`summarize`, `yt-dlp`, `pandoc`, `ffmpeg`). YouTube URLs are validated before processing, and filenames are sanitized. However, as with any tool that processes external content, review the code if you have concerns.
+
 ### External Dependencies
 The setup script downloads tools from official sources:
 - **pandoc** — from Homebrew or official releases

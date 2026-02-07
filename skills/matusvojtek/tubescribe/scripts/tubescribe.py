@@ -26,13 +26,14 @@ Author: Jackie 🦊 & Matus
 Version: 1.1.0
 """
 
-__version__ = "1.1.0"
+__version__ = "1.1.2"
 
 import subprocess
 import json
 import re
 import sys
 import os
+import fcntl
 import urllib.request
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -42,7 +43,7 @@ SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from html_writer import create_html_from_markdown
-from config import load_config as load_config_raw, save_config, CONFIG_FILE
+from config import load_config as load_config_raw, save_config as save_config_raw, CONFIG_FILE
 
 
 def load_config() -> dict:
@@ -77,8 +78,32 @@ def extract_video_id(url: str) -> str | None:
 
 
 def is_youtube_url(url: str) -> bool:
-    """Check if URL is a valid YouTube URL."""
-    return extract_video_id(url) is not None
+    """Check if URL is a valid YouTube URL with proper domain validation."""
+    # First check if we can extract a video ID
+    video_id = extract_video_id(url)
+    if not video_id:
+        return False
+    
+    # If it's just a bare video ID (11 chars), accept it
+    if re.match(r'^[a-zA-Z0-9_-]{11}$', url):
+        return True
+    
+    # Otherwise validate the domain
+    valid_domains = [
+        'youtube.com',
+        'www.youtube.com',
+        'm.youtube.com',
+        'youtu.be',
+        'music.youtube.com',
+    ]
+    
+    # Extract domain from URL
+    domain_match = re.search(r'(?:https?://)?([^/]+)', url)
+    if domain_match:
+        domain = domain_match.group(1).lower()
+        return any(domain == d or domain.endswith('.' + d) for d in valid_domains)
+    
+    return False
 
 
 # Error patterns from summarize/yt-dlp
@@ -254,9 +279,9 @@ def safe_unescape(text: str) -> str:
     if not text:
         return text
     try:
-        # Handle common JSON escapes
-        return text.encode('utf-8').decode('unicode_escape').encode('latin-1').decode('utf-8')
-    except (UnicodeDecodeError, UnicodeEncodeError):
+        # Use json.loads to properly decode JSON string escapes
+        return json.loads(f'"{text}"')
+    except (json.JSONDecodeError, ValueError):
         # Fallback: just handle the common ones manually
         text = text.replace('\\n', '\n')
         text = text.replace('\\t', '\t')
@@ -409,11 +434,12 @@ def clean_transcript(segments: list[dict]) -> list[dict]:
     return cleaned
 
 
-def sanitize_filename(title: str) -> str:
-    """Create safe filename from title."""
+def sanitize_filename(title: str, fallback: str = "untitled") -> str:
+    """Create safe filename from title. Uses fallback if result is empty."""
     safe = re.sub(r'[<>:"/\\|?*]', '', title)
     safe = re.sub(r'\s+', ' ', safe).strip()
-    return safe[:100]  # Limit length
+    safe = safe[:100]  # Limit length
+    return safe if safe else fallback
 
 
 def prepare_source_data(url: str, temp_dir: str = "/tmp", quiet: bool = False) -> tuple[str | None, str | None, str | None]:
@@ -564,7 +590,7 @@ def cleanup_temp_files(video_id: str, quiet: bool = False) -> bool:
     return cleaned
 
 
-def convert_to_document(md_path: str, output_dir: str, doc_format: str) -> str:
+def convert_to_document(md_path: str, output_dir: str, doc_format: str, video_id: str = None) -> str:
     """Convert markdown to final document format."""
     
     # Get title from markdown for filename
@@ -572,7 +598,8 @@ def convert_to_document(md_path: str, output_dir: str, doc_format: str) -> str:
         content = f.read()
     title_match = re.search(r'^# (.+)$', content, re.MULTILINE)
     title = title_match.group(1) if title_match else "TubeScribe Output"
-    safe_title = sanitize_filename(title)
+    fallback = video_id if video_id else "TubeScribe_Output"
+    safe_title = sanitize_filename(title, fallback=fallback)
     
     if doc_format == "md":
         # Just copy/rename markdown
@@ -603,35 +630,9 @@ def convert_to_document(md_path: str, output_dir: str, doc_format: str) -> str:
             except FileNotFoundError:
                 continue
         
-        # Try python-docx
-        try:
-            from docx import Document
-            from docx.shared import Pt, Inches
-            
-            doc = Document()
-            # Simple conversion - headers and paragraphs
-            for line in content.split('\n'):
-                if line.startswith('# '):
-                    doc.add_heading(line[2:], level=1)
-                elif line.startswith('## '):
-                    doc.add_heading(line[3:], level=2)
-                elif line.startswith('### '):
-                    doc.add_heading(line[4:], level=3)
-                elif line.strip():
-                    # Handle bold
-                    p = doc.add_paragraph()
-                    # Simple bold handling
-                    parts = re.split(r'\*\*(.+?)\*\*', line)
-                    for i, part in enumerate(parts):
-                        run = p.add_run(part)
-                        if i % 2 == 1:  # Odd indices are bold content
-                            run.bold = True
-            
-            doc.save(out_path)
-            return out_path
-        except ImportError:
-            print("   Warning: Neither pandoc nor python-docx available, falling back to HTML")
-            return convert_to_document(md_path, output_dir, "html")
+        # No pandoc available, fall back to HTML
+        print("   pandoc not found, falling back to HTML")
+        return convert_to_document(md_path, output_dir, "html")
     
     return md_path
 
@@ -731,13 +732,14 @@ def find_kokoro(use_cache: bool = True) -> tuple[str | None, str | None]:
 def _save_kokoro_cache(python_path: str, kokoro_dir: str, source: str):
     """Cache found Kokoro setup."""
     try:
-        config = load_config()
+        # Use load_config_raw to avoid the flat keys added by tubescribe's load_config()
+        config = load_config_raw()
         if "kokoro" not in config:
             config["kokoro"] = {}
         config["kokoro"]["python"] = "system" if source == "system" else python_path
         config["kokoro"]["path"] = kokoro_dir
         config["kokoro"]["source"] = source
-        save_config(config)
+        save_config_raw(config)
     except (IOError, KeyError, TypeError):
         pass  # Non-critical: cache save failed, will retry next time
 
@@ -808,15 +810,10 @@ print("OK")
 def generate_builtin_audio(text: str, output_path: str, audio_format: str) -> str:
     """Generate audio using macOS say command (fallback)."""
     wav_path = output_path.replace('.mp3', '.wav')
-    aiff_path = output_path.replace('.mp3', '.aiff').replace('.wav', '.aiff')
     
-    # Use macOS say command
-    subprocess.run(["say", "-o", aiff_path, text], check=True, capture_output=True)
-    
-    # Convert to wav
-    subprocess.run(["afconvert", "-f", "WAVE", "-d", "LEI16", aiff_path, wav_path],
+    # macOS say outputs WAV directly — no intermediate AIFF or afconvert needed
+    subprocess.run(["say", "-o", wav_path, "--data-format=LEI16@22050", text],
                   check=True, capture_output=True)
-    os.remove(aiff_path)
     
     if audio_format == "mp3":
         mp3_path = output_path
@@ -883,6 +880,8 @@ def main():
         config["document_format"] = args.doc_format
     if args.audio_format:
         config["audio_format"] = args.audio_format
+    if args.no_audio:
+        config["audio_enabled"] = False
     
     # Use config output folder if not specified
     output_dir = args.output_dir or os.path.expanduser(config.get("output_folder", "~/Documents/TubeScribe"))
@@ -967,21 +966,29 @@ QUEUE_FILE = os.path.expanduser("~/.tubescribe/queue.json")
 
 
 def load_queue() -> dict:
-    """Load queue from file."""
+    """Load queue from file with advisory locking."""
     if os.path.exists(QUEUE_FILE):
         try:
             with open(QUEUE_FILE, 'r') as f:
-                return json.load(f)
+                fcntl.flock(f.fileno(), fcntl.LOCK_SH)  # Shared lock for reading
+                try:
+                    return json.load(f)
+                finally:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
         except (json.JSONDecodeError, IOError):
             pass
     return {"current": None, "queue": []}
 
 
 def save_queue(data: dict):
-    """Save queue to file."""
+    """Save queue to file with advisory locking."""
     os.makedirs(os.path.dirname(QUEUE_FILE), exist_ok=True)
     with open(QUEUE_FILE, 'w') as f:
-        json.dump(data, f, indent=2)
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)  # Exclusive lock for writing
+        try:
+            json.dump(data, f, indent=2)
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
 def add_to_queue(url: str, title: str = None) -> int:
@@ -994,7 +1001,7 @@ def add_to_queue(url: str, title: str = None) -> int:
     entry = {
         "url": url,
         "title": title,
-        "added": subprocess.run(["date", "-Iseconds"], capture_output=True, text=True).stdout.strip()
+        "added": datetime.now().astimezone().isoformat()
     }
     data["queue"].append(entry)
     save_queue(data)
@@ -1068,10 +1075,13 @@ def is_processing() -> bool:
     try:
         added_str = data["current"].get("added", "")
         if added_str:
-            # Parse ISO format - handle timezone-naive comparison
+            # Parse ISO format
             added = datetime.fromisoformat(added_str.replace("Z", "+00:00"))
-            now = datetime.now(added.tzinfo) if added.tzinfo else datetime.now()
-            if now - added.replace(tzinfo=None) > timedelta(minutes=stale_minutes):
+            now = datetime.now().astimezone()
+            # Strip tzinfo from both for naive comparison (avoids TypeError)
+            added_naive = added.replace(tzinfo=None)
+            now_naive = now.replace(tzinfo=None)
+            if now_naive - added_naive > timedelta(minutes=stale_minutes):
                 # Stale, clear it
                 clear_current()
                 return False
@@ -1079,17 +1089,6 @@ def is_processing() -> bool:
         pass
     
     return True
-
-
-def set_current(url: str, title: str = None):
-    """Set current processing item."""
-    data = load_queue()
-    data["current"] = {
-        "url": url,
-        "title": title,
-        "added": subprocess.run(["date", "-Iseconds"], capture_output=True, text=True).stdout.strip()
-    }
-    save_queue(data)
 
 
 if __name__ == "__main__":

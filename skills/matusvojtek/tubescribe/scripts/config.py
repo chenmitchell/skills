@@ -28,7 +28,7 @@ DEFAULT_CONFIG = {
     # Document settings
     "document": {
         "format": "docx",               # docx, html, md
-        "engine": "pandoc",             # pandoc, python_docx (for docx format)
+        "engine": "pandoc",             # pandoc (for docx), falls back to html
     },
     
     # Audio settings

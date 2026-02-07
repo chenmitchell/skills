@@ -161,7 +161,6 @@ def run_checks() -> dict:
         },
         "document": {
             "pandoc": check_pandoc(),
-            "python_docx": check_python_package("docx"),
         },
         "audio": {
             "kokoro": check_kokoro(),
@@ -191,9 +190,6 @@ def determine_config(checks: dict) -> dict:
     if checks["document"]["pandoc"]:
         config["document"]["format"] = "docx"
         config["document"]["engine"] = "pandoc"
-    elif checks["document"]["python_docx"]:
-        config["document"]["format"] = "docx"
-        config["document"]["engine"] = "python_docx"
     else:
         config["document"]["format"] = "html"
         config["document"]["engine"] = None
@@ -559,8 +555,6 @@ def main(check_only: bool = False, quiet: bool = False):
     if not quiet:
         print("\nDocument output:")
         print_status("pandoc", checks["document"]["pandoc"])
-        print_status("python-docx", checks["document"]["python_docx"])
-        
         print("\nAudio output:")
         print_status("kokoro", checks["audio"]["kokoro"])
         print_status("ffmpeg", checks["audio"]["ffmpeg"])
@@ -596,7 +590,7 @@ def main(check_only: bool = False, quiet: bool = False):
     # === OFFER TO INSTALL MISSING FOR BEST EXPERIENCE ===
     missing_upgrades = []
     
-    if not checks["document"]["pandoc"] and not checks["document"]["python_docx"]:
+    if not checks["document"]["pandoc"]:
         missing_upgrades.append({
             "name": "pandoc",
             "desc": "DOCX support",

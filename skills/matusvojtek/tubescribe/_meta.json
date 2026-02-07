@@ -1,13 +1,18 @@
 {
   "owner": "matusvojtek",
   "slug": "tubescribe",
-  "displayName": "Tubescribe",
+  "displayName": "TubeScribe",
   "latest": {
-    "version": "1.1.1",
-    "publishedAt": 1770352257905,
-    "commit": "https://github.com/openclaw/skills/commit/63f457efa3e869d66392572c57ff0c3d13e6b06b"
+    "version": "1.1.2",
+    "publishedAt": 1770405884408,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.1",
+      "publishedAt": 1770352257905,
+      "commit": "https://github.com/openclaw/skills/commit/63f457efa3e869d66392572c57ff0c3d13e6b06b"
+    },
     {
       "version": "1.0.8",
       "publishedAt": 1770298864004,

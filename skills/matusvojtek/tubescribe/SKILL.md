@@ -1,11 +1,11 @@
 ---
-name: tubescribe
+name: TubeScribe
 description: "YouTube video summarizer with speaker detection, formatted documents, and audio output. Use when user sends a YouTube URL or asks to summarize/transcribe a YouTube video."
 ---
 
 # TubeScribe 🎬
 
-**Turn any YouTube video into a polished document + audio summary in seconds.**
+**Turn any YouTube video into a polished document + audio summary.**
 
 Drop a YouTube link → get a beautiful transcript with speaker labels, key quotes, timestamps that link back to the video, and an audio summary you can listen to on the go.
 
@@ -18,11 +18,13 @@ Drop a YouTube link → get a beautiful transcript with speaker labels, key quot
 
 ### ✨ Features
 
-- **🎯 Smart Speaker Detection** — Automatically identifies who's talking in interviews, podcasts, and conversations
+- **🎯 Smart Speaker Detection** — Automatically identifies participants
+- **🔊 Audio Summaries** — Listen to key points (MP3/WAV)
 - **📝 Clickable Timestamps** — Every quote links directly to that moment in the video
-- **💬 YouTube Comments** — Fetches top comments, summarizes viewer sentiment, highlights best reactions
-- **📄 Clean Documents** — Export as HTML, DOCX, or Markdown
-- **🔊 Audio Summaries** — Listen to the key points (MP3/WAV)
+- **💬 YouTube Comments** — Viewer sentiment analysis and best comments
+- **📄 Transcript with summary and key quotes** — Export as DOCX, HTML, or Markdown
+- **📋 Queue Support** — Send multiple links, they get processed in order
+- **🚀 Non-Blocking Workflow** — Conversation continues while video processes in background
 
 ### 🎬 Works With Any Video
 
@@ -50,7 +52,7 @@ Run setup to check dependencies and configure defaults:
 python skills/tubescribe/scripts/setup.py
 ```
 
-This checks: `summarize` CLI, `pandoc`/`python-docx`, `ffmpeg`, `Kokoro TTS`
+This checks: `summarize` CLI, `pandoc`, `ffmpeg`, `Kokoro TTS`
 
 ## Full Workflow (Single Sub-Agent)
 
@@ -90,21 +92,27 @@ Write to `/tmp/tubescribe_<video_id>_output.md`:
 ---
 4. `## **Summary**` — 3-5 paragraphs
 ---
-5. `## **Key Quotes**` — 5 best with clickable YouTube timestamps
+5. `## **Key Quotes**` — 5 best with clickable YouTube timestamps. Format each as:
+   ```
+   "Quote text here." - [12:34](https://www.youtube.com/watch?v=ID&t=754s)
+
+   "Another quote." - [25:10](https://www.youtube.com/watch?v=ID&t=1510s)
+   ```
+   Use regular dash `-`, NOT em dash `—`. Do NOT use blockquotes `>`. Plain paragraphs only.
 ---
 6. `## **Viewer Sentiment**` (if comments exist)
 ---
 7. `## **Best Comments**` (if comments exist) — Top 5, NO lines between them:
    ```
    Comment text here.
-   
-   <p align="right">▲ 123 @AuthorName</p>
+
+   *- ▲ 123 @AuthorName*
 
    Next comment text here.
-   
-   <p align="right">▲ 45 @AnotherAuthor</p>
+
+   *- ▲ 45 @AnotherAuthor*
    ```
-   Just blank line between comments, NO `---` separators.
+   Attribution line: dash + italic. Just blank line between comments, NO `---` separators.
 
 ---
 8. `## **Full Transcript**` — merge segments, speaker labels, clickable timestamps
@@ -190,7 +198,7 @@ Config file: `~/.tubescribe/config.json`
 | Option | Default | Values | Description |
 |--------|---------|--------|-------------|
 | `document.format` | `docx` | `docx`, `html`, `md` | Output format |
-| `document.engine` | `pandoc` | `pandoc`, `python_docx` | Converter for DOCX |
+| `document.engine` | `pandoc` | `pandoc` | Converter for DOCX (falls back to HTML) |
 
 ### Audio Options
 | Option | Default | Values | Description |

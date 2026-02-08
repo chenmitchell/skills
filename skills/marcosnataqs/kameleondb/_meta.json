@@ -3,9 +3,15 @@
   "slug": "kameleondb",
   "displayName": "KameleonDB",
   "latest": {
-    "version": "0.1.2",
-    "publishedAt": 1770485825684,
-    "commit": "https://github.com/openclaw/skills/commit/4c7af5fe07df850df68f44871df88632bc929d88"
+    "version": "0.1.4",
+    "publishedAt": 1770516466159,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.2",
+      "publishedAt": 1770485825684,
+      "commit": "https://github.com/openclaw/skills/commit/4c7af5fe07df850df68f44871df88632bc929d88"
+    }
+  ]
 }

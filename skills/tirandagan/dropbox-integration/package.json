@@ -1,6 +1,6 @@
 {
   "name": "dropbox-integration",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Read-only Dropbox integration with OAuth authentication and automatic token refresh",
   "main": "dropbox-helper.js",
   "scripts": {

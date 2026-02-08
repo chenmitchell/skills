@@ -1,3 +1,8 @@
+---
+name: near-multi-account
+description: Secure multi-account management for NEAR Protocol with encrypted credential storage, account switching, and balance aggregation.
+---
+
 # NEAR Multi-Account Manager
 
 A secure and comprehensive OpenClaw skill for managing multiple NEAR Protocol accounts. Store credentials, switch between accounts, check balances, transfer NEAR, and track transactions across all your accounts from one unified interface.

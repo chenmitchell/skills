@@ -1,0 +1,11 @@
+{
+  "owner": "eyebots",
+  "slug": "eyebot-vaultbot",
+  "displayName": "Eyebot VaultBot",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1770580334596,
+    "commit": null
+  },
+  "history": []
+}

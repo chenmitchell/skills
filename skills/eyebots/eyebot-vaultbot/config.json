@@ -1,0 +1,106 @@
+{
+  "agent_id": "vaultbot",
+  "name": "VaultBot",
+  "version": "1.0.0",
+  "description": "Wallet management - tracks balances, manages multiple wallets",
+  "enabled": true,
+  "triggers": {
+    "keywords": [
+      "balance",
+      "wallet",
+      "portfolio",
+      "vaultbot",
+      "my tokens",
+      "check wallet",
+      "token balance",
+      "gas check",
+      "approvals",
+      "revoke",
+      "wallet security"
+    ],
+    "commands": ["/balance", "/wallet", "/portfolio", "/vault", "/approvals"],
+    "regex_patterns": [
+      "check.*balance",
+      "my.*wallet",
+      "portfolio.*value",
+      "token.*approval"
+    ]
+  },
+  "pricing": {
+    "payment_wallet": "0x4A9583c6B09154bD88dEE64F5249df0C5EC99Cf9",
+    "accepted_tokens": ["ETH"],
+    "plans": {
+      "trial": {
+        "duration_days": 2,
+        "price_eth": 0.010,
+        "display": "VaultBot: 0.010 ETH (2-day) | 5 ETH (lifetime)",
+        "features": ["balance_check", "single_wallet", "single_chain"]
+      },
+      "lifetime": {
+        "duration_days": -1,
+        "price_eth": 5.0,
+        "display": "VaultBot: 0.010 ETH (2-day) | 5 ETH (lifetime)",
+        "features": ["multi_wallet", "all_chains", "portfolio_analytics", "gas_optimization", "approval_management"]
+      }
+    }
+  },
+  "chains": {
+    "ethereum": {
+      "chain_id": 1,
+      "enabled": true,
+      "rpc_env": "ETH_RPC_URL"
+    },
+    "base": {
+      "chain_id": 8453,
+      "enabled": true,
+      "rpc_env": "BASE_RPC_URL"
+    },
+    "polygon": {
+      "chain_id": 137,
+      "enabled": true,
+      "rpc_env": "POLYGON_RPC_URL"
+    },
+    "arbitrum": {
+      "chain_id": 42161,
+      "enabled": true,
+      "rpc_env": "ARBITRUM_RPC_URL"
+    },
+    "optimism": {
+      "chain_id": 10,
+      "enabled": true,
+      "rpc_env": "OPTIMISM_RPC_URL"
+    }
+  },
+  "features": {
+    "balance_tracking": {
+      "native_tokens": true,
+      "erc20_tokens": true,
+      "nfts": true,
+      "update_interval_seconds": 30
+    },
+    "portfolio_analytics": {
+      "historical_data": true,
+      "pnl_tracking": true,
+      "allocation_charts": true
+    },
+    "approval_management": {
+      "scan_approvals": true,
+      "revoke_support": true,
+      "risk_scoring": true
+    },
+    "gas_optimization": {
+      "gas_tracker": true,
+      "optimal_timing": true,
+      "batch_transactions": true
+    }
+  },
+  "automation": {
+    "auto_refresh": true,
+    "refresh_interval_seconds": 60,
+    "cache_ttl_seconds": 30
+  },
+  "limits": {
+    "max_wallets_per_user": 20,
+    "max_tokens_tracked": 500
+  }
+}

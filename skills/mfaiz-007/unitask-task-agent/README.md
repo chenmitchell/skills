@@ -19,9 +19,61 @@ Use Unitask (unitask.app) with AI agents via **hosted MCP** and **scoped API tok
 - URL: `https://unitask.app/api/mcp`
 - Header: `Authorization: Bearer <UNITASK_API_KEY>`
 
+## Client configuration examples
+
+### Claude Code (remote HTTP MCP)
+
+Create/edit `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "unitask": {
+      "type": "http",
+      "url": "https://unitask.app/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${UNITASK_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Then set `UNITASK_API_KEY` in your shell environment (or Claude secrets UI, if you use that).
+
+### VS Code (remote HTTP MCP)
+
+Create `.vscode/mcp.json` in your workspace:
+
+```json
+{
+  "inputs": [
+    {
+      "id": "unitask_api_key",
+      "type": "promptString",
+      "description": "Unitask API key",
+      "password": true
+    }
+  ],
+  "servers": {
+    "unitask": {
+      "type": "http",
+      "url": "https://unitask.app/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:unitask_api_key}"
+      }
+    }
+  }
+}
+```
+
+### Generic (any MCP client that supports HTTP + headers)
+
+- URL: `https://unitask.app/api/mcp`
+- Header: `Authorization: Bearer <UNITASK_API_KEY>`
+
 ## Safety
 
 - Use the smallest scope needed.
 - Preview time-block plans (`apply=false`) before applying.
 - Confirm deletes unless the user explicitly requested deletion.
-

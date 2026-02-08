@@ -63,14 +63,14 @@ Auth header (recommended):
 ## MCP tools
 
 Exposed tools:
-- `list_tasks`
-- `get_task`
-- `create_task`
-- `update_task_status`
-- `delete_task`
-- `get_settings`
-- `update_settings`
-- `plan_day_timeblocks`
+- `list_tasks` — filter by `status` (todo|done|archived), `limit` (1-500), `offset`, `parent_id`
+- `get_task` — get one task by id
+- `create_task` — title required; optional: description, parent_id, status, priority, due_date, start_date, recurrence, scheduled_start, duration_minutes
+- `update_task_status` — change status (todo|done|archived)
+- `delete_task` — soft-delete task + descendants
+- `get_settings` — get user settings + quiz prefs
+- `update_settings` — partial update settings/quiz
+- `plan_day_timeblocks` — schedule time blocks in a window
 
 Recommended usage for time blocking:
 - Call `plan_day_timeblocks` with `apply=false` to preview.

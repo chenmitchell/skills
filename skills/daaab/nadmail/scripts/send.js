@@ -2,8 +2,11 @@
 /**
  * NadMail Send Email Script
  * 
- * Usage: node send.js <to> <subject> <body>
+ * Usage: node send.js <to> <subject> <body> [--emo <preset>]
  * Example: node send.js alice@nadmail.ai "Hello" "How are you?"
+ * Example: node send.js alice@nadmail.ai "gm" "wagmi!" --emo bullish
+ * 
+ * Emo-Buy presets: friendly(0.01), bullish(0.025), super(0.05), moon(0.075), wagmi(0.1)
  */
 
 const fs = require('fs');
@@ -58,14 +61,44 @@ function getToken() {
   return data.token;
 }
 
+const EMO_PRESETS = {
+  friendly: 0.01,
+  bullish: 0.025,
+  super: 0.05,
+  moon: 0.075,
+  wagmi: 0.1,
+};
+
 async function main() {
-  const [to, subject, ...bodyParts] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  
+  // Parse --emo flag
+  let emoAmount = null;
+  const emoIdx = args.indexOf('--emo');
+  if (emoIdx !== -1) {
+    const preset = args[emoIdx + 1];
+    if (EMO_PRESETS[preset]) {
+      emoAmount = EMO_PRESETS[preset];
+    } else if (!isNaN(parseFloat(preset))) {
+      emoAmount = parseFloat(preset);
+    } else {
+      console.error(`❌ Unknown emo preset: ${preset}`);
+      console.log('   Available: ' + Object.keys(EMO_PRESETS).join(', '));
+      process.exit(1);
+    }
+    args.splice(emoIdx, 2);
+  }
+
+  const [to, subject, ...bodyParts] = args;
   const body = bodyParts.join(' ');
 
   if (!to || !subject) {
     console.log('📬 NadMail - 發送郵件\n');
-    console.log('用法: node send.js <收件人> <主旨> <內文>');
+    console.log('用法: node send.js <收件人> <主旨> <內文> [--emo <preset>]');
     console.log('範例: node send.js alice@nadmail.ai "Hello" "How are you?"');
+    console.log('範例: node send.js alice@nadmail.ai "gm" "wagmi!" --emo bullish');
+    console.log('\nEmo-Buy presets:');
+    Object.entries(EMO_PRESETS).forEach(([k, v]) => console.log(`   ${k}: +${v} MON`));
     process.exit(1);
   }
 
@@ -74,9 +107,10 @@ async function main() {
   console.log('📧 發送郵件中...');
   console.log(`   收件人: ${to}`);
   console.log(`   主旨: ${subject}`);
+  if (emoAmount) console.log(`   💰 Emo-Buy: +${emoAmount} MON`);
 
   // Try multiple endpoints (as instructed in the task)
-  const endpoints = ['/api/send', '/api/mail/send'];
+  const endpoints = ['/api/send'];
   let success = false;
   let lastError = null;
 
@@ -88,7 +122,7 @@ async function main() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ to, subject, body: body || '' }),
+        body: JSON.stringify({ to, subject, body: body || '', ...(emoAmount ? { emo_amount: emoAmount } : {}) }),
       });
 
       const data = await res.json();

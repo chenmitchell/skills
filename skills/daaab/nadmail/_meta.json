@@ -3,9 +3,15 @@
   "slug": "nadmail",
   "displayName": "NadMail",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1770605385155,
-    "commit": "https://github.com/openclaw/skills/commit/9aced930ce3cefe25f2c4cdbb50e90804bfc347e"
+    "version": "1.0.3",
+    "publishedAt": 1770651701290,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1770605385155,
+      "commit": "https://github.com/openclaw/skills/commit/9aced930ce3cefe25f2c4cdbb50e90804bfc347e"
+    }
+  ]
 }

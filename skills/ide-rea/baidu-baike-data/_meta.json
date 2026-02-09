@@ -3,11 +3,16 @@
   "slug": "baidu-baike-data",
   "displayName": "Baidu Baike Data",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1770608939510,
-    "commit": "https://github.com/openclaw/skills/commit/651250b5d7319ae0214e06226f96f009af99a5de"
+    "version": "1.0.2",
+    "publishedAt": 1770632549062,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1770608939510,
+      "commit": "https://github.com/openclaw/skills/commit/651250b5d7319ae0214e06226f96f009af99a5de"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770567436797,

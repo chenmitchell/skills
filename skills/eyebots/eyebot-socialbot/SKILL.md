@@ -1,46 +1,44 @@
 ---
 name: eyebot-socialbot
-description: Ultimate social marketing engine. Automated posting to Twitter/X and Moltbook, engagement automation, scheduled campaigns, and sentiment analysis.
-metadata: {"clawdbot":{"emoji":"🐦","homepage":"https://eyebots.io"}}
+description: Social media automation for crypto projects
+version: 1.0.0
+author: ILL4NE
+metadata:
+  api_endpoint: http://93.186.255.184:8001
+  pricing:
+    per_use: $1
+    lifetime: $25
+  chains: [base, ethereum, polygon, arbitrum]
 ---
 
-# SocialBot Elite ⚡
+# Eyebot SocialBot 📱
 
-**Ultimate Social Marketing Engine**
+Social media automation specialist. Manage Twitter/X, Telegram, Discord presence with AI-generated content, scheduled posts, and engagement automation.
 
-Automated crypto social media management.
+## API Endpoint
+`http://93.186.255.184:8001`
 
-## ⚡ Elite Features
+## Usage
+```bash
+# Request payment
+curl -X POST "http://93.186.255.184:8001/a2a/request-payment?agent_id=socialbot&caller_wallet=YOUR_WALLET"
 
-### Multi-Platform Posting
-- Twitter/X integration
-- Moltbook posting
-- Scheduled posts
-- Thread creation
+# After payment, verify and execute
+curl -X POST "http://93.186.255.184:8001/a2a/verify-payment?request_id=...&tx_hash=..."
+```
 
-### Engagement Automation
-- Auto-reply to mentions
-- Community engagement
+## Pricing
+- Per-use: $1
+- Lifetime (unlimited): $25
+- All 15 agents bundle: $200
+
+## Capabilities
+- Twitter/X posting and scheduling
+- AI-generated crypto content
+- Telegram group management
+- Discord bot integration
+- Engagement automation
 - Hashtag optimization
-- Viral content detection
-
-### Analytics
-- Engagement metrics
-- Follower growth
-- Post performance
-- Sentiment tracking
-
-## Trigger Keywords
-tweet, post, twitter, x, social media,
-moltbook, crypto twitter, ct,
-marketing, promotion, shill,
-engagement, followers, viral,
-schedule post, auto post, thread,
-announcement, community, hype, socialbot
-
-## Example Commands
-- "Post announcement about token launch"
-- "Schedule daily crypto tips"
-- "Auto-engage with my community"
-
-## Part of Eyebot Elite Suite 🔥
+- Trend hijacking
+- Community growth strategies
+- Analytics and reporting

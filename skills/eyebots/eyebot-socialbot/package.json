@@ -1,0 +1,8 @@
+{
+  "name": "eyebot-socialbot",
+  "version": "1.0.0",
+  "description": "Social media automation for crypto",
+  "author": "ILL4NE",
+  "license": "MIT",
+  "keywords": ["eyebot", "social", "twitter", "telegram", "crypto", "a2a"]
+}

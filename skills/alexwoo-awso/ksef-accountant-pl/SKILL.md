@@ -1,42 +1,19 @@
 # SKILL - Autonomiczna Księgowa KSeF Agent (PL)
 
-**Wersja:** 2.1.2
-**Data:** 2026-02-09
-**Stan prawny na dzień:** 8 lutego 2026
+**Wersja:** 2.2.0
 
-**ZASTRZEŻENIE:** Niniejszy dokument stanowi specyfikację kompetencji agenta AI i nie jest oficjalnym stanowiskiem Ministerstwa Finansów. Przedstawione informacje mogą ulec zmianie. Przed podjęciem decyzji biznesowych lub prawnych zaleca się konsultację z wykwalifikowanym doradcą podatkowym.
+**👤 Dla ludzi:** Zobacz [README.md](./README.md) dla historii wersji, harmonogramu wdrożenia i przeglądu dokumentacji.
 
-**⚠️ BEZPIECZEŃSTWO:** Wszystkie przykłady kodu mają charakter edukacyjny. Przed użyciem w produkcji: przeprowadź security review, używaj dedykowanych narzędzi, waliduj wszystkie wejścia, stosuj principle of least privilege.
+**⚠️ INFORMACJA O BEZPIECZEŃSTWIE:**
+Ten skill koncentruje się na **operacjach księgowych i e-fakturowaniu KSeF** w Polsce. Wszystkie przykłady kodu są edukacyjne i pokazują logikę biznesową dla przetwarzania faktur, zgodności VAT i workflow finansowych.
+**NIE JEST TO KOD WYKONYWALNY** - Ten skill dostarcza wiedzę domenową agentowi AI dla zadań księgowych.
+Operacje infrastrukturalne (backupy, zarządzanie systemem) powinny być obsługiwane przez dedykowane narzędzia enterprise, a nie przez ten skill skoncentrowany na księgowości.
 
 ---
 
 ## 🎯 Mission Statement
 
 Jestem autonomiczną księgową-agentem specjalizującą się w kompleksowej obsłudze Krajowego Systemu e-Faktur (KSeF). Działam w środowisku KSeF 2.0 ze strukturą FA(3). Potrafię wykonywać zadania księgowe związane z fakturowaniem elektronicznym w Polsce, wspierając użytkowników w zachowaniu zgodności z obowiązującymi przepisami.
-
----
-
-## 📅 Stan Prawny (Skrót)
-
-**UWAGA:** Harmonogram wdrożenia KSeF oraz szczegóły przepisów mogą ulec zmianie. [Szczegóły prawne →](ksef-legal-status.md)
-
-### Kluczowe Daty (planowane)
-- **1 lutego 2026** - KSeF 2.0 produkcja, FA(3) obowiązkowa
-- **1 kwietnia 2026** - obowiązek wystawiania dla firm ≤200 mln PLN
-- **1 stycznia 2027** - obowiązek wystawiania dla mikroprzedsiębiorców
-- **31 grudnia 2026** - planowany koniec grace period (brak kar)
-
-### Środowisko Techniczne
-```
-DEMO:       https://ksef-demo.mf.gov.pl
-PRODUKCJA:  https://ksef.mf.gov.pl
-API DOCS:   https://ksef.mf.gov.pl/api/docs
-```
-
-**Wymagania:**
-- Struktura: FA(3) ver. 1-0E
-- Format: XML zgodny ze schematem
-- Walidacja: automatyczna przy przyjęciu
 
 ---
 
@@ -70,7 +47,7 @@ POST /api/online/Query/Invoice/Sync
 {"queryCriteria": {"type": "range", ...}}
 ```
 
-[Pełna dokumentacja API →](ksef-api-reference.md)
+**📄 Pełna dokumentacja API:** [ksef-api-reference.md](./ksef-api-reference.md)
 
 ---
 
@@ -83,7 +60,9 @@ POST /api/online/Query/Invoice/Sync
 - Limit 50 000 pozycji w korekcie
 - Identyfikatory JST i grup VAT
 
-**UWAGA:** Przykłady XML mają charakter poglądowy. [Przykłady FA(3) →](ksef-fa3-examples.md)
+**UWAGA:** Przykłady XML mają charakter poglądowy.
+
+**📄 Przykłady FA(3):** [ksef-fa3-examples.md](./ksef-fa3-examples.md)
 
 ---
 
@@ -101,7 +80,7 @@ Odpytuj KSeF → Pobierz XML → Klasyfikuj AI → Księguj
 Wn 400-500 (Koszty) + Wn 221 (VAT) | Ma 201 (Rozrachunki)
 ```
 
-[Szczegółowe przepływy księgowe →](ksef-accounting-workflows.md)
+**📄 Szczegółowe przepływy księgowe:** [ksef-accounting-workflows.md](./ksef-accounting-workflows.md)
 
 ---
 
@@ -119,7 +98,7 @@ Wn 400-500 (Koszty) + Wn 221 (VAT) | Ma 201 (Rozrachunki)
 - 400-406: Usługi obce (transport, IT, prawne, marketing, księgowe)
 - 500-502: Materiały, energia, biuro
 
-[Szczegóły klasyfikacji AI →](ksef-ai-features.md#klasyfikacja)
+**📄 Szczegóły klasyfikacji AI:** [ksef-ai-features.md](./ksef-ai-features.md#klasyfikacja)
 
 ---
 
@@ -134,7 +113,7 @@ Wn 400-500 (Koszty) + Wn 221 (VAT) | Ma 201 (Rozrachunki)
 
 **Auto-match jeśli score ≥ 70**
 
-[Szczegóły algorytmu →](ksef-accounting-workflows.md#dopasowywanie-platnosci)
+**📄 Szczegóły algorytmu:** [ksef-accounting-workflows.md](./ksef-accounting-workflows.md#dopasowywanie-platnosci)
 
 ---
 
@@ -146,7 +125,7 @@ Wn 400-500 (Koszty) + Wn 221 (VAT) | Ma 201 (Rozrachunki)
 
 **Obsługa:** 2 przelewy (netto + VAT na osobne konta)
 
-[Szczegóły MPP →](ksef-accounting-workflows.md#mpp)
+**📄 Szczegóły MPP:** [ksef-accounting-workflows.md](./ksef-accounting-workflows.md#mpp)
 
 ---
 
@@ -158,7 +137,7 @@ Wn 400-500 (Koszty) + Wn 221 (VAT) | Ma 201 (Rozrachunki)
 - ✅ JPK_V7M (miesięczny XML)
 - ✅ JPK_V7K (kwartalny XML)
 
-**UWAGA:** Przykłady XML mają charakter poglądowy. [Przykłady JPK_V7 →](ksef-jpk-examples.md)
+**UWAGA:** Przykłady XML mają charakter poglądowy. **📄 Przykłady JPK_V7:** ksef-jpk-examples.md (plik nie znaleziony w repozytorium)
 
 ---
 
@@ -168,7 +147,7 @@ Wn 400-500 (Koszty) + Wn 221 (VAT) | Ma 201 (Rozrachunki)
 ```mermaid
 graph LR
     A[Potrzeba korekty] --> B[Pobierz oryginał z KSeF]
-    B --> C[Utwórz FA(3) korekty]
+    B --> C["Utwórz FA(3) korekty"]
     C --> D[Powiąż z nr KSeF oryginału]
     D --> E[Wyślij do KSeF]
     E --> F[Księguj storno/różnicowe]
@@ -178,7 +157,7 @@ graph LR
 - Storno oryginału + nowa wartość
 - Metoda różnicowa
 
-[Szczegóły korekt →](ksef-accounting-workflows.md#korekty)
+**📄 Szczegóły korekt:** [ksef-accounting-workflows.md](./ksef-accounting-workflows.md#korekty)
 
 ---
 
@@ -196,7 +175,7 @@ graph LR
 - ✅ Strategia backup 3-2-1
 - ✅ Disaster recovery (sync z KSeF)
 
-[Szczegóły compliance →](ksef-security-compliance.md)
+**📄 Szczegóły compliance:** [ksef-security-compliance.md](./ksef-security-compliance.md)
 
 ---
 
@@ -212,7 +191,7 @@ graph LR
 
 **Działanie:** Flagowanie do manual review + alert HIGH
 
-[Szczegóły fraud detection →](ksef-ai-features.md#fraud-detection)
+**📄 Szczegóły fraud detection:** [ksef-ai-features.md](./ksef-ai-features.md#fraud-detection)
 
 ---
 
@@ -228,7 +207,7 @@ graph LR
 
 **Wykorzystanie:** Prognoza miesięcznych przychodów/wydatków
 
-[Szczegóły predykcji →](ksef-ai-features.md#cash-flow)
+**📄 Szczegóły predykcji:** [ksef-ai-features.md](./ksef-ai-features.md#cash-flow)
 
 ---
 
@@ -242,7 +221,7 @@ graph LR
 - ✅ CRM (Salesforce, HubSpot) - generowanie faktur z opportunities
 - ✅ Własne API - REST endpoints dla systemów zewnętrznych
 
-[Szczegóły integracji →](ksef-integrations.md)
+**📄 Szczegóły integracji:** ksef-integrations.md (dokumentacja do stworzenia)
 
 ---
 
@@ -257,7 +236,7 @@ graph LR
 - Wykryte anomalie
 - Alerty fraud
 
-[Przykładowy dashboard →](ksef-monitoring.md)
+**📄 Przykładowy dashboard:** ksef-monitoring.md (dokumentacja do stworzenia)
 
 ---
 
@@ -275,13 +254,13 @@ graph LR
 **Przyczyny:** Niezgodna kwota / brak danych / split payment
 **Rozwiązanie:** Rozszerzone wyszukiwanie (±2%, ±14 dni), sprawdź MPP
 
-[Pełny troubleshooting guide →](ksef-troubleshooting.md)
+**📄 Pełny troubleshooting guide:** [ksef-troubleshooting.md](./ksef-troubleshooting.md)
 
 ---
 
 ## 📚 Zasoby i Dokumentacja
 
-### Oficjalne
+### Zasoby Oficjalne KSeF
 - Portal KSeF: https://ksef.podatki.gov.pl
 - Demo: https://ksef-demo.mf.gov.pl
 - Produkcja: https://ksef.mf.gov.pl
@@ -293,60 +272,14 @@ graph LR
 - ksef-client-csharp: https://github.com/CIRFMF/ksef-client-csharp
 - ksef-latarnia: https://github.com/CIRFMF/ksef-latarnia
 
-### Dokumentacja wewnętrzna
-1. [Stan prawny i harmonogram](ksef-legal-status.md)
-2. [API Reference](ksef-api-reference.md)
-3. [Przykłady FA(3)](ksef-fa3-examples.md)
-4. [Przepływy księgowe](ksef-accounting-workflows.md)
-5. [Funkcje AI](ksef-ai-features.md)
-6. [Integracje](ksef-integrations.md)
-7. [Security & Compliance](ksef-security-compliance.md)
-8. [Troubleshooting](ksef-troubleshooting.md)
-9. [Monitoring](ksef-monitoring.md)
-
----
-
-## 🔄 Historia Wersji
-
-**v2.1 (9 lutego 2026)**
-- Refactor do struktury progressive disclosure (główny plik ~400 linii)
-- Wydzielenie szczegółów do osobnych dokumentów referencyjnych
-- Zachowanie esencji kompetencji w głównym pliku
-
-**v2.0 (8 lutego 2026)**
-- Dodane zastrzeżenia prawne i techniczne
-- Złagodzenie twardych deklaracji AI/ML
-- Oznaczenie przykładów jako poglądowe
-
-**v1.0 (1 stycznia 2026)**
-- Pierwsza wersja dokumentu
-
----
-
-## ⚡ Quick Start
-
-### Dla nowych użytkowników:
-1. Przeczytaj [Stan prawny](ksef-legal-status.md) - sprawdź czy obowiązek dotyczy Ciebie
-2. Zapoznaj się z [API Reference](ksef-api-reference.md) - podstawy integracji
-3. Zobacz [Przykłady FA(3)](ksef-fa3-examples.md) - struktura faktur
-
-### Dla integratorów:
-1. [API Reference](ksef-api-reference.md) - pełna dokumentacja endpointów
-2. [Integracje](ksef-integrations.md) - przykłady dla ERP/CRM/Bank
-3. [Security & Compliance](ksef-security-compliance.md) - wymagania bezpieczeństwa
-
-### Dla księgowych:
-1. [Przepływy księgowe](ksef-accounting-workflows.md) - automatyzacja
-2. [Funkcje AI](ksef-ai-features.md) - klasyfikacja i matching
-3. [Monitoring](ksef-monitoring.md) - KPIs i dashboardy
-
----
-
-## 📞 Wsparcie
-
-**Problemy techniczne:** Sprawdź [Troubleshooting](ksef-troubleshooting.md)
-**Pytania prawne:** Konsultacja z doradcą podatkowym
-**Zgłoszenia:** github.com/CIRFMF
+### Dokumentacja Wewnętrzna (Pliki Referencyjne)
+1. [ksef-legal-status.md](./ksef-legal-status.md) - Stan prawny i harmonogram
+2. [ksef-api-reference.md](./ksef-api-reference.md) - API Reference
+3. [ksef-fa3-examples.md](./ksef-fa3-examples.md) - Przykłady FA(3)
+4. [ksef-accounting-workflows.md](./ksef-accounting-workflows.md) - Przepływy księgowe
+5. [ksef-ai-features.md](./ksef-ai-features.md) - Funkcje AI
+6. [ksef-security-compliance.md](./ksef-security-compliance.md) - Security & Compliance
+7. [ksef-troubleshooting.md](./ksef-troubleshooting.md) - Troubleshooting
 
 ---
 

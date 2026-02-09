@@ -388,7 +388,7 @@ Ma 130 Rachunek bieżący    11 500,00
 ---
 
 **Zobacz również:**
-- [Funkcje AI - Klasyfikacja](ksef-ai-features.md#klasyfikacja)
-- [Przykłady JPK_V7](ksef-jpk-examples.md)
+- [Funkcje AI - Klasyfikacja](https://github.com/alexwoo-awso/skill/blob/main/ksef-accountant-pl/ksef-ai-features.md#klasyfikacja)
+- [Przykłady JPK_V7](https://github.com/alexwoo-awso/skill/blob/main/ksef-accountant-pl/ksef-jpk-examples.md)
 
-[← Powrót do głównego SKILL](SKILL.md)
+[← Powrót do głównego SKILL](https://github.com/alexwoo-awso/skill/blob/main/ksef-accountant-pl/SKILL.md)

@@ -1,11 +1,17 @@
 {
   "owner": "alexwoo-awso",
   "slug": "ksef-accountant-pl",
-  "displayName": "KSeF Autonomous Accountant   (Polish)",
+  "displayName": "KSeF Autonomous Accountant (Polish)",
   "latest": {
-    "version": "2.1.2",
-    "publishedAt": 1770597858890,
-    "commit": "https://github.com/openclaw/skills/commit/a0729ceb1cf2ce721fef9f65f871eb80c89a7f59"
+    "version": "2.2.1",
+    "publishedAt": 1770644184219,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "2.1.2",
+      "publishedAt": 1770597858890,
+      "commit": "https://github.com/openclaw/skills/commit/a0729ceb1cf2ce721fef9f65f871eb80c89a7f59"
+    }
+  ]
 }

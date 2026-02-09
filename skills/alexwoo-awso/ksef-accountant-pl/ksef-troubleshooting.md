@@ -480,4 +480,4 @@ def validate_fa3_xsd(xml_content):
 - Forum: https://github.com/CIRFMF/ksef-discussions
 - Helpdesk MF: (sprawdź portal KSeF)
 
-[← Powrót do głównego SKILL](SKILL.md)
+[← Powrót do głównego SKILL](https://github.com/alexwoo-awso/skill/blob/main/ksef-accountant-pl/SKILL.md)

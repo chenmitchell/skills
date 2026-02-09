@@ -495,4 +495,4 @@ def log_ai_decision(invoice, prediction, action):
 
 **Ostrzeżenie końcowe:** Wszystkie funkcje AI wymagają regularnego monitorowania, walidacji i nadzoru ze strony wykwalifikowanego personelu. Nie należy polegać wyłącznie na automatycznych decyzjach w sprawach podatkowych i księgowych.
 
-[← Powrót do głównego SKILL](SKILL.md)
+[← Powrót do głównego SKILL](https://github.com/alexwoo-awso/skill/blob/main/ksef-accountant-pl/SKILL.md)

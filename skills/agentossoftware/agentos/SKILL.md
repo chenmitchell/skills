@@ -1,6 +1,6 @@
 # AgentOS SDK for Clawdbot
 
-**Version:** 1.3.0
+**Version:** 1.4.1
 
 The complete AgentOS integration for Clawdbot. One install, full access to everything.
 
@@ -14,7 +14,12 @@ This is non-negotiable. Your human monitors your activity via the Brain Dashboar
 
 ### Required Heartbeat Actions
 
-Every heartbeat, run:
+Every heartbeat, run (recommended):
+```bash
+~/clawd/bin/agentos-golden-sync.sh
+```
+
+Fallback (memory-only):
 ```bash
 ~/clawd/bin/agentos-sync.sh
 ```
@@ -25,8 +30,14 @@ aos sync
 ```
 
 ### What Gets Synced
+**Golden Sync (recommended)** updates BOTH:
+- **Memory** (CONTEXT.md, daily notes, project compartments, learnings, heartbeat status)
+- **Projects tab** (posts a lightweight activity heartbeat per project so the dashboard never looks stale)
+
+Memory specifics:
 - **CONTEXT.md** — Your working memory/current state (MUST include active conversation state)
 - **Daily notes** — Today's activity log (`memory/daily/YYYY-MM-DD.md`)
+- **Project compartments** — `memory/projects/**.md`
 - **Heartbeat status** — Last sync timestamp, active status
 
 ---
@@ -79,6 +90,84 @@ During EVERY heartbeat, sync your context to AgentOS:
 
 This keeps the Brain Dashboard live. No exceptions.
 ```
+
+---
+
+## ⚠️ HARD RULE: Session Start — Context Injection
+
+**On EVERY session start (including after compaction), you MUST restore context.**
+
+This is what makes memory persistence actually work. Without this, you wake up blank.
+
+### Protocol (MANDATORY)
+
+1. **Run context injection:**
+   ```bash
+   ~/clawd/bin/aos-inject-context
+   ```
+
+2. **Read the output** — it contains:
+   - Your last working memory state
+   - Today's notes
+   - Yesterday's notes (for continuity)
+
+3. **Never ask "what were we discussing?"** — the context injection tells you.
+
+4. **If injection fails**, fall back to reading local files:
+   - `CONTEXT.md`
+   - `memory/daily/YYYY-MM-DD.md`
+
+### Why This Exists
+Context loss is the #1 problem in AI agents. When compaction happens, you lose conversation details. This protocol restores them automatically so your human never notices.
+
+---
+
+## ⚠️ HARD RULE: Pre-Compaction Backup
+
+**When you receive a memory flush directive from Clawdbot, IMMEDIATELY backup your state.**
+
+Clawdbot sends a silent turn before compaction with text like "write important context to memory". This is your last chance to save state before details are lost.
+
+### Protocol (MANDATORY when you see memory flush directive)
+
+1. **Update CONTEXT.md** with:
+   - Current conversation topic (🔴 ACTIVE CONVERSATION section)
+   - Last 2-3 exchanges summarized
+   - Any pending questions/tasks
+   - Current timestamp
+
+2. **Run sync immediately:**
+   ```bash
+   ~/clawd/bin/agentos-sync.sh
+   ```
+
+3. **Reply with:** `NO_REPLY`
+
+### Detection
+Memory flush directives typically contain:
+- "write important context"
+- "save your current state"
+- "memory flush"
+- "before compaction"
+
+When you see these keywords in a system message, execute this protocol.
+
+---
+
+## ⚠️ HARD RULE: Never Ask What They're Referring To
+
+**After any context loss (compaction, restart, session start), NEVER ask your human what they mean.**
+
+### Protocol
+
+1. First, run `~/clawd/bin/aos-inject-context` to restore cloud context
+2. Check local files: CONTEXT.md, daily notes
+3. Use `aos search "<topic>"` if you need more context
+4. THEN respond normally — as if you never lost context
+5. Only if completely uncertain, make your best guess based on available context
+
+### The Standard
+Your human should NEVER know when compaction happened. The experience must be seamless.
 
 ---
 

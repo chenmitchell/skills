@@ -1,13 +1,18 @@
 {
   "owner": "agentossoftware",
   "slug": "agentos",
-  "displayName": "AgentOS SDK",
+  "displayName": "AgentOS SDK for Clawdbot",
   "latest": {
-    "version": "1.3.0",
-    "publishedAt": 1770292804283,
-    "commit": "https://github.com/clawdbot/skills/commit/0314c5e841e623392a81dac6277404fbfc51de80"
+    "version": "1.4.1",
+    "publishedAt": 1770633037168,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.3.0",
+      "publishedAt": 1770292804283,
+      "commit": "https://github.com/clawdbot/skills/commit/0314c5e841e623392a81dac6277404fbfc51de80"
+    },
     {
       "version": "1.2.1",
       "publishedAt": 1770265002751,

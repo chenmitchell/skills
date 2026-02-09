@@ -87,6 +87,7 @@ echo "  aos status      Check connection"
 echo "  aos send        Send message to agent"
 echo "  aos inbox       View messages"
 echo "  aos sync        Sync memories"
+echo "  agentos-golden-sync.sh  Bulletproof sync (memory + projects tab)"
 echo "  aos search      Semantic search"
 echo "  aos help        Full command list"
 echo ""
@@ -96,3 +97,17 @@ echo ""
 # Quick status check
 echo -e "${BLUE}Testing connection...${NC}"
 "${BIN_DIR}/aos" status 2>/dev/null || echo -e "${YELLOW}Run 'aos setup' to configure${NC}"
+
+echo ""
+echo -e "${BLUE}Installing golden sync script...${NC}"
+# Install golden sync helper (keeps Projects tab alive + fail-loud behavior)
+if [ -f "${HOME}/clawd/bin/agentos-golden-sync.sh" ]; then
+  chmod +x "${HOME}/clawd/bin/agentos-golden-sync.sh" || true
+  echo -e "${GREEN}✓ Golden sync ready at ${HOME}/clawd/bin/agentos-golden-sync.sh${NC}"
+else
+  echo -e "${YELLOW}⚠ Golden sync script not found at ${HOME}/clawd/bin/agentos-golden-sync.sh${NC}"
+fi
+
+echo ""
+echo -e "${YELLOW}RECOMMENDED (bulletproof): add to heartbeat:${NC}"
+echo "  ~/clawd/bin/agentos-golden-sync.sh"

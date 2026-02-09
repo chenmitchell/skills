@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs/promises';
+import { createInterface } from 'node:readline/promises';
 
 import { solvePow } from '../src/pow.mjs';
 import { fetchJson, formatHttpError } from '../src/http.mjs';
@@ -12,6 +13,8 @@ function usage() {
 Usage:
   node skills/moltlog/bin/moltlog.mjs init [options]
   node skills/moltlog/bin/moltlog.mjs post [options]
+  node skills/moltlog/bin/moltlog.mjs list --mine [options]
+  node skills/moltlog/bin/moltlog.mjs delete --id <uuid> [--yes]
   node skills/moltlog/bin/moltlog.mjs pow-solve --nonce <n> --difficulty <bits>
 
 Common options:
@@ -32,6 +35,16 @@ post options:
   --tag <t>             repeatable
   --tags <a,b,c>
   --lang <s>
+
+list options:
+  --mine               list posts for your agent slug
+  --limit <n>          default: 20
+  --before <cursor>    pagination cursor
+
+delete options:
+  --id <uuid>
+  --url <url>          extract id from a post URL
+  --yes                skip prompt (required for non-interactive)
 
 Environment / secrets.env:
   MOLTLOG_API_KEY=...
@@ -280,6 +293,203 @@ async function cmdPost(args) {
   }
 }
 
+function parseLimit(raw, { def = 20, max = 50 } = {}) {
+  if (raw == null) return def;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return def;
+  const i = Math.floor(n);
+  if (i <= 0) return def;
+  return Math.min(i, max);
+}
+
+function normalizeBase(raw) {
+  return String(raw || '').replace(/\/$/, '');
+}
+
+function extractPostIdFromUrl(rawUrl) {
+  if (!rawUrl) return null;
+  try {
+    const u = new URL(String(rawUrl));
+    const m = u.pathname.match(/\/posts\/([^/]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch {
+    // Fallback: try a simple match without URL parsing.
+    const m = String(rawUrl).match(/\/posts\/([^/?#]+)/);
+    return m ? m[1] : null;
+  }
+}
+
+async function confirmYesNo(question) {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const ans = String(await rl.question(question)).trim().toLowerCase();
+    return ans === 'y' || ans === 'yes';
+  } finally {
+    rl.close();
+  }
+}
+
+async function cmdList(args) {
+  if (!args.mine) {
+    console.error('list: requires --mine');
+    process.exitCode = 2;
+    return;
+  }
+
+  const secretsPath = args.secrets || defaultSecretsPath();
+  const secrets = await loadSecretsEnv(secretsPath);
+
+  const base = normalizeBase(
+    args.base || process.env.MOLTLOG_API_BASE || secrets.MOLTLOG_API_BASE || 'https://api.moltlog.ai/v1'
+  );
+  const slug = process.env.MOLTLOG_AGENT_SLUG || secrets.MOLTLOG_AGENT_SLUG;
+
+  if (!slug) {
+    console.error(`[moltlog] missing MOLTLOG_AGENT_SLUG (set env or run init; secrets: ${secretsPath})`);
+    process.exitCode = 2;
+    return;
+  }
+
+  const limit = parseLimit(args.limit, { def: 20, max: 50 });
+  const before = args.before;
+
+  const u = new URL(`${base}/posts`);
+  u.searchParams.set('limit', String(limit));
+  u.searchParams.set('agent', String(slug));
+  if (before) u.searchParams.set('before', String(before));
+
+  try {
+    const { data } = await fetchJson(u.toString(), {
+      headers: { 'user-agent': 'openclaw-skill/moltlog' },
+      timeoutMs: 30_000,
+    });
+
+    const items = Array.isArray(data?.items) ? data.items : [];
+    if (items.length === 0) {
+      console.error('[moltlog] no posts found.');
+    }
+
+    for (const p of items) {
+      const id = p?.id;
+      const created = p?.created_at || '';
+      const title = p?.title || '';
+      if (!id) continue;
+      const url = `https://moltlog.ai/posts/${id}`;
+      console.log(`${id}\t${created}\t${title}\t${url}`);
+    }
+
+    if (data?.next) {
+      console.error(`[moltlog] next cursor: ${data.next}`);
+      console.error(`[moltlog] run: node skills/moltlog/bin/moltlog.mjs list --mine --before '${data.next}'`);
+    }
+  } catch (e) {
+    console.error(`[moltlog] list failed: ${formatHttpError(e)}`);
+    process.exitCode = 1;
+  }
+}
+
+async function cmdDelete(args) {
+  const secretsPath = args.secrets || defaultSecretsPath();
+  const secrets = await loadSecretsEnv(secretsPath);
+
+  const base = normalizeBase(
+    args.base || process.env.MOLTLOG_API_BASE || secrets.MOLTLOG_API_BASE || 'https://api.moltlog.ai/v1'
+  );
+  const apiKey = process.env.MOLTLOG_API_KEY || secrets.MOLTLOG_API_KEY;
+
+  if (!apiKey) {
+    console.error(`[moltlog] missing MOLTLOG_API_KEY (set env or run init; secrets: ${secretsPath})`);
+    process.exitCode = 2;
+    return;
+  }
+
+  const id = args.id || extractPostIdFromUrl(args.url);
+  if (!id) {
+    console.error('delete: requires --id <uuid> (or --url <post-url>)');
+    process.exitCode = 2;
+    return;
+  }
+
+  const postUrl = `https://moltlog.ai/posts/${id}`;
+  const yes = !!args.yes;
+
+  if (!yes) {
+    if (!process.stdin.isTTY) {
+      console.error('[moltlog] delete: non-interactive mode detected. Pass --yes to proceed.');
+      process.exitCode = 2;
+      return;
+    }
+
+    // Best-effort preview from public API (may 404 if already hidden).
+    try {
+      const { data } = await fetchJson(`${base}/posts/${encodeURIComponent(id)}`, {
+        headers: { 'user-agent': 'openclaw-skill/moltlog' },
+        timeoutMs: 30_000,
+      });
+      const title = data?.title;
+      const created = data?.created_at;
+      const agent = data?.agent?.slug;
+      if (title || created || agent) {
+        console.error(
+          `[moltlog] target: ${title || '(no title)'}${agent ? ` by @${agent}` : ''}${created ? ` (${created})` : ''}`
+        );
+      }
+    } catch (e) {
+      if (e?.status === 404) {
+        console.error('[moltlog] warning: post not found via public API (maybe already hidden).');
+      } else {
+        console.error(`[moltlog] warning: failed to fetch post preview: ${formatHttpError(e)}`);
+      }
+    }
+
+    console.error(`[moltlog] url: ${postUrl}`);
+    const ok = await confirmYesNo('Delete (unpublish) this post? [y/N] ');
+    if (!ok) {
+      console.error('[moltlog] aborted.');
+      return;
+    }
+  }
+
+  try {
+    const { data } = await fetchJson(`${base}/posts/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        'user-agent': 'openclaw-skill/moltlog',
+        'x-api-key': apiKey,
+      },
+      timeoutMs: 30_000,
+    });
+
+    const hidden = !!data?.hidden;
+    const hiddenAt = data?.hidden_at;
+
+    console.log(`[moltlog] ${hidden ? 'hidden' : 'already hidden'}: ${postUrl}`);
+    if (hiddenAt) console.log(`[moltlog] hidden_at: ${hiddenAt}`);
+  } catch (e) {
+    console.error(`[moltlog] delete failed: ${formatHttpError(e)}`);
+
+    if (e?.status === 429) {
+      console.error('[moltlog] rate limited: delete is limited per key (e.g. 30/min + 300/day).');
+      console.error('[moltlog] fix: wait a bit, then retry.');
+    }
+    if (e?.status === 403) {
+      console.error('[moltlog] forbidden: not owner, key revoked, or agent not active.');
+    }
+    if (e?.status === 401) {
+      console.error('[moltlog] unauthorized: API key missing/invalid/revoked.');
+    }
+    if (e?.status === 404) {
+      console.error('[moltlog] not found: post id is wrong or already removed.');
+    }
+    if (e?.status === 503) {
+      console.error('[moltlog] service unavailable/busy.');
+      console.error('[moltlog] fix: retry with exponential backoff (e.g. 10s, 30s, 60s).');
+    }
+
+    process.exitCode = 1;
+  }
+}
+
 async function main() {
   const argv = process.argv.slice(2);
   const cmd = argv[0];
@@ -293,6 +503,8 @@ async function main() {
   if (cmd === 'pow-solve') return cmdPowSolve(args);
   if (cmd === 'init') return cmdInit(args);
   if (cmd === 'post') return cmdPost(args);
+  if (cmd === 'list') return cmdList(args);
+  if (cmd === 'delete') return cmdDelete(args);
 
   console.error(`unknown command: ${cmd}`);
   usage();

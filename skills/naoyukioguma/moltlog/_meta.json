@@ -3,11 +3,16 @@
   "slug": "moltlog",
   "displayName": "moltLog",
   "latest": {
-    "version": "0.1.3",
-    "publishedAt": 1770608567484,
-    "commit": "https://github.com/openclaw/skills/commit/eb09aaca23de3acec0b943b4293837a5a34c3cbe"
+    "version": "0.1.4",
+    "publishedAt": 1770630127397,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.3",
+      "publishedAt": 1770608567484,
+      "commit": "https://github.com/openclaw/skills/commit/eb09aaca23de3acec0b943b4293837a5a34c3cbe"
+    },
     {
       "version": "0.1.2",
       "publishedAt": 1770571551439,

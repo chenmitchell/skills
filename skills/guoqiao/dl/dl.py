@@ -2,13 +2,26 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#     "yt-dlp>=2026.2.4",
+#     "yt-dlp",
 # ]
 # ///
 
-from __future__ import annotations
+"""Smart Media Downloader.
+
+Tips:
+- `%(title).240B`: limite filename to 240 chars in output template, to avoid `file name too long` errors.
+- `--max-filesize=2000M`: limit single file max size to 2G, to avoid huge file download.
+- `--max-downloads=30`: limit max playlist item to 30, to avoid huage list download.
+- `--no-playlist`: avoid downloading playlist unexpectedly for single item url like `https://www.youtube.com/watch?v=UVCa8...&list=PL...`
+- macOS defaults `~/Movies` and `~/Music` are used here.
+- `uvx yt-dlp@latest` will ensure `yt-dlp` is always up to date.
+- `yt-dlp` will be blocked quickly if the host machine is in Cloud/DataCenter, use a residential IP if you can.
+"""
 
 import argparse
+import json
+import os
+import sys
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -22,6 +35,53 @@ MAX_AUDIO_SIZE = 30 * 1024 * 1024  # 30M
 PLAYLIST_LIMIT = 30
 
 
+HERE = Path(__file__).parent
+
+
+def get_dir(candidates: list[str], default: Path = HERE) -> Path:
+    for candidate in candidates:
+        if candidate:
+            path = Path(candidate).expanduser().resolve()
+            if path.is_dir():
+                return path.expanduser().resolve()
+    return default
+
+
+def get_video_dir():
+    candidates = [
+        os.getenv("DL_VIDEO_DIR"),
+        os.getenv("VIDEO_DIR"),
+        "~/Movies",
+        "~/Videos",
+        "~/Downloads",
+    ]
+    return get_dir(candidates, default=HERE)
+
+
+def get_music_dir():
+    candidates = [
+        os.getenv("DL_MUSIC_DIR"),
+        os.getenv("MUSIC_DIR"),
+        "~/Music",
+        "~/Audio",
+        "~/Downloads",
+    ]
+    return get_dir(candidates, default=HERE)
+
+
+VIDEO_DIR = get_video_dir()
+MUSIC_DIR = get_music_dir()
+
+
+def fmt_json(obj: Any) -> str:
+    return json.dumps(obj, indent=2, ensure_ascii=False)
+
+
+def tee_json(obj: Any, file=sys.stdout) -> Any:
+    print(fmt_json(obj), file=file)
+    return obj
+
+
 class MediaKind(Enum):
     VIDEO = "video"
     MUSIC = "music"
@@ -29,23 +89,12 @@ class MediaKind(Enum):
 
 @dataclass(frozen=True)
 class DownloadPlan:
+    id: str
     url: str
     kind: MediaKind
+    target_dir: Path
     is_playlist: bool
     extractor: str
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Smart media downloader with yt-dlp defaults from SKILL.md.",
-    )
-    parser.add_argument("url", help="Media URL to download")
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Probe and print the plan without downloading",
-    )
-    return parser.parse_args()
 
 
 def detect_kind(info: dict[str, Any], url: str) -> MediaKind:
@@ -76,7 +125,8 @@ def detect_playlist(info: dict[str, Any]) -> bool:
     return bool(info.get("playlist_count"))
 
 
-def probe(url: str) -> DownloadPlan:
+def probe(args) -> DownloadPlan:
+    url = args.url
     probe_opts = {
         "quiet": True,
         "skip_download": True,
@@ -87,9 +137,21 @@ def probe(url: str) -> DownloadPlan:
     with yt_dlp.YoutubeDL(probe_opts) as ydl:
         info = ydl.extract_info(url, download=False)
 
+    id = info.get("id")
+    if args.verbose:
+        with open(f'info-{id}.json', 'w') as f:
+            tee_json(info, file=f)
+
+    kind = detect_kind(info, url)
+    if kind is MediaKind.MUSIC:
+        target_dir = args.music_dir
+    else:
+        target_dir = args.video_dir
     return DownloadPlan(
-        url=url,
-        kind=detect_kind(info, url),
+        id=info.get("id"),
+        url=info.get("webpage_url", url),
+        kind=kind,
+        target_dir=target_dir,
         is_playlist=detect_playlist(info),
         extractor=info.get("extractor") or info.get("extractor_key") or "unknown",
     )
@@ -105,9 +167,7 @@ def build_options(plan: DownloadPlan) -> dict[str, Any]:
     opts: dict[str, Any] = {
         "outtmpl": {"default": outtmpl},
         "paths": {
-            "home": str(
-                Path.home() / ("Music" if plan.kind is MediaKind.MUSIC else "Movies"),
-            ),
+            "home": str(plan.target_dir),
         },
         "noplaylist": not plan.is_playlist,
         "max_downloads": PLAYLIST_LIMIT if plan.is_playlist else None,
@@ -142,10 +202,17 @@ def build_options(plan: DownloadPlan) -> dict[str, Any]:
 
 
 def print_plan(plan: DownloadPlan) -> None:
-    playlist_label = "playlist" if plan.is_playlist else "single"
-    print(
-        f"[plan] {plan.kind.value} · {playlist_label} · extractor={plan.extractor}",
-    )
+    playlist_label = "yes" if plan.is_playlist else "no"
+    lines = [
+        "Download Plan:",
+        f"  url: {plan.url}",
+        f"  id: {plan.id}",
+        f"  kind: {plan.kind.value}",
+        f"  playlist: {playlist_label}",
+        f"  extractor: {plan.extractor}",
+        f"  target_dir: {plan.target_dir}",
+    ]
+    print("\n".join(lines))
 
 
 def download(plan: DownloadPlan) -> None:
@@ -155,9 +222,52 @@ def download(plan: DownloadPlan) -> None:
         ydl.download([plan.url])
 
 
+def cli():
+    parser = argparse.ArgumentParser(
+        prog="Smart Media Downloader",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("url", help="Media URL to download")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true",
+        help="Verbose logging",
+    )
+    parser.add_argument(
+        "-n", "--dry-run", action="store_true",
+        help="Probe and print the plan without downloading",
+    )
+    parser.add_argument(
+        "-m", "--music", action="store_true",
+        help="Download best quality audio from url",
+    )
+    parser.add_argument(
+        "-a", "--audio", action="store_true",
+        help="Download decent quality audio from url",
+    )
+    parser.add_argument(
+        "-s", "--subtitle", action="store_true",
+        help="Download subtitle from url",
+    )
+    parser.add_argument(
+        "-f", "--format",
+        help="yt-dlp format string",
+    )
+    parser.add_argument(
+        "-M", "--music_dir",
+        default=MUSIC_DIR,
+        help="Music directory",
+    )
+    parser.add_argument(
+        "-V", "--video_dir",
+        default=VIDEO_DIR,
+        help="Video directory",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
-    args = parse_args()
-    plan = probe(args.url)
+    args = cli()
+    plan = probe(args)
     print_plan(plan)
 
     if args.dry_run:

@@ -1,11 +1,17 @@
 {
   "owner": "guoqiao",
   "slug": "dl",
-  "displayName": "Media Downloader",
+  "displayName": "Smart Media Downloader",
   "latest": {
-    "version": "0.0.5",
-    "publishedAt": 1770552984077,
-    "commit": "https://github.com/openclaw/skills/commit/8c608f05ec0478de6dcee98a70b82533c5328851"
+    "version": "0.0.7",
+    "publishedAt": 1770596173733,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.0.5",
+      "publishedAt": 1770552984077,
+      "commit": "https://github.com/openclaw/skills/commit/8c608f05ec0478de6dcee98a70b82533c5328851"
+    }
+  ]
 }

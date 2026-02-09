@@ -1,181 +1,209 @@
 ---
 name: seisoai
-description: AI media generation. 50+ tools for images, videos, music, audio, 3D, speech. x402 pay-per-request on Base. Highly optimized for agentic workflows.
-metadata: {"openclaw":{"homepage":"https://seisoai.com","emoji":"🎨"}}
+description: Unified media generation gateway for agents. Discover tools dynamically, choose API key or x402 auth, invoke image/video/audio/music/3D/training tools, and handle queue jobs reliably.
+metadata: {"openclaw":{"homepage":"https://seisoai.com","emoji":":art:"}}
+version: 1.1.1
+last_synced: 2026-02-09
 ---
 
 # Seisoai
 
-**Base:** `https://seisoai.com`  
-**Endpoint:** `POST /api/gateway/invoke/{toolId}`  
-**Auth:** `X-API-Key: sk_live_...` or x402 payment
+Base URL: `https://seisoai.com`
+Primary endpoint: `POST /api/gateway/invoke/{toolId}` or `POST /api/gateway/invoke` with `toolId` in body.
+Auth: `X-API-Key` or x402 payment (USDC on Base).
 
-**Optimized for agentic, pay-per-job workflows.** Each tool call is stateless—no sessions, no accounts required. Perfect for AI agents that need to generate media on demand.
+## Agent-First Workflow (Do This Every Session)
 
----
+1. Discover live tools:
+   - `GET /api/gateway/tools`
+2. For selected tools, fetch exact schema:
+   - `GET /api/gateway/tools/{toolId}`
+3. Optionally pre-price inputs:
+   - `GET /api/gateway/price/{toolId}`
+4. Invoke with API key or x402.
+5. If queue tool, poll job status/result URLs from response.
 
-## Quick Start
+Do not rely on static tool lists when a live registry is available.
+
+## Auth Strategy
+
+Use this decision order:
+
+1. If you have a project API key, use `X-API-Key`.
+2. If you do not have a key, use x402 pay-per-request.
+3. Do not send browser CSRF tokens for machine clients.
+
+### API Key Example
 
 ```http
-POST https://seisoai.com/api/gateway/invoke/image.generate.flux-2
-Content-Type: application/json
+POST /api/gateway/invoke/image.generate.flux-2
 X-API-Key: sk_live_xxx
+Content-Type: application/json
 
-{"prompt": "a sunset over mountains"}
+{"prompt":"a sunset over mountains"}
 ```
 
-That's it. Just `prompt` and you get an image. One API call = one job = one payment.
+### x402 Example (2-step)
 
----
+1. Call without payment header.
+2. Receive `402` with payment requirements.
+3. Sign/pay on Base.
+4. Retry same request with one of:
+   - `payment-signature`
+   - `x-payment`
+   - `payment`
 
-## Tools (50+)
+## High-Value Endpoints
 
-### Image Generation
+- Discovery:
+  - `GET /api/gateway/tools`
+  - `GET /api/gateway/tools/{toolId}`
+  - `GET /api/gateway/price/{toolId}`
+  - `GET /api/gateway/mcp-manifest`
+- Invoke:
+  - `POST /api/gateway/invoke/{toolId}`
+  - `POST /api/gateway/invoke`
+- Jobs:
+  - `GET /api/gateway/jobs/{jobId}?model=...`
+  - `GET /api/gateway/jobs/{jobId}/result?model=...`
+- Agent-scoped:
+  - `GET /api/gateway/agents`
+  - `GET /api/gateway/agent/{agentId}`
+  - `POST /api/gateway/agent/{agentId}/invoke/{toolId?}`
+  - `POST /api/gateway/agent/{agentId}/orchestrate`
 
-| Task | toolId | Just need |
-|------|--------|-----------|
-| Image (fast) | `image.generate.flux-2` | `prompt` |
-| Image (cinematic) | `image.generate.kling-image-v3` | `prompt` |
-| Image (aesthetic) | `image.generate.grok-imagine` | `prompt` |
-| Image (consistent) | `image.generate.kling-image-o3` | `prompt` |
-| Image (360°) | `image.generate.nano-banana-pro` | `prompt` |
-| Edit image | `image.generate.flux-pro-kontext` | `prompt` + `image_url` |
-| Face swap | `image.face-swap` | `source_image_url` + `target_image_url` |
-| Remove BG | `image.extract-layer` | `image_url` |
-| Upscale | `image.upscale` | `image_url` |
+## Agent-Scoped Safety Controls (Mandatory)
 
-### Video Generation
+Default posture: **deny by default** for agent-scoped routes.
 
-| Task | toolId | Just need |
-|------|--------|-----------|
-| Video (fast) | `video.generate.ltx-2` | `prompt` |
-| Video (quality) | `video.generate.veo3` | `prompt` |
-| Video (cinematic) | `video.generate.kling-3-pro-text` | `prompt` |
-| Video (stylized) | `video.generate.grok-imagine-text` | `prompt` |
-| Animate image | `video.generate.kling-3-pro-image` | `prompt` + `image_url` |
-| Motion transfer | `video.generate.dreamactor-v2` | `source_url` + `driver_url` |
+Use agent-scoped endpoints only when all checks pass:
 
-### Audio & Speech
+1. **Explicit task requirement**
+   - Do not call `/agent/*` routes unless the current task explicitly requires operating a specific agent.
+2. **Exact agent binding**
+   - Resolve `agentId` from a trusted source (`GET /api/gateway/agents` or user-provided exact ID).
+   - Never infer or guess agent IDs from names/prompts.
+3. **Authorization boundary**
+   - Use only the current caller credentials.
+   - Never attempt to reuse, escalate, or proxy credentials to access other tenants/owners.
+4. **Single-agent scope**
+   - For one task, operate on one approved `agentId` unless the user explicitly requests multi-agent execution.
+5. **Tool allowlist enforcement**
+   - Before invoke/orchestrate, fetch `GET /api/gateway/agent/{agentId}` and only use tool IDs declared for that agent.
+   - Reject tool IDs not listed in that agent definition.
+6. **No recursive orchestration**
+   - Do not create self-referential orchestrations, orchestration loops, or fan-out patterns across unknown agents.
+7. **No broad discovery exfiltration**
+   - Do not enumerate all agents unless needed for user task; prefer direct lookup when `agentId` is known.
+8. **Audit trail requirement**
+   - Log `agentId`, route, tool ID, and reason for each agent-scoped call in agent run notes.
+9. **On mismatch or ambiguity: stop**
+   - If ownership/scope/tool authorization is ambiguous, do not call `/agent/*`; fall back to `/api/gateway/invoke`.
 
-| Task | toolId | Just need |
-|------|--------|-----------|
-| Music | `music.generate` | `prompt` |
-| Sound FX | `audio.sfx` | `prompt` |
-| TTS (voice clone) | `audio.tts` | `text` + `voice_url` |
-| TTS (high quality) | `audio.tts.minimax-hd` | `text` |
-| TTS (fast) | `audio.tts.minimax-turbo` | `text` |
-| Transcribe | `audio.transcribe` | `audio_url` |
+## Tool Selection Cheatsheet (Verified IDs)
 
-### 3D Generation
+### Images
+- Fast text->image: `image.generate.flux-2`
+- Premium cinematic: `image.generate.kling-image-v3`
+- Premium consistency: `image.generate.kling-image-o3`
+- 360/panorama: `image.generate.nano-banana-pro`
+- Prompted edit: `image.generate.flux-pro-kontext-edit`
+- Face swap: `image.face-swap`
+- Inpaint/outpaint: `image.inpaint`, `image.outpaint`
+- Background removal/layer: `image.extract-layer`
+- Upscale: `image.upscale`
 
-| Task | toolId | Just need |
-|------|--------|-----------|
-| 3D from image | `3d.image-to-3d.hunyuan-pro` | `image_url` |
-| 3D from text | `3d.text-to-3d.hunyuan-pro` | `prompt` |
-| 3D (fast) | `3d.image-to-3d.hunyuan-rapid` | `image_url` |
+### Video
+- Text->video (Veo): `video.generate.veo3`
+- Image->video (Veo): `video.generate.veo3-image-to-video`
+- First/last frame: `video.generate.veo3-first-last-frame`
+- Kling text: `video.generate.kling-3-pro-text`, `video.generate.kling-3-std-text`
+- Kling image: `video.generate.kling-3-pro-image`, `video.generate.kling-3-std-image`
+- Motion transfer: `video.generate.dreamactor-v2`
 
----
+### Audio / Speech / Music
+- Voice clone TTS: `audio.tts`
+- TTS quality tiers: `audio.tts.minimax-hd`, `audio.tts.minimax-turbo`
+- Lip sync: `audio.lip-sync`
+- Transcription: `audio.transcribe`
+- Music: `music.generate`
+- Sound FX: `audio.sfx`
+- Stem separation: `audio.stem-separation`
 
-## Why Seisoai for Agents?
+### 3D
+- Image->3D standard: `3d.image-to-3d`
+- Image->3D pro: `3d.image-to-3d.hunyuan-pro`
+- Text->3D pro: `3d.text-to-3d.hunyuan-pro`
+- Fast image->3D: `3d.image-to-3d.hunyuan-rapid`
+- Mesh post-processing: `3d.smart-topology`, `3d.part-splitter`
 
-**Pay-per-job**: Each API call is billed independently. No subscriptions, no credits to manage.
+## Minimal Payload Patterns
 
-**Stateless**: No sessions, no auth tokens to refresh. Just API key or x402 signature per request.
-
-**Smart defaults**: Most tools only need `prompt`. We handle model selection, sizing, and optimization.
-
-**50+ tools**: One endpoint, unified interface. Your agent doesn't need to integrate multiple APIs.
-
-**Fast routing**: Automatic model selection based on task. Ask for "cinematic video" and we route to Kling 3.0 Pro.
-
----
-
-## Flexible Input
-
-The API normalizes your input automatically:
-
-| You send | We accept |
-|----------|-----------|
-| `"imageUrl"` | → `image_url` |
-| `"sourceImageUrl"` | → `source_image_url` |
-| `"numImages"` | → `num_images` |
-| `"generateAudio"` | → `generate_audio` |
-| `"duration": "60"` | → `60` (number) |
-| `"duration": 60` | → `"60s"` (string, for video) |
-
-**camelCase or snake_case** — both work.  
-**Strings or numbers** — we coerce to the right type.  
-**Missing defaults** — we apply them from the schema.
-
----
-
-## Common Options
-
-**Image:** `image_size` (square, landscape_16_9, portrait_16_9), `num_images` (1-4)
-
-**Video:** `duration` (4s, 6s, 8s, 10s), `generate_audio` (true/false)
-
-**Music:** `duration` (10-180 seconds)
-
-**3D:** `format` (glb, obj, fbx)
-
----
-
-## Response
-
+Text->image:
 ```json
-{
-  "success": true,
-  "result": {
-    "images": [{"url": "https://..."}]
-  }
-}
+{"prompt":"..."}
 ```
 
-- Images: `result.images[0].url`
-- Video: `result.video.url`
-- Audio/Music: `result.audio_file.url`
-- 3D: `result.model_mesh.url`
-
----
-
-## Auth Options
-
-**API Key** (easiest): Get at `https://seisoai.com/settings/api-keys`, add header `X-API-Key: sk_live_...`
-
-**x402** (agentic): No key needed. First call returns 402 with payment details, sign USDC on Base, retry with signature. Perfect for autonomous agents with wallets.
-
----
-
-## Pricing (Pay-per-job)
-
-| Category | Cost |
-|----------|------|
-| Image (standard) | ~$0.03-0.05 |
-| Image (premium) | ~$0.04-0.065 |
-| Video (per second) | ~$0.10-0.20 |
-| Music (per minute) | ~$0.02 |
-| TTS | ~$0.02-0.04 |
-| 3D | ~$0.04-0.15 |
-
-All prices include 30% markup over raw API costs. x402 payments are in USDC on Base.
-
----
-
-## Errors
-
-| Code | Meaning |
-|------|---------|
-| 400 | Missing required field (usually just `prompt`) |
-| 402 | Add API key or sign payment |
-| 500 | Retry |
-
----
-
-## Discovery
-
-```
-GET /api/gateway/tools
+Image edit:
+```json
+{"prompt":"...","image_url":"https://..."}
 ```
 
-Returns all 50+ tools with JSON schemas. For agents, use this to discover available capabilities dynamically.
+Text->video:
+```json
+{"prompt":"...","duration":"6s"}
+```
+
+DreamActor motion transfer:
+```json
+{"source_image_url":"https://...","driving_video_url":"https://..."}
+```
+
+Voice clone TTS:
+```json
+{"text":"...","audio_url":"https://..."}
+```
+
+3D image->mesh:
+```json
+{"image_url":"https://...","output_format":"glb"}
+```
+
+## Queue Handling Contract
+
+If `executionMode` is `queue`, response includes job metadata. Use:
+
+1. `statusUrl` until completed/failed.
+2. `resultUrl` when completed.
+
+Treat queue submit success as billable success (x402 settlement/API-key credit deduction already handled server-side).
+
+## Error Policy
+
+- `400`: Schema/input mismatch. Re-fetch tool schema and correct fields.
+- `402`: Missing/invalid payment or insufficient API key credits.
+- `404`: Tool/agent not found. Refresh registry.
+- `503`: Tool disabled. Select fallback in same category.
+- `500`: Retry with backoff; then switch model/tool.
+
+## Reliability Rules for Agents
+
+1. Always discover live tools before planning multi-step flows.
+2. Use exact schema from `GET /tools/{toolId}` for required fields.
+3. Keep one tool call per request; chain in your agent.
+4. Prefer explicit model/tool IDs over natural-language routing assumptions.
+5. For retries, do not reuse stale x402 signatures.
+6. Treat `/api/gateway/agent/*` as privileged routes and apply the mandatory safety controls above.
+
+## Self-Maintenance
+
+When this file is updated:
+- Keep IDs aligned with `backend/services/toolRegistry.ts`.
+- Update `last_synced` and `version`.
+- Keep examples minimal and executable.
+
+## Changelog
+
+- [2026-02-09] v1.1.1 - Added mandatory safety controls for agent-scoped endpoints (deny-by-default, agent/tool scoping, anti-recursion, and audit requirements).
+- [2026-02-09] v1.1.0 - Rewrote for agent discovery-first flow, corrected stale tool IDs/params, tightened auth/x402 guidance, and added queue/error reliability policy.
+- [2026-02-08] v1.0.0 - Initial self-improvement protocol added.

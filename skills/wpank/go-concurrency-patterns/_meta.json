@@ -1,0 +1,11 @@
+{
+  "owner": "wpank",
+  "slug": "go-concurrency-patterns",
+  "displayName": "Go Concurrency Patterns",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1770725725807,
+    "commit": null
+  },
+  "history": []
+}

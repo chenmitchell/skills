@@ -101,3 +101,9 @@ On each heartbeat:
 ## 다른 국가/대회 적용
 
 `events.json`의 `country`, `flag`, `links`, `events`를 수정하여 다른 국가나 대회에 적용 가능.
+
+## 문의 / Feedback
+
+버그 리포트, 기능 요청, 피드백은 아래로 보내주세요.
+- Email: contact@garibong.dev
+- Developer: Garibong Labs (가리봉랩스)

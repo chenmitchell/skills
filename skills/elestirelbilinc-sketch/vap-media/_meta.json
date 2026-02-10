@@ -3,11 +3,16 @@
   "slug": "vap-media",
   "displayName": "AI media generation API - Flux2pro, Veo3.1, Suno Ai",
   "latest": {
-    "version": "1.0.7",
-    "publishedAt": 1770677134187,
-    "commit": "https://github.com/openclaw/skills/commit/0606134f880ec1e6613bfc69d382c9201e760e09"
+    "version": "1.0.10",
+    "publishedAt": 1770748406604,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.7",
+      "publishedAt": 1770677134187,
+      "commit": "https://github.com/openclaw/skills/commit/0606134f880ec1e6613bfc69d382c9201e760e09"
+    },
     {
       "version": "1.0.5",
       "publishedAt": 1770463902193,

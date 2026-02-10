@@ -1,0 +1,14 @@
+{
+  "name": "nano-banana-pro",
+  "version": "1.0.1",
+  "description": "Generate or edit images via Gemini 3 Pro Image (Nano Banana Pro).",
+  "main": "scripts/generate_image.py",
+  "keywords": [
+    "openclaw",
+    "gemini",
+    "image",
+    "ai"
+  ],
+  "author": "OpenClaw",
+  "license": "MIT"
+}

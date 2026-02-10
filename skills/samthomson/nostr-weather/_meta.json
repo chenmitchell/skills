@@ -1,0 +1,11 @@
+{
+  "owner": "samthomson",
+  "slug": "nostr-weather",
+  "displayName": "Nostr Weather",
+  "latest": {
+    "version": "1.0.2",
+    "publishedAt": 1770639971340,
+    "commit": null
+  },
+  "history": []
+}

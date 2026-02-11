@@ -1,0 +1,11 @@
+{
+  "owner": "charpup",
+  "slug": "task-workflow-v3",
+  "displayName": "Task Workflow V3",
+  "latest": {
+    "version": "3.0.0",
+    "publishedAt": 1770796455981,
+    "commit": null
+  },
+  "history": []
+}

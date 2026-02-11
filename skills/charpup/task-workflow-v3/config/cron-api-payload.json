@@ -1,0 +1,14 @@
+[
+  {
+    "name": "task-workflow-daily-init",
+    "schedule": "0 0 * * *",
+    "command": "python -m task_workflow_v3.cli init-daily",
+    "enabled": true
+  },
+  {
+    "name": "task-workflow-cleanup",
+    "schedule": "0 1 * * *",
+    "command": "python -m task_workflow_v3.cli cleanup-old-files --days 30",
+    "enabled": true
+  }
+]

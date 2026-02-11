@@ -1,0 +1,15 @@
+cron_jobs:
+- command: python -m task_workflow_v3.cli init-daily
+  description: Initialize daily task workflow file
+  enabled: true
+  name: task-workflow-daily-init
+  schedule: 0 0 * * *
+- command: python -m task_workflow_v3.cli cleanup-old-files --days 30
+  description: Clean up old task files older than 30 days
+  enabled: true
+  name: task-workflow-cleanup
+  schedule: 0 1 * * *
+settings:
+  auto_migrate: true
+  retention_days: 30
+  timezone: Asia/Shanghai

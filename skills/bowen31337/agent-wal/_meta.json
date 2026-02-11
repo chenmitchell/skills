@@ -1,0 +1,11 @@
+{
+  "owner": "bowen31337",
+  "slug": "agent-wal",
+  "displayName": "Agent WAL",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1770791402222,
+    "commit": null
+  },
+  "history": []
+}

@@ -1,0 +1,14 @@
+{
+  "name": "log-archiver",
+  "version": "1.0.0",
+  "description": "Automated log rotation and archiving for OpenClaw",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "fs-extra": "^11.1.0",
+    "minimist": "^1.2.8",
+    "glob": "^10.3.10"
+  }
+}

@@ -3,9 +3,15 @@
   "slug": "meta-tags-optimizer",
   "displayName": "Meta Tags Optimizer",
   "latest": {
-    "version": "0.1.0",
-    "publishedAt": 1770559394903,
-    "commit": "https://github.com/openclaw/skills/commit/bd404162a80ceae5002aa6962f2c1dc355b8597f"
+    "version": "0.1.1",
+    "publishedAt": 1770739304818,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.0",
+      "publishedAt": 1770559394903,
+      "commit": "https://github.com/openclaw/skills/commit/bd404162a80ceae5002aa6962f2c1dc355b8597f"
+    }
+  ]
 }

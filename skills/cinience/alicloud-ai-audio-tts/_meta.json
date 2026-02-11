@@ -1,0 +1,11 @@
+{
+  "owner": "cinience",
+  "slug": "alicloud-ai-audio-tts",
+  "displayName": "Alicloud Ai Audio Tts",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1770768394297,
+    "commit": null
+  },
+  "history": []
+}

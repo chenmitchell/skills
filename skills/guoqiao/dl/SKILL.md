@@ -1,7 +1,6 @@
 ---
 name: dl
 description: Download Video/Music from YouTube/Bilibili/X/etc.
-version: 0.1.0
 author: guoqiao
 metadata: {"openclaw":{"always":true,"emoji":"🦞","homepage":"https://clawhub.ai/guoqiao/dl","os":["darwin","linux","win32"],"requires":{"bins":["uv"]}}}
 triggers:
@@ -57,7 +56,10 @@ The script auto-detects Video vs Music and Single vs Playlist.
 
 ## Setup (User)
 
-To enable TV playback:
+This skill will be much more useful if you setup a media server on same machine to share the downloaded media in your LAN:
+
 1. Install a DLNA/UPnP Media Server (Universal Media Server, miniDLNA, Jellyfin).
 2. Share `~/Music` and `~/Movies` (or `~/Videos`) folders.
-3. Downloaded media will appear automatically on your TV.
+3. Downloaded media will appear automatically on your TV, with apps support DLNA/UPnP, such as VLC.
+
+See [example script](https://github.com/guoqiao/skills/blob/main/dl/ums/ums_install.sh) to setup Universal Media Server on Mac.

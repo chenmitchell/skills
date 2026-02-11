@@ -6,18 +6,6 @@
 # ]
 # ///
 
-"""Smart Media Downloader.
-
-Tips:
-- `%(title).240B`: limite filename to 240 chars in output template, to avoid `file name too long` errors.
-- `--max-filesize=2000M`: limit single file max size to 2G, to avoid huge file download.
-- `--max-downloads=30`: limit max playlist item to 30, to avoid huage list download.
-- `--no-playlist`: avoid downloading playlist unexpectedly for single item url like `https://www.youtube.com/watch?v=UVCa8...&list=PL...`
-- macOS defaults `~/Movies` and `~/Music` are used here.
-- `uvx yt-dlp@latest` will ensure `yt-dlp` is always up to date.
-- `yt-dlp` will be blocked quickly if the host machine is in Cloud/DataCenter, use a residential IP if you can.
-"""
-
 import argparse
 import json
 import os
@@ -144,9 +132,9 @@ def probe(args) -> DownloadPlan:
 
     kind = detect_kind(info, url)
     if kind is MediaKind.MUSIC:
-        target_dir = args.music_dir
+        target_dir = MUSIC_DIR
     else:
-        target_dir = args.video_dir
+        target_dir = VIDEO_DIR
     return DownloadPlan(
         id=info.get("id"),
         url=info.get("webpage_url", url),
@@ -157,7 +145,7 @@ def probe(args) -> DownloadPlan:
     )
 
 
-def build_options(plan: DownloadPlan) -> dict[str, Any]:
+def build_options(plan: DownloadPlan, verbose: bool = False) -> dict[str, Any]:
     outtmpl = (
         "%(playlist_title)s/%(title).240B.%(ext)s"
         if plan.is_playlist
@@ -198,6 +186,12 @@ def build_options(plan: DownloadPlan) -> dict[str, Any]:
     if opts["max_downloads"] is None:
         opts.pop("max_downloads")
 
+    if verbose:
+        opts["verbose"] = True
+    else:
+        opts["quiet"] = True
+        opts["no_warnings"] = True
+
     return opts
 
 
@@ -215,9 +209,8 @@ def print_plan(plan: DownloadPlan) -> None:
     print("\n".join(lines))
 
 
-def download(plan: DownloadPlan) -> None:
-    opts = build_options(plan)
-    print_plan(plan)
+def download(plan: DownloadPlan, verbose: bool = False) -> None:
+    opts = build_options(plan, verbose=verbose)
     with yt_dlp.YoutubeDL(opts) as ydl:
         ydl.download([plan.url])
 
@@ -236,32 +229,6 @@ def cli():
         "-n", "--dry-run", action="store_true",
         help="Probe and print the plan without downloading",
     )
-    parser.add_argument(
-        "-m", "--music", action="store_true",
-        help="Download best quality audio from url",
-    )
-    parser.add_argument(
-        "-a", "--audio", action="store_true",
-        help="Download decent quality audio from url",
-    )
-    parser.add_argument(
-        "-s", "--subtitle", action="store_true",
-        help="Download subtitle from url",
-    )
-    parser.add_argument(
-        "-f", "--format",
-        help="yt-dlp format string",
-    )
-    parser.add_argument(
-        "-M", "--music_dir",
-        default=MUSIC_DIR,
-        help="Music directory",
-    )
-    parser.add_argument(
-        "-V", "--video_dir",
-        default=VIDEO_DIR,
-        help="Video directory",
-    )
     return parser.parse_args()
 
 
@@ -274,7 +241,7 @@ def main() -> None:
         return
 
     try:
-        download(plan)
+        download(plan, verbose=args.verbose)
     except yt_dlp.utils.DownloadError as exc:  # type: ignore[attr-defined]
         raise SystemExit(str(exc)) from exc
 

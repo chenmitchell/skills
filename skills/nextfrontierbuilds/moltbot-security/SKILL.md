@@ -1,9 +1,9 @@
 ---
-name: moltbot, openclaw-security
-description: Security hardening guide for AI agents (OpenClaw/Moltbot/OpenClaw). Lock down gateway, fix permissions, set up auth. Based on real vulnerability research.
-version: 1.0.1
+name: moltbot-security
+description: Security hardening for AI agents - Moltbot, OpenClaw, Cursor, Claude. Lock down gateway, fix permissions, auth, firewalls. Essential for vibe-coding setups.
+version: 1.0.3
 author: NextFrontierBuilds
-keywords: moltbot, openclaw, openclaw, security, hardening, gateway, firewall, tailscale, ssh, authentication, ai-agent, ai-coding, claude, cursor, devops, infosec, vibe-coding
+keywords: [moltbot, openclaw, security, hardening, gateway, firewall, tailscale, ssh, authentication, ai-agent, ai-coding, claude, cursor, copilot, github-copilot, chatgpt, devops, infosec, vibe-coding, ai-tools, developer-tools, devtools, typescript, automation, llm]
 ---
 
 # Moltbot Security Guide

@@ -3,11 +3,16 @@
   "slug": "moltbot-security",
   "displayName": "Moltbot Security",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1770220743140,
-    "commit": "https://github.com/clawdbot/skills/commit/04cd06392a39161db4b1a69ce23f581965bef8ba"
+    "version": "1.0.3",
+    "publishedAt": 1770799033611,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1770220743140,
+      "commit": "https://github.com/clawdbot/skills/commit/04cd06392a39161db4b1a69ce23f581965bef8ba"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1769626340579,

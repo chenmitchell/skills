@@ -1,11 +1,10 @@
 {
   "name": "moltbot-security",
-  "version": "1.0.2",
-  "description": "Security hardening guide for Moltbot/OpenClaw. Lock down gateway, fix permissions, set up auth, configure firewalls. Based on real vulnerability research.",
+  "version": "1.0.3",
+  "description": "Security hardening guide for AI agents - Moltbot, OpenClaw, Cursor, Claude. Lock down gateway, fix permissions, auth, firewalls. Essential for vibe-coding setups.",
   "main": "SKILL.md",
   "keywords": [
     "moltbot",
-    "openclaw",
     "openclaw",
     "security",
     "hardening",
@@ -16,7 +15,18 @@
     "authentication",
     "ai-agent",
     "devops",
-    "infosec"
+    "infosec",
+    "cursor",
+    "copilot",
+    "github-copilot",
+    "chatgpt",
+    "vibe-coding",
+    "ai-tools",
+    "developer-tools",
+    "devtools",
+    "typescript",
+    "automation",
+    "llm"
   ],
   "author": "tytaninc7",
   "license": "MIT",

@@ -3,11 +3,16 @@
   "slug": "ceorater",
   "displayName": "CEORater",
   "latest": {
-    "version": "1.0.4",
-    "publishedAt": 1770768241348,
-    "commit": "https://github.com/openclaw/skills/commit/a32abb6c1ff3fdeec6138ad7b17a9bd6d21f83e4"
+    "version": "1.0.5",
+    "publishedAt": 1770771820369,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.4",
+      "publishedAt": 1770768241348,
+      "commit": "https://github.com/openclaw/skills/commit/a32abb6c1ff3fdeec6138ad7b17a9bd6d21f83e4"
+    },
     {
       "version": "1.0.3",
       "publishedAt": 1770703533072,

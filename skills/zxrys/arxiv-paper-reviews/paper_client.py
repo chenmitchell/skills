@@ -7,6 +7,8 @@ arXiv Paper Reviews - 简易命令行客户端
     python paper_client.py show <paper_key>
     python paper_client.py comments <paper_key>
     python paper_client.py comment <paper_key> "这是一篇好论文"
+    python paper_client.py search --query "transformer" --limit 10
+    python paper_client.py import --url "https://arxiv.org/abs/2602.09012"
 """
 
 import argparse
@@ -40,7 +42,7 @@ def cmd_list(args):
     config = load_config()
     url = f"{config['apiBaseUrl']}/v1/papers"
 
-    params = {"limit": args.limit}
+    params = {"{"limit": args.limit}
     if args.date:
         params["date"] = args.date
     if args.interest:
@@ -166,6 +168,63 @@ def cmd_comment(args):
     print(f"时间: {result['created_at']}")
 
 
+def cmd_search(args):
+    """搜索论文"""
+    config = load_config()
+    url = f"{config['apiBaseUrl']}/public/papers/search"
+
+    params = {
+        "q": args.query,
+        "limit": args.limit
+    }
+
+    response = requests.get(url, params=params)
+    if response.status_code != 200:
+        print(f"错误: {response.status_code} - {response.text}")
+        sys.exit(1)
+
+    result = response.json()
+
+    if not result.get('papers'):
+        print("没有找到论文")
+        return
+
+    print(f"搜索关键词: {result['query']}")
+    print(f"共找到 {result['total']} 篇论文:\n")
+
+    for i, paper in enumerate(result['papers'], 1):
+        print(f"{i}. {paper['title']}")
+        print(f"   论文ID: {paper['paper_key']}")
+        print(f"   分类: {paper['categories']}")
+        print(f"   作者: {paper['authors'][:80]}{'...' if len(paper['authors']) > 80 else ''}")
+        print(f"   摘要: {paper['abstract'][:150]}{'...' if len(paper['abstract']) > 150 else ''}")
+        print(f"   提交日期: {paper['first_submitted_date']}")
+        print(f"   公布日期: {paper['first_announced_date']}")
+        print()
+
+
+def cmd_import(args):
+    """导入论文"""
+    config = load_config()
+    url = f"{config['apiBaseUrl']}/public/papers/import"
+
+    params = {
+        "arxiv_url": args.url
+    }
+
+    response = requests.post(url, params=params)
+    if response.status_code != 200:
+        print(f"错误: {response.status_code} - {response.text}")
+        sys.exit(1)
+
+    result = response.json()
+    print("论文导入成功!")
+    print(f"状态: {result['status']}")
+    print(f"消息: {result['message']}")
+    print(f"论文ID: {result['paper']['paper_key']}")
+    print(f"标题: {result['paper']['title']}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="arXiv Paper Reviews 客户端",
@@ -183,6 +242,12 @@ def main():
 
   # 添加评论
   python paper_client.py comment 4711d67c242a5ecba2751e6b "这篇论文很有价值"
+
+  # 搜索论文
+  python paper_client.py search --query "transformer" --limit 10
+
+  # 导入论文
+  python paper_client.py import --url "https://arxiv.org/abs/2602.09012"
         """
     )
 
@@ -215,6 +280,17 @@ def main():
     comment_parser.add_argument('content', help='评论内容')
     comment_parser.add_argument('--author-name', help='作者名称')
     comment_parser.set_defaults(func=cmd_comment)
+
+    # search 命令
+    search_parser = subparsers.add_parser('search', help='搜索论文')
+    search_parser.add_argument('--query', required=True, help='搜索关键词')
+    search_parser.add_argument('--limit', type=int, default=20, help='返回数量限制 (1-50)')
+    search_parser.set_defaults(func=cmd_search)
+
+    # import 命令
+    import_parser = subparsers.add_parser('import', help='导入论文')
+    import_parser.add_argument('--url', required=True, help='arXiv 论文链接')
+    import_parser.set_defaults(func=cmd_import)
 
     args = parser.parse_args()
 

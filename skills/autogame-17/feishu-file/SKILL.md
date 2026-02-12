@@ -2,6 +2,11 @@
 
 Manage file uploads and downloads via Feishu API.
 
+## Prerequisites
+
+- Install `feishu-common` first.
+- This skill depends on `../feishu-common/index.js` for token and API auth.
+
 ## Commands
 
 ### Send File

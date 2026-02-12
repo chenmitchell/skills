@@ -6,13 +6,13 @@ const { pipeline } = require('stream/promises');
 const { Readable } = require('stream');
 
 // Import robust shared client (Deduplication & Reliability)
-// Uses ../feishu-post/utils/feishu-client.js
+// Preferred dependency: feishu-common
 let getToken;
 try {
-    const client = require('../feishu-post/utils/feishu-client.js');
+    const client = require('../feishu-common/index.js');
     getToken = client.getToken;
 } catch (e) {
-    console.error('❌ Dependency Missing: ../feishu-post/utils/feishu-client.js');
+    console.error('Dependency Missing: feishu-common (../feishu-common/index.js)');
     process.exit(1);
 }
 

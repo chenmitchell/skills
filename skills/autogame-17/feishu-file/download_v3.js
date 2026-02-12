@@ -7,7 +7,7 @@ const { finished } = require('stream/promises');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 // Optimization: Use shared client (Cycle #0060)
-const { getToken, fetchWithRetry } = require('../common/feishu-client.js');
+const { getToken, fetchWithRetry } = require('../feishu-common/index.js');
 
 async function downloadFile(fileKey, outputPath, messageId) {
     const token = await getToken();

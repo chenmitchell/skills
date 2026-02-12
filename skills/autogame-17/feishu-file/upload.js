@@ -32,7 +32,7 @@ async function main() {
         // uploadFile signature: async function uploadFile(token, filePath)
         
         // We need to get the token here since uploadFile expects it.
-        const { getToken } = require('../common/feishu-client.js');
+        const { getToken } = require('../feishu-common/index.js');
         const token = await getToken();
 
         const fileKey = await uploadFile(token, filePath);

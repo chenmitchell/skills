@@ -2,10 +2,10 @@
 const fs = require('fs');
 const path = require('path');
 const { program } = require('commander');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
 
 // Optimization: Use shared client and native FormData (Cycle #0061)
-const { getToken, fetchWithRetry } = require('../common/feishu-client.js');
+const { getToken, fetchWithRetry } = require('../feishu-common/index.js');
 
 async function uploadFile(token, filePath) {
     const fileName = path.basename(filePath);

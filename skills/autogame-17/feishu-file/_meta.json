@@ -3,11 +3,16 @@
   "slug": "feishu-file",
   "displayName": "Feishu File",
   "latest": {
-    "version": "1.0.10",
-    "publishedAt": 1770791655058,
-    "commit": "https://github.com/openclaw/skills/commit/b4901ab6dba96f98e825b2390ba4f2f5bd17f941"
+    "version": "1.0.11",
+    "publishedAt": 1770892452816,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.10",
+      "publishedAt": 1770791655058,
+      "commit": "https://github.com/openclaw/skills/commit/b4901ab6dba96f98e825b2390ba4f2f5bd17f941"
+    },
     {
       "version": "1.0.8",
       "publishedAt": 1770561346501,

@@ -1,388 +1,326 @@
 ---
-name: aluvia
-description: Proxy any HTTP request or browser session through Aluvia's premium mobile IPs. Use when websites return 403s, CAPTCHAs, or rate limits. Zero dependencies — works immediately with curl, Python, or any browser.
-metadata:
-  {
-    "openclaw":
-      {
-        "requires": { "env": ["ALUVIA_API_KEY"] },
-        "primaryEnv": "ALUVIA_API_KEY",
-        "emoji": "🌐",
-      },
-  }
+name: Aluvia Browser Proxy
+description: Launch a proxy-protected headless browser session using Aluvia SDK. Avoid 403 blocks, CAPTCHAs, and rate limits by routing browser traffic through residential proxies. Provides a CDP URL for integration with browser automation tools.
+read_when:
+  - Browsing websites that block datacenter IPs
+  - Avoiding CAPTCHAs and rate limits
+  - Scraping or extracting data from protected websites
+  - Running browser automation through residential proxies
+  - Need a CDP URL for browser tools
+metadata: { 'clawdbot': { 'emoji': '🛡️', 'requires': { 'bins': ['node', 'npx'] } } }
+allowed-tools: Bash(aluvia-sdk:*)
 ---
 
-# Aluvia — Mobile IP Proxy
+# Aluvia Browser Proxy
 
-Aluvia gives you trusted mobile IP addresses from real US carrier networks. Websites see a legitimate mobile user, not a datacenter bot. Use it to bypass 403 blocks, CAPTCHAs, and rate limits.
+## What it does
 
-API base: `https://api.aluvia.io/v1`
-All requests require: `Authorization: Bearer $ALUVIA_API_KEY`
+Aluvia SDK launches a headless Chromium browser routed through residential proxies, making your browser traffic appear as a real user. It returns a CDP (Chrome DevTools Protocol) URL that any browser automation tool can connect to.
 
-## When to Use
-
-- A website returns **403 Forbidden**, **429 Too Many Requests**, or a CAPTCHA challenge
-- You need to scrape or browse a site that blocks datacenter/cloud IPs
-- You need a **stable IP** across multiple requests (sticky sessions)
-- You need an IP from a **specific US state** (geo-targeting)
-
-Do NOT proxy traffic that works fine without it — direct connections are faster and free.
-
-## Quick Start
-
-Get a proxy URL in one step:
+## Quick start
 
 ```bash
-python <<'EOF'
-import urllib.request, os, json
+export ALUVIA_API_KEY=your_api_key
+aluvia-sdk open https://example.com        # Start proxied browser, get CDP URL
+aluvia-sdk close                            # Stop the session
+```
 
-data = json.dumps({"description": "openclaw", "rules": ["*"]}).encode()
-req = urllib.request.Request("https://api.aluvia.io/v1/account/connections", data=data, method="POST")
-req.add_header("Authorization", f"Bearer {os.environ['ALUVIA_API_KEY']}")
-req.add_header("Content-Type", "application/json")
-result = json.load(urllib.request.urlopen(req))
-conn = result["data"]
-print(json.dumps({
-    "connection_id": conn["connection_id"],
-    "proxy_url": conn["proxy_urls"]["url"],
-    "username": conn["proxy_username"],
-    "password": conn["proxy_password"],
-    "server": f"{conn['proxy_urls']['raw']['protocol']}://{conn['proxy_urls']['raw']['host']}:{conn['proxy_urls']['raw']['port']}"
-}, indent=2))
-EOF
+## Core workflow
+
+1. Set `ALUVIA_API_KEY` environment variable
+2. `aluvia-sdk open <url>` — launches a headless proxied browser, returns JSON with `cdpUrl`
+3. Parse the `cdpUrl` from the JSON output and pass it to browser tools (agent-browser, OpenClaw, etc.)
+4. `aluvia-sdk close` — stops the session when done
+
+## Installation
+
+```bash
+npm install -g @aluvia/sdk
+```
+
+Or use directly with npx (no install needed):
+
+```bash
+npx aluvia-sdk help
+```
+
+## API Key Setup
+
+1. Sign up at [Aluvia Dashboard](https://www.aluvia.io/)
+2. Create an API key from the dashboard
+3. Set the environment variable:
+
+```bash
+export ALUVIA_API_KEY=your_api_key_here
+```
+
+The CLI reads the API key from the `ALUVIA_API_KEY` environment variable. It must be set before running any command.
+
+## Commands
+
+### Open a browser session
+
+```bash
+aluvia-sdk open <url>
+```
+
+Options:
+
+- `--connection-id <id>` — Use an existing account connection
+- `--headed` — Show the browser window (default is headless)
+
+Example:
+
+```bash
+aluvia-sdk open https://example.com
+```
+
+Output (JSON):
+
+```json
+{
+  "status": "ok",
+  "url": "https://example.com",
+  "cdpUrl": "http://127.0.0.1:45651",
+  "connectionId": 3449,
+  "pid": 113282
+}
+```
+
+### Close the browser session
+
+```bash
+aluvia-sdk close
+```
+
+Output (JSON):
+
+```json
+{
+  "status": "ok",
+  "message": "Browser session closed.",
+  "url": "https://example.com",
+  "cdpUrl": "http://127.0.0.1:45651",
+  "connectionId": 3449,
+  "pid": 113282
+}
+```
+
+### Help
+
+```bash
+aluvia-sdk help
+```
+
+Output (plain text):
+
+```
+Usage: aluvia-sdk <command> [options]
+
+Commands:
+  open <url>    Start a browser session
+  close         Stop the running browser session
+  help          Show this help message
+
+Options for 'open':
+  --connection-id <id>   Use an existing account connection
+  --headed               Show the browser window (default: headless)
+
+Environment:
+  ALUVIA_API_KEY         Your Aluvia API key (required)
+```
+
+## Response Structure
+
+All operational commands (`open`, `close`) return a single JSON line to stdout.
+
+| Field          | Type              | Description                               |
+| -------------- | ----------------- | ----------------------------------------- |
+| `status`       | `"ok" \| "error"` | Whether the command succeeded             |
+| `url`          | `string \| null`  | The URL the browser was opened with       |
+| `cdpUrl`       | `string \| null`  | CDP endpoint to connect external tools    |
+| `connectionId` | `number \| null`  | Aluvia account connection ID              |
+| `pid`          | `number \| null`  | Process ID of the background daemon       |
+| `error`        | `string`          | Error message (only when status is error) |
+| `message`      | `string`          | Success message (only on close)           |
+
+Parse the output:
+
+```bash
+CDP_URL=$(aluvia-sdk open https://example.com | jq -r '.cdpUrl')
+```
+
+Only one session can run at a time. If `aluvia-sdk open` is called while a session is already running, it returns:
+
+```json
+{
+  "status": "error",
+  "error": "A browser session is already running.",
+  "url": "https://example.com",
+  "cdpUrl": "http://127.0.0.1:45651",
+  "connectionId": 3449,
+  "pid": 113282
+}
+```
+
+## Create a Connection via API (recommended)
+
+Create a reusable connection to avoid creating a new one on every `open` call. Reusing a connection is recommended — it maintains the same proxy allocation and rules across sessions.
+
+```bash
+# Create a new connection
+curl -s -X POST https://api.aluvia.io/v1/account/connections \
+  -H "Authorization: Bearer $ALUVIA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "openclaw agent"
+  }'
 ```
 
 Response:
 
 ```json
 {
-  "connection_id": 1328,
-  "proxy_url": "http://BeKprkcj:cyLTNMaJ@gateway.aluvia.io:8080",
-  "username": "BeKprkcj",
-  "password": "cyLTNMaJ",
-  "server": "http://gateway.aluvia.io:8080"
+  "data": {
+    "connection_id": "3449",
+    "proxy_username": "...",
+    "proxy_password": "..."
+  }
 }
 ```
 
-**Save the `connection_id` and `proxy_url` — reuse them for all subsequent requests.** Only create a new connection if you need separate credentials or independent session/geo settings.
-
-## Proxy HTTP Requests
-
-### curl
+Then use the `connection_id` when opening a browser session:
 
 ```bash
-curl -x "$PROXY_URL" https://httpbin.org/ip
+aluvia-sdk open https://target-site.com --connection-id 3449
 ```
 
-Or with explicit auth:
+Other useful API calls:
 
 ```bash
-curl --proxy "http://gateway.aluvia.io:8080" \
-     --proxy-user "USERNAME:PASSWORD" \
-     https://httpbin.org/ip
+# List existing connections
+curl -s https://api.aluvia.io/v1/account/connections \
+  -H "Authorization: Bearer $ALUVIA_API_KEY"
+
+# Update connection
+curl -s -X PATCH https://api.aluvia.io/v1/account/connections/3449 \
+  -H "Authorization: Bearer $ALUVIA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"description": "openclaw agent (updated)"}'
+
+# Delete a connection
+curl -s -X DELETE https://api.aluvia.io/v1/account/connections/3449 \
+  -H "Authorization: Bearer $ALUVIA_API_KEY"
 ```
 
-### Python (stdlib)
+## Using the CDP URL with agent-browser
+
+Start an Aluvia session, then pass the CDP URL to agent-browser:
 
 ```bash
-python <<'EOF'
-import urllib.request, json
+# Start Aluvia proxy browser
+CDP_URL=$(aluvia-sdk open https://example.com | jq -r '.cdpUrl')
 
-proxy_url = "http://USERNAME:PASSWORD@gateway.aluvia.io:8080"
-proxy_handler = urllib.request.ProxyHandler({"http": proxy_url, "https": proxy_url})
-opener = urllib.request.build_opener(proxy_handler)
+# Connect agent-browser via CDP
+agent-browser --cdp $CDP_URL snapshot -i
+agent-browser --cdp $CDP_URL click @e1
+agent-browser --cdp $CDP_URL fill @e2 "search query"
 
-response = opener.open("https://httpbin.org/ip")
-print(json.loads(response.read().decode()))
-EOF
+# When done
+aluvia-sdk close
 ```
 
-### Python (requests)
+This routes all of agent-browser's traffic through Aluvia's residential proxies, avoiding blocks and CAPTCHAs.
 
-```python
-import requests
+## Using the CDP URL with OpenClaw Browser Tool
 
-proxies = {"http": proxy_url, "https": proxy_url}
-response = requests.get("https://httpbin.org/ip", proxies=proxies)
-print(response.json())
-```
-
-## Proxy Browser Traffic
-
-When you need full browser navigation through Aluvia (not just HTTP requests), launch a browser with proxy settings.
-
-### Playwright
-
-```python
-from playwright.async_api import async_playwright
-
-async with async_playwright() as p:
-    browser = await p.chromium.launch(proxy={
-        "server": "http://gateway.aluvia.io:8080",
-        "username": "USERNAME",
-        "password": "PASSWORD"
-    })
-    page = await browser.new_page()
-    await page.goto("https://example.com")
-    content = await page.content()
-    await browser.close()
-```
-
-### Any Chromium Browser (CLI)
-
-For headless Chromium without Playwright, set the proxy and handle auth via environment:
+Start an Aluvia session and configure OpenClaw to use the CDP URL as a remote profile.
 
 ```bash
-chromium --proxy-server="http://gateway.aluvia.io:8080" --headless https://example.com
+# Start Aluvia proxy browser
+CDP_URL=$(aluvia-sdk open https://example.com | jq -r '.cdpUrl')
 ```
 
-Note: CLI-launched Chromium doesn't handle proxy auth automatically. Use Playwright for authenticated proxy access, or use curl/Python for HTTP-only tasks.
+Add a remote profile in `~/.openclaw/openclaw.json`:
 
-## List Existing Connections
+```json
+{
+  "browser": {
+    "profiles": {
+      "aluvia": {
+        "cdpUrl": "http://127.0.0.1:<port>",
+        "color": "#6366F1"
+      }
+    }
+  }
+}
+```
 
-Before creating a new connection, check if one already exists:
+Replace `<port>` with the port from the `cdpUrl` output. Then use the profile:
 
 ```bash
-python <<'EOF'
-import urllib.request, os, json
-
-req = urllib.request.Request("https://api.aluvia.io/v1/account/connections")
-req.add_header("Authorization", f"Bearer {os.environ['ALUVIA_API_KEY']}")
-result = json.load(urllib.request.urlopen(req))
-for conn in result["data"]:
-    print(json.dumps({
-        "connection_id": conn["connection_id"],
-        "proxy_url": conn["proxy_urls"]["url"],
-        "rules": conn.get("rules", []),
-        "session_id": conn.get("session_id"),
-        "target_geo": conn.get("target_geo")
-    }, indent=2))
-EOF
+openclaw browser --browser-profile aluvia snapshot
+openclaw browser --browser-profile aluvia open https://example.com
 ```
 
-## Update Routing Rules
+This works the same way as [Browserless hosted remote CDP](https://docs.openclaw.ai/tools/browser#browserless-hosted-remote-cdp), but routes traffic through Aluvia's residential proxies instead.
 
-Rules control what the Aluvia gateway proxies. Update rules on an existing connection:
+The browser session is shared — the tool will see the same pages, cookies, and state as the `aluvia-sdk open` command created.
+
+## Example: Full workflow
 
 ```bash
-python <<'EOF'
-import urllib.request, os, json
+# 1. Set API key
+export ALUVIA_API_KEY=your_api_key
 
-connection_id = CONNECTION_ID  # integer
-data = json.dumps({"rules": ["example.com", "*.blocked-site.com"]}).encode()
-req = urllib.request.Request(
-    f"https://api.aluvia.io/v1/account/connections/{connection_id}",
-    data=data, method="PATCH"
-)
-req.add_header("Authorization", f"Bearer {os.environ['ALUVIA_API_KEY']}")
-req.add_header("Content-Type", "application/json")
-result = json.load(urllib.request.urlopen(req))
-print(json.dumps({"rules": result["data"]["rules"]}, indent=2))
-EOF
+# 2. Open a proxied browser session
+RESULT=$(aluvia-sdk open https://example.com)
+CDP_URL=$(echo $RESULT | jq -r '.cdpUrl')
+echo "CDP URL: $CDP_URL"
+
+# 3. Use with agent-browser or any CDP-compatible tool
+agent-browser --cdp $CDP_URL snapshot -i
+agent-browser --cdp $CDP_URL click @e1
+
+# 4. Close when done
+aluvia-sdk close
 ```
 
-### Rule Patterns
-
-| Pattern         | Matches                                         |
-| --------------- | ----------------------------------------------- |
-| `*`             | All hostnames (proxy everything)                |
-| `example.com`   | Exact match                                     |
-| `*.example.com` | All subdomains of example.com                   |
-| `google.*`      | google.com, google.co.uk, etc.                  |
-| `-example.com`  | Exclude (use with `*` to proxy all except this) |
-
-Examples:
-
-- `["*"]` — proxy all traffic
-- `["target-site.com"]` — proxy only target-site.com
-- `["*", "-safe-site.com"]` — proxy everything except safe-site.com
-
-## Set Session ID (Sticky IPs)
-
-Requests with the same session ID use the same mobile IP. Use this when a site requires consistent identity across requests.
+## Example: Reuse an existing connection
 
 ```bash
-python <<'EOF'
-import urllib.request, os, json
-
-connection_id = CONNECTION_ID
-data = json.dumps({"session_id": "my-session-1"}).encode()
-req = urllib.request.Request(
-    f"https://api.aluvia.io/v1/account/connections/{connection_id}",
-    data=data, method="PATCH"
-)
-req.add_header("Authorization", f"Bearer {os.environ['ALUVIA_API_KEY']}")
-req.add_header("Content-Type", "application/json")
-result = json.load(urllib.request.urlopen(req))
-print(json.dumps({"session_id": result["data"]["session_id"]}, indent=2))
-EOF
+# Open with a specific connection ID (reuses proxy allocation)
+aluvia-sdk open https://example.com --connection-id 3449
 ```
 
-To rotate to a fresh IP, change the session ID to any new value.
-
-## Set Geo Target
-
-Use a mobile IP from a specific US state:
+## Example: Headed mode for debugging
 
 ```bash
-python <<'EOF'
-import urllib.request, os, json
-
-connection_id = CONNECTION_ID
-data = json.dumps({"target_geo": "us_ca"}).encode()
-req = urllib.request.Request(
-    f"https://api.aluvia.io/v1/account/connections/{connection_id}",
-    data=data, method="PATCH"
-)
-req.add_header("Authorization", f"Bearer {os.environ['ALUVIA_API_KEY']}")
-req.add_header("Content-Type", "application/json")
-result = json.load(urllib.request.urlopen(req))
-print(json.dumps({"target_geo": result["data"]["target_geo"]}, indent=2))
-EOF
+# Launch with a visible browser window
+aluvia-sdk open https://example.com --headed
 ```
 
-### List Available Geos
+## Troubleshooting
 
-```bash
-python <<'EOF'
-import urllib.request, os, json
-
-req = urllib.request.Request("https://api.aluvia.io/v1/geos")
-req.add_header("Authorization", f"Bearer {os.environ['ALUVIA_API_KEY']}")
-result = json.load(urllib.request.urlopen(req))
-for geo in result["data"]:
-    print(f"{geo['code']:8s} {geo['label']}")
-EOF
-```
-
-## Check Account Balance
-
-```bash
-python <<'EOF'
-import urllib.request, os, json
-
-req = urllib.request.Request("https://api.aluvia.io/v1/account")
-req.add_header("Authorization", f"Bearer {os.environ['ALUVIA_API_KEY']}")
-result = json.load(urllib.request.urlopen(req))
-acct = result["data"]
-print(json.dumps({
-    "balance_gb": acct["balance_gb"],
-    "connection_count": acct["connection_count"]
-}, indent=2))
-EOF
-```
-
-## Check Data Usage
-
-```bash
-python <<'EOF'
-import urllib.request, os, json
-
-req = urllib.request.Request("https://api.aluvia.io/v1/account/usage")
-req.add_header("Authorization", f"Bearer {os.environ['ALUVIA_API_KEY']}")
-result = json.load(urllib.request.urlopen(req))
-print(json.dumps(result["data"], indent=2))
-EOF
-```
-
-## Smart Unblocking Workflow
-
-When you encounter a block (403, 429, CAPTCHA), follow this pattern:
-
-1. **Try the request directly first** (no proxy)
-2. **If blocked**, get or create an Aluvia connection
-3. **Retry through the proxy**
-4. **If still blocked**, rotate the IP by changing session ID
-
-```bash
-python <<'EOF'
-import urllib.request, os, json, time
-
-TARGET_URL = "https://example.com/data"
-API_KEY = os.environ["ALUVIA_API_KEY"]
-
-# Step 1: Try direct
-try:
-    req = urllib.request.Request(TARGET_URL)
-    req.add_header("User-Agent", "Mozilla/5.0")
-    response = urllib.request.urlopen(req, timeout=10)
-    print(json.dumps({"status": "direct_ok", "code": response.getcode()}))
-except urllib.error.HTTPError as e:
-    if e.code in (403, 429):
-        print(json.dumps({"status": "blocked", "code": e.code, "action": "retrying_via_aluvia"}))
-
-        # Step 2: Get or create an Aluvia connection
-        data = json.dumps({"description": "unblock", "rules": ["*"]}).encode()
-        api_req = urllib.request.Request(
-            "https://api.aluvia.io/v1/account/connections", data=data, method="POST"
-        )
-        api_req.add_header("Authorization", f"Bearer {API_KEY}")
-        api_req.add_header("Content-Type", "application/json")
-        conn = json.load(urllib.request.urlopen(api_req))["data"]
-        proxy_url = conn["proxy_urls"]["url"]
-
-        # Step 3: Retry through Aluvia
-        proxy_handler = urllib.request.ProxyHandler({"http": proxy_url, "https": proxy_url})
-        opener = urllib.request.build_opener(proxy_handler)
-        req2 = urllib.request.Request(TARGET_URL)
-        req2.add_header("User-Agent", "Mozilla/5.0")
-        response = opener.open(req2, timeout=15)
-        print(json.dumps({"status": "unblocked_via_aluvia", "code": response.getcode()}))
-    else:
-        raise
-EOF
-```
-
-## Delete Connection
-
-Clean up connections you no longer need:
-
-```bash
-python <<'EOF'
-import urllib.request, os, json
-
-connection_id = CONNECTION_ID
-req = urllib.request.Request(
-    f"https://api.aluvia.io/v1/account/connections/{connection_id}",
-    method="DELETE"
-)
-req.add_header("Authorization", f"Bearer {os.environ['ALUVIA_API_KEY']}")
-result = json.load(urllib.request.urlopen(req))
-print(json.dumps(result["data"], indent=2))
-EOF
-```
-
-## Error Handling
-
-| Code | Meaning                                        |
-| ---- | ---------------------------------------------- |
-| 401  | Invalid or missing `ALUVIA_API_KEY`            |
-| 403  | Endpoint requires account-level API token      |
-| 404  | Connection not found                           |
-| 422  | Validation error (bad rules, invalid geo code) |
-
-### Troubleshooting: Invalid API Key
-
-```bash
-echo $ALUVIA_API_KEY
-```
-
-If empty, the user needs to set it. Get the API key from [dashboard.aluvia.io](https://dashboard.aluvia.io) → API tab.
+- **"ALUVIA_API_KEY environment variable is required"** — Set `export ALUVIA_API_KEY=your_key` before running the command.
+- **"A browser session is already running"** — Run `aluvia-sdk close` first, then try again.
+- **"Browser session timed out"** — The browser took too long to start. Check the daemon log at `/tmp/aluvia-sdk/cli.log` for details.
+- **"Failed to load Playwright"** — Install Playwright: `npm install playwright` and then `npx playwright install chromium`.
+- **CDP connection refused** — Make sure the session is still running. Check with `cat /tmp/aluvia-sdk/cli.lock`.
+- **Cannot find `aluvia-sdk` command** — Use `npx aluvia-sdk` instead, or install globally with `npm install -g @aluvia/sdk`.
 
 ## Notes
 
-- **Reuse connections.** Create once, use many times. Don't create a new connection for every request.
-- **Proxy selectively.** Only proxy requests to sites that block you. Direct connections are faster and don't consume data balance.
-- **Rotate IPs** by changing the `session_id`. Each unique session ID gets a different mobile IP.
-- **Data balance** is measured in GB. Check balance before large jobs. The user can purchase more data at [aluvia.io/pricing](https://www.aluvia.io/pricing).
-- **No use case restrictions.** Unlimited data, unlimited connections.
-- **Proxy URL format:** `http://USERNAME:PASSWORD@gateway.aluvia.io:8080`
-- Mobile IPs are from real devices on Tier 1 US carriers. They have high trust scores and rarely get blocked.
+- Only one browser session can run at a time per machine.
+- The browser runs as a background daemon — closing the terminal does not stop it.
+- Always run `aluvia-sdk close` to cleanly shut down the session.
+- The CDP URL is a local endpoint (`http://127.0.0.1:<port>`) — it is only accessible from the same machine.
+- Session state (cookies, localStorage) persists for the lifetime of the session.
+- The `connectionId` can be reused across sessions with `--connection-id` to maintain the same proxy allocation.
 
-## Resources
+## Links
 
-- [Aluvia Docs](https://docs.aluvia.io/)
-- [Dashboard](https://dashboard.aluvia.io/)
-- [Pricing](https://www.aluvia.io/pricing)
-- [Python SDK](https://pypi.org/project/aluvia-sdk/) (for advanced use: local proxy with hostname routing)
-- [Node SDK](https://www.npmjs.com/package/@aluvia/sdk)
+- [Aluvia Website](https://www.aluvia.io/)
+- [Aluvia Documentation](https://docs.aluvia.io/)
+- [SDK on npm](https://www.npmjs.com/package/@aluvia/sdk)
+- [OpenClaw Browser Tool Docs](https://docs.openclaw.ai/tools/browser#browserless-hosted-remote-cdp)

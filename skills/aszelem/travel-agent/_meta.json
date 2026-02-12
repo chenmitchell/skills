@@ -3,11 +3,16 @@
   "slug": "travel-agent",
   "displayName": "Travel Agent Skill",
   "latest": {
-    "version": "2.3.1",
-    "publishedAt": 1770755972590,
-    "commit": "https://github.com/openclaw/skills/commit/50c03273221e1aff12b174ec11644011a3699a2d"
+    "version": "2.4.1",
+    "publishedAt": 1770849399612,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.3.1",
+      "publishedAt": 1770755972590,
+      "commit": "https://github.com/openclaw/skills/commit/50c03273221e1aff12b174ec11644011a3699a2d"
+    },
     {
       "version": "1.0.8",
       "publishedAt": 1769854657149,

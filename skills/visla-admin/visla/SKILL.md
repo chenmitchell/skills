@@ -6,7 +6,7 @@ argument-hint: <script|url|doc|account> [script|URL|file]
 
 # Visla Video Generation
 
-**Version: 260201-2257**
+**Version: 260211-1520**
 
 Create AI-generated videos from text scripts, web URLs, or documents (PPT/PDF) using Visla's OpenAPI.
 
@@ -139,47 +139,7 @@ The `script`, `url`, and `doc` commands execute the complete flow automatically:
 - **PowerPoint**: `.pptx`, `.ppt`
 - **PDF**: `.pdf`
 
-## Error Recovery
-
-When a command fails, enter **Autonomous Repair Mode**. The goal is to repair the bundled scripts so future runs succeed, without requiring the user to debug.
-
-Hard rules (always):
-
-- Never print or persist secrets (API key/secret).
-- Treat `https://www.visla.us/visla-api` as the only authoritative reference for API/auth/signing details.
-- Prefer continuing an existing project/clip if IDs already exist (avoid starting over).
-
-Safety constraints (cost / duplication control):
-
-- Avoid blindly retrying `create`/`export` calls. They can create duplicate projects or consume credits.
-- If you must retry a `create` or `export` call, do it at most **once** automatically. If it still fails, stop retrying and switch to repair/debug actions.
-
-Repair workflow:
-
-1. Re-run once to confirm the failure mode (do not spam retries).
-2. Classify the failure quickly:
-   - auth/credits/rate-limit -> explain clearly and ask the user to fix credentials/credits; do not “fix code”
-   - network -> surface the error; optionally retry polling/read-only calls; do not “fix code”
-   - script logic/compatibility -> proceed with repair
-3. Repair the script:
-   - Read the failing script (`scripts/visla_cli.sh` or `scripts/visla_cli.py`)
-   - Patch the minimal code necessary (signing, payloads, parsing, timeouts, error handling)
-   - Keep the CLI surface unchanged (no new required arguments; do not expose advanced knobs)
-4. Make the fix durable for the user:
-   - Before overwriting, create a timestamped backup next to the script (e.g., `visla_cli.py.bak-YYYYMMDD-HHMMSS`)
-   - Overwrite the installed script in the Skill directory (same path the agent executes from)
-   - Backup/overwrite templates:
-     - Bash:
-       - `ts=$(date +%Y%m%d-%H%M%S); cp scripts/visla_cli.py scripts/visla_cli.py.bak-$ts`
-       - `ts=$(date +%Y%m%d-%H%M%S); cp scripts/visla_cli.sh scripts/visla_cli.sh.bak-$ts`
-     - PowerShell:
-       - `$ts = Get-Date -Format "yyyyMMdd-HHmmss"; Copy-Item scripts\\visla_cli.py scripts\\visla_cli.py.bak-$ts`
-       - `$ts = Get-Date -Format "yyyyMMdd-HHmmss"; Copy-Item scripts\\visla_cli.sh scripts\\visla_cli.sh.bak-$ts`
-5. Verify:
-   - Run local no-network checks (`--help`, Python syntax check)
-   - Re-run the original command and verify it succeeds (or reaches a stable intermediate state like a known `project_uuid`)
-
 ## Output Format
 
-- **Start**: Display "Visla Skill v260131-0031" when skill begins
-- **End**: Display "Visla Skill v260131-0031 completed" when skill finishes
+- **Start**: Display "Visla Skill v260211-1520" when skill begins
+- **End**: Display "Visla Skill v260211-1520 completed" when skill finishes

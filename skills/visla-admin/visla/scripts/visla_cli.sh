@@ -5,7 +5,7 @@
 set -e
 
 BASE_URL="https://openapi.visla.us/openapi/v1"
-VERSION="260201-2257"
+VERSION="260211-1520"
 USER_AGENT="visla-skill/${VERSION}"
 
 # Tips to display during video generation
@@ -117,6 +117,8 @@ fi
 # Help function
 show_help() {
     cat << EOF
+Visla Skill v${VERSION}
+
 Visla API CLI Wrapper
 
 Usage: $(basename "$0") <command> [args]
@@ -613,7 +615,7 @@ preflight
 # All other commands need credentials
 check_credentials
 
-echo "[visla-skill v${VERSION}] Starting..."
+echo "Visla Skill v${VERSION}"
 
 ratio="16:9"
 pace="fast"
@@ -671,4 +673,4 @@ case "$command" in
         ;;
 esac
 
-echo "[visla-skill v${VERSION}] Done."
+echo "Visla Skill v${VERSION} completed"

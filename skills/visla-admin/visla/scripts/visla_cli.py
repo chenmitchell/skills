@@ -52,7 +52,7 @@ except ImportError:
     print("Install: python3 -m pip install requests")
     sys.exit(1)
 
-VERSION = "260201-2257"
+VERSION = "260211-1520"
 USER_AGENT = f"visla-skill/{VERSION}"
 
 def classify_error_code(msg: str) -> str:
@@ -521,7 +521,7 @@ class VislaAPI:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Visla API CLI")
+    parser = argparse.ArgumentParser(description=f"Visla Skill v{VERSION}")
     parser.add_argument("--key", help="API Key (or set VISLA_API_KEY env var)")
     parser.add_argument("--secret", help="API Secret (or set VISLA_API_SECRET env var)")
 
@@ -579,7 +579,7 @@ def main():
         print("  https://www.visla.us/visla-api")
         sys.exit(1)
 
-    print(f"[visla-skill v{VERSION}] Starting...")
+    print(f"Visla Skill v{VERSION}")
     api = VislaAPI(api_key, api_secret)
     # Intentionally keep the user-facing CLI minimal; use internal defaults.
     default_ratio = "16:9"
@@ -616,7 +616,7 @@ def main():
         print("Video ready!")
         if result.get("share_link"):
             print(f"View link: {result['share_link']}")
-        print(f"[visla-skill v{VERSION}] Done.")
+        print(f"Visla Skill v{VERSION} completed")
 
     elif args.command == "url":
         result = api.url_and_download(args.url, aspect_ratio=default_ratio, pace=default_pace)
@@ -626,7 +626,7 @@ def main():
         print("Video ready!")
         if result.get("share_link"):
             print(f"View link: {result['share_link']}")
-        print(f"[visla-skill v{VERSION}] Done.")
+        print(f"Visla Skill v{VERSION} completed")
 
     elif args.command == "doc":
         result = api.doc_and_download(args.file, aspect_ratio=default_ratio, pace=default_pace)
@@ -636,7 +636,7 @@ def main():
         print("Video ready!")
         if result.get("share_link"):
             print(f"View link: {result['share_link']}")
-        print(f"[visla-skill v{VERSION}] Done.")
+        print(f"Visla Skill v{VERSION} completed")
 
     elif args.command == "account":
         from datetime import datetime
@@ -670,7 +670,7 @@ def main():
         print(f"Registered: {reg_date}")
         print(f"Last Login: {login_date}")
         print(f"Credits: {credits}")
-        print(f"[visla-skill v{VERSION}] Done.")
+        print(f"Visla Skill v{VERSION} completed")
         sys.exit(0)
 
     else:

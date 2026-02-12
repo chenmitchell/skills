@@ -1,11 +1,17 @@
 {
   "owner": "meshailabs",
   "slug": "moltblock",
-  "displayName": "Moltblock — Trust Layer For AI Agents",
+  "displayName": "Skill",
   "latest": {
-    "version": "0.7.4",
-    "publishedAt": 1770860810988,
-    "commit": "https://github.com/openclaw/skills/commit/ce7bcab18efaba49c9b90ea3cde0fa27ec654622"
+    "version": "0.7.5",
+    "publishedAt": 1770917286240,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.7.4",
+      "publishedAt": 1770860810988,
+      "commit": "https://github.com/openclaw/skills/commit/ce7bcab18efaba49c9b90ea3cde0fa27ec654622"
+    }
+  ]
 }

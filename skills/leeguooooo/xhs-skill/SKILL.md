@@ -11,6 +11,12 @@ metadata: {"openclaw":{"emoji":"📌","stage":"workflow"}}
 - 所有浏览器交互（打开页面/点击/输入/上传/截图/登录/导出）全部委托 `agent-browser`。
 - 所有敏感数据（cookies、导出文件、截图）只落地在本机 `data/` 目录，不要粘贴到聊天里。
 
+执行硬约束（稳定性）：
+
+- 同一 `agent-browser` session 禁止并发操作（串行执行），否则容易触发 `os error 35` 假失败。
+- `snapshot` 的 ref 会漂移：关键动作前后必须重抓 `snapshot -i`，并用 `placeholder/role/text` 做二次定位兜底。
+- 扫码不等于登录成功；必须做后验校验（见下方 A 节“登录成功判定”）。
+
 ## 安装
 
 ```bash
@@ -52,6 +58,21 @@ mkdir -p data
 node ./bin/xhs-skill.mjs qr show --in ./data/xhs_login_qr.png
 ```
 
+OpenClaw 回传规范（强制）：
+
+- 禁止只回传文件路径（例如仅说 `data/xhs_login_qr.png`）。
+- 必须先执行 `node ./bin/xhs-skill.mjs qr show --in ./data/xhs_login_qr.png`，然后把输出的二维码文本 + ASCII 二维码直接发给用户。
+- 若会话支持图片渲染，再附上二维码截图绝对路径（或图片附件）作为补充。
+- 发完二维码后必须暂停，等待用户确认“已扫码”再继续 cookies 导出。
+
+推荐回传模板：
+
+```text
+请用小红书 App 扫这个二维码登录。
+二维码文本: <qr_text>
+<ASCII QR>
+```
+
 4. 用小红书 App 扫码完成登录后，导出 cookies 到 `data/raw_cookies.json`（不走 DevTools）：
 
 ```bash
@@ -64,6 +85,14 @@ agent-browser cookies --json > ./data/raw_cookies.json
 node ./bin/xhs-skill.mjs cookies normalize --in ./data/raw_cookies.json --out ./data/xhs_cookies.json
 node ./bin/xhs-skill.mjs cookies status --in ./data/xhs_cookies.json
 ```
+
+登录成功判定（强制）：
+
+- 必须同时满足以下 3 条才可回报“登录完成”：
+- 当前 URL 已离开 `/login`
+- 可访问创作者后台页面，且不会 401/回跳登录
+- cookies 中存在 `web_session`
+- 任一条件不满足，必须回报“登录失败/未完成”，并重试登录流程；禁止误报成功。
 
 6. （可选）生成 `Cookie:` header：
 
@@ -102,7 +131,10 @@ node ./bin/xhs-skill.mjs cookies to-header --in ./data/xhs_cookies.json
 1. 确保已登录（先完成上面的 A，或已有有效登录态）。
 2. 打开发布页面（允许路径变化）。
 3. 上传媒体（图文多图/视频文件与封面）。
-4. 填写标题/正文/话题。
+4. 填写标题/正文/话题：
+- 标题必须 `<= 20` 字（超限先裁剪或提示用户改短）
+- 正文编辑区按 `ProseMirror` 处理，不要按普通 input 假设
+- 每次点击/填写前先刷新 ref，避免 ref 漂移误操作
 5. 点击“发布/提交”前暂停，要求用户确认最终预览。
 6. 发布后记录结果页 URL；失败时截图并记录错误文案。
 
@@ -125,4 +157,3 @@ node ./bin/xhs-skill.mjs cookies to-header --in ./data/xhs_cookies.json
 - `node ./bin/xhs-skill.mjs cookies normalize --in <jsonPath> --out <outPath>`
 - `node ./bin/xhs-skill.mjs cookies status --in <cookiesJsonPath>`
 - `node ./bin/xhs-skill.mjs cookies to-header --in <cookiesJsonPath>`
-

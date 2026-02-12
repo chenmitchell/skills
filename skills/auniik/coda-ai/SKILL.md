@@ -2,7 +2,7 @@
 name: coda-ai
 description: CLI to read Coda.io documents and pages. List docs, list pages, read content in markdown/json/html.
 homepage: https://www.npmjs.com/package/coda-ai
-metadata: {"openclaw":{"requires":{"bins":["coda-ai"]},"install":[{"id":"node","kind":"node","package":"coda-ai","bins":["coda-ai"],"label":"Install coda-ai (npm)"}]}}
+metadata: {"openclaw":{"requires":{"bins":["coda-ai"],"env":["CODA_API_TOKEN"]},"primaryEnv":"CODA_API_TOKEN","install":[{"id":"node","kind":"node","package":"coda-ai","bins":["coda-ai"],"label":"Install coda-ai (npm)"}]}}
 ---
 
 # coda-ai

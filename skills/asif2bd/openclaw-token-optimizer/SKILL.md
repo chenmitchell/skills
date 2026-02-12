@@ -1,6 +1,6 @@
 ---
 name: token-optimizer
-description: Reduce OpenClaw token usage and API costs through smart model routing, heartbeat optimization, budget tracking, and multi-provider fallbacks. Use when token costs are high, API rate limits are being hit, or hosting multiple agents at scale. Includes ready-to-use scripts for task classification, usage monitoring, and optimized heartbeat scheduling.
+description: Reduce OpenClaw token usage and API costs through smart model routing, heartbeat optimization, budget tracking, and multi-provider fallbacks. Use when token costs are high, API rate limits are being hit, or hosting multiple agents at scale. Includes ready-to-use scripts for task classification, usage monitoring, and optimized heartbeat scheduling. All operations are local file analysis only - no network requests, no code execution. See SECURITY.md for details.
 ---
 
 # Token Optimizer

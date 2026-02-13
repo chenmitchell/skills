@@ -1,0 +1,11 @@
+{
+  "owner": "byungkyu",
+  "slug": "netlify-api",
+  "displayName": "Netlify",
+  "latest": {
+    "version": "1.0.2",
+    "publishedAt": 1770927860601,
+    "commit": null
+  },
+  "history": []
+}

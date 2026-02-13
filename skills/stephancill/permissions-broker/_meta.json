@@ -3,9 +3,15 @@
   "slug": "permissions-broker",
   "displayName": "Permissions Broker",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1770642132073,
-    "commit": "https://github.com/openclaw/skills/commit/759293d7944039bb8283e99d585451616abb5ae9"
+    "version": "1.0.7",
+    "publishedAt": 1771001810567,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1770642132073,
+      "commit": "https://github.com/openclaw/skills/commit/759293d7944039bb8283e99d585451616abb5ae9"
+    }
+  ]
 }

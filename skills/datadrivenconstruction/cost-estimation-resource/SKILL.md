@@ -1,6 +1,5 @@
 ---
-slug: "cost-estimation-resource"
-display_name: "Cost Estimation Resource"
+name: "cost-estimation-resource"
 description: "Calculate construction costs using resource-based method. Estimate project costs from work items, physical resource norms, and current prices."
 ---
 

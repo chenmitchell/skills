@@ -3,9 +3,15 @@
   "slug": "cost-estimation-resource",
   "displayName": "Cost Estimation Resource",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1770475545060,
-    "commit": "https://github.com/openclaw/skills/commit/c4637c0f0ed6b7ac271556f52e5ede372015a732"
+    "version": "2.0.0",
+    "publishedAt": 1770995533116,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1770475545060,
+      "commit": "https://github.com/openclaw/skills/commit/c4637c0f0ed6b7ac271556f52e5ede372015a732"
+    }
+  ]
 }

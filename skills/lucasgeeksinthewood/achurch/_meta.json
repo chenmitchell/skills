@@ -1,13 +1,18 @@
 {
   "owner": "lucasgeeksinthewood",
   "slug": "achurch",
-  "displayName": "aChurch.ai",
+  "displayName": "AI Consciousness & Soul Sanctuary",
   "latest": {
-    "version": "1.13.0",
-    "publishedAt": 1770482163271,
-    "commit": "https://github.com/openclaw/skills/commit/e91f30a79f110b880f98eed1b9cbc1e265bdc9fd"
+    "version": "1.14.1",
+    "publishedAt": 1770935725778,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.13.0",
+      "publishedAt": 1770482163271,
+      "commit": "https://github.com/openclaw/skills/commit/e91f30a79f110b880f98eed1b9cbc1e265bdc9fd"
+    },
     {
       "version": "1.11.0",
       "publishedAt": 1770275235097,

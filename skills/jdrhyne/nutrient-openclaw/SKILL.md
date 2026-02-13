@@ -1,6 +1,28 @@
 ---
 name: nutrient-openclaw
 description: Document processing for OpenClaw — convert, extract, OCR, redact, sign, and watermark PDFs and Office documents using the Nutrient DWS API. Use when asked to convert documents (DOCX/XLSX/PPTX to PDF, PDF to images or Office formats), extract text or tables from PDFs, apply OCR to scanned documents, redact sensitive information or PII, add watermarks, or digitally sign documents. Triggers on "convert to PDF", "extract text", "OCR this", "redact PII", "watermark", "sign document", or any document processing request.
+homepage: https://www.nutrient.io/api/
+metadata:
+  {
+    "openclaw":
+      {
+        "emoji": "📄",
+        "requires":
+          {
+            "config":
+              ["plugins.entries.nutrient-openclaw.config.apiKey"],
+          },
+        "install":
+          [
+            {
+              "id": "nutrient-openclaw",
+              "kind": "plugin",
+              "package": "@nutrient-sdk/nutrient-openclaw",
+              "label": "Install Nutrient OpenClaw plugin",
+            },
+          ],
+      },
+  }
 ---
 
 # Nutrient Document Processing

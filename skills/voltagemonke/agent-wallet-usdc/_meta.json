@@ -1,0 +1,11 @@
+{
+  "owner": "voltagemonke",
+  "slug": "agent-wallet-usdc",
+  "displayName": "Agent Wallet",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1770884598361,
+    "commit": null
+  },
+  "history": []
+}

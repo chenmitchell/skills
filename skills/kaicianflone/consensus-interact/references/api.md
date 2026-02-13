@@ -39,12 +39,8 @@ Side-effect tools are optional by default and may require opt-in via `plugins.en
 All plugin config is under `plugins.entries.consensus-tools.config`.
 
 - `mode`: `local` or `global`
-- `local.storage.kind`: `json`, `sqlite`, or `supabase`
+- `local.storage.kind`: `json` or `sqlite`
 - `local.storage.path`: local state path (default `./.openclaw/consensus-tools.json`)
-- `local.storage.url`: Supabase project URL (supabase mode)
-- `local.storage.anonKey`: Supabase anon key (supabase mode)
-- `local.storage.serviceRoleKey`: Supabase service role key (supabase mode)
-- `local.storage.tablePrefix`: Table name prefix (supabase mode, default `consensus_`)
 - `local.jobDefaults.*`: reward/stake/participants/expiry defaults
 - `local.consensusPolicies`: named policy presets (referenced by `policyKey`)
 - `local.ledger.*`: initial/override credit balances (local only)

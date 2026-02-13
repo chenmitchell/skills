@@ -1,0 +1,11 @@
+{
+  "owner": "eucalyptus-viminalis",
+  "slug": "leak",
+  "displayName": "Leak",
+  "latest": {
+    "version": "2026.2.14",
+    "publishedAt": 1771024540315,
+    "commit": null
+  },
+  "history": []
+}

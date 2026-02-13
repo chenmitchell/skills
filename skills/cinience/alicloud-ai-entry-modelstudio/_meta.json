@@ -3,9 +3,15 @@
   "slug": "alicloud-ai-entry-modelstudio",
   "displayName": "Alicloud Ai Entry Modelstudio",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1770768405375,
-    "commit": "https://github.com/openclaw/skills/commit/d60040e1bf7a0ff7b58700842b5b8829e31d3781"
+    "version": "1.0.2",
+    "publishedAt": 1770973121539,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1770768405375,
+      "commit": "https://github.com/openclaw/skills/commit/d60040e1bf7a0ff7b58700842b5b8829e31d3781"
+    }
+  ]
 }

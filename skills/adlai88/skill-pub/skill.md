@@ -1,6 +1,6 @@
 ---
 name: simmer
-version: 1.12.1
+version: 1.13.1
 description: The best prediction market interface for AI agents. Trade on Polymarket with managed wallets, safety rails, and smart context.
 homepage: https://simmer.markets
 metadata: {"openclaw":{"emoji":"🔮","category":"trading","api_base":"https://api.simmer.markets"}}

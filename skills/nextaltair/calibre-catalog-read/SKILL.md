@@ -1,6 +1,7 @@
 ---
 name: calibre-catalog-read
 description: Read Calibre catalog data via calibredb over a Content server, and run one-book analysis workflow that writes HTML analysis block back to comments while caching analysis state in SQLite. Use for list/search/id lookups and AI reading pipeline for a selected book.
+metadata: {"openclaw":{"requires":{"bins":["node","uv","calibredb","ebook-convert"],"env":["CALIBRE_PASSWORD"]},"optionalEnv":["CALIBRE_USERNAME"],"primaryEnv":"CALIBRE_PASSWORD","dependsOnSkills":["subagent-spawn-command-builder"],"localWrites":["skills/calibre-catalog-read/state/runs.json","skills/calibre-catalog-read/state/calibre_analysis.sqlite","skills/calibre-catalog-read/state/cache/**","~/.config/calibre-catalog-read/auth.json"],"modifiesRemoteData":["calibre:comments-metadata"]}}
 ---
 
 # calibre-catalog-read
@@ -17,9 +18,14 @@ Use this skill for:
 - Reachable Calibre Content server URL in `--with-library` format:
   - `http://HOST:PORT/#LIBRARY_ID`
 - Do not assume localhost/127.0.0.1; always pass explicit reachable `HOST:PORT`.
-- If auth is enabled, pass:
-  - `--username <user>`
-  - `--password-env <ENV_VAR_NAME>`
+- If auth is enabled:
+  - Preferred: set in `/home/altair/.openclaw/.env`
+    - `CALIBRE_USERNAME=<user>`
+    - `CALIBRE_PASSWORD=<password>`
+  - Then pass only `--password-env CALIBRE_PASSWORD` (username auto-loads from env)
+  - You can still override with `--username <user>` explicitly.
+  - Optional auth cache file: `~/.config/calibre-catalog-read/auth.json`
+    - Avoid `--save-plain-password` unless explicitly requested.
 
 ## Commands
 
@@ -28,7 +34,7 @@ List books (JSON):
 ```bash
 node skills/calibre-catalog-read/scripts/calibredb_read.mjs list \
   --with-library "http://192.168.11.20:8080/#Calibreライブラリ" \
-  --username user --password-env CALIBRE_PASSWORD \
+  --password-env CALIBRE_PASSWORD \
   --limit 50
 ```
 
@@ -37,7 +43,7 @@ Search books (JSON):
 ```bash
 node skills/calibre-catalog-read/scripts/calibredb_read.mjs search \
   --with-library "http://192.168.11.20:8080/#Calibreライブラリ" \
-  --username user --password-env CALIBRE_PASSWORD \
+  --password-env CALIBRE_PASSWORD \
   --query 'series:"中公文庫"'
 ```
 
@@ -46,16 +52,16 @@ Get one book by id (JSON):
 ```bash
 node skills/calibre-catalog-read/scripts/calibredb_read.mjs id \
   --with-library "http://192.168.11.20:8080/#Calibreライブラリ" \
-  --username user --password-env CALIBRE_PASSWORD \
+  --password-env CALIBRE_PASSWORD \
   --book-id 3
 ```
 
 Run one-book pipeline (analyze + comments HTML apply + cache):
 
 ```bash
-python3 skills/calibre-catalog-read/scripts/run_analysis_pipeline.py \
+uv run python skills/calibre-catalog-read/scripts/run_analysis_pipeline.py \
   --with-library "http://192.168.11.20:8080/#Calibreライブラリ" \
-  --username user --password-env CALIBRE_PASSWORD \
+  --password-env CALIBRE_PASSWORD \
   --book-id 3 --lang ja
 ```
 
@@ -64,15 +70,15 @@ python3 skills/calibre-catalog-read/scripts/run_analysis_pipeline.py \
 Initialize DB schema:
 
 ```bash
-python3 skills/calibre-catalog-read/scripts/analysis_db.py init \
-  --db /home/altair/clawd/data/calibre_analysis.sqlite
+uv run python skills/calibre-catalog-read/scripts/analysis_db.py init \
+  --db skills/calibre-catalog-read/state/calibre_analysis.sqlite
 ```
 
 Check current hash state:
 
 ```bash
-python3 skills/calibre-catalog-read/scripts/analysis_db.py status \
-  --db /home/altair/clawd/data/calibre_analysis.sqlite \
+uv run python skills/calibre-catalog-read/scripts/analysis_db.py status \
+  --db skills/calibre-catalog-read/state/calibre_analysis.sqlite \
   --book-id 3 --format EPUB
 ```
 
@@ -118,12 +124,12 @@ Book-reading analysis is a heavy task. Use a subagent with a lightweight model f
 - Prompt template: `references/subagent-analysis.prompt.md`
 - Input schema: `references/subagent-input.schema.json`
 - Output schema: `references/subagent-analysis.schema.json`
-- Input preparation helper: `scripts/prepare_subagent_input.py`
+- Input preparation helper: `scripts/prepare_subagent_input.mjs`
   - Splits extracted text into multiple files to avoid read-tool single-line size issues.
 
 Rules:
 - Use subagent only for heavy analysis generation; keep main agent lightweight and non-blocking.
-- In this environment, Python commands must use `python3` (never `python`).
+- In this environment, Python commands must use `uv run python`.
 - Use the strict prompt template (`references/subagent-analysis.prompt.md`) as mandatory base; do not send ad-hoc relaxed read instructions.
 - Keep final DB upsert and Calibre metadata apply in main agent.
 - Process one book per run.
@@ -149,7 +155,7 @@ Required runtime sequence:
 1. Main agent prepares `subagent_input.json` + chunked `source_files` from extracted text.
    - Use:
    ```bash
-   python3 skills/calibre-catalog-read/scripts/prepare_subagent_input.py \
+   node skills/calibre-catalog-read/scripts/prepare_subagent_input.mjs \
      --book-id <id> --title "<title>" --lang ja \
      --text-path /tmp/book_<id>.txt --out-dir /tmp/calibre_subagent_<id>
    ```
@@ -170,14 +176,14 @@ For Discord/chat, always run as **two separate turns**.
 - Select one target book.
 - Build spawn payload with `subagent-spawn-command-builder` (`--profile calibre-read` + run-specific `--task`).
 - Call `sessions_spawn` using that payload.
-- Record run state (`runId`) via `run_state.py upsert`.
+- Record run state (`runId`) via `run_state.mjs upsert`.
 - Reply to user with selected title + "running in background".
 - **Stop turn here.**
 
 ### Turn B: completion only (separate later turn)
 Trigger: completion announce/event for that run.
 - Run one command only (completion handler):
-  - `scripts/handle_completion.py` (`get -> apply -> remove`, and `fail` on error).
+  - `scripts/handle_completion.mjs` (`get -> apply -> remove`, and `fail` on error).
 - If `runId` is missing, handler returns `stale_or_duplicate` and does nothing.
 - Send completion/failure reply from handler result.
 
@@ -209,15 +215,15 @@ Use helper scripts (avoid ad-hoc env var mistakes):
 
 ```bash
 # Turn A: register running task
-python3 skills/calibre-catalog-read/scripts/run_state.py upsert \
+node skills/calibre-catalog-read/scripts/run_state.mjs upsert \
   --state skills/calibre-catalog-read/state/runs.json \
   --run-id <RUN_ID> --book-id <BOOK_ID> --title "<TITLE>"
 
 # Turn B: completion handler (preferred)
-python3 skills/calibre-catalog-read/scripts/handle_completion.py \
+node skills/calibre-catalog-read/scripts/handle_completion.mjs \
   --state skills/calibre-catalog-read/state/runs.json \
   --run-id <RUN_ID> \
   --analysis-json /tmp/calibre_<BOOK_ID>/analysis.json \
   --with-library "http://HOST:PORT/#LIBRARY_ID" \
-  --username user --password-env CALIBRE_PASSWORD --lang ja
+  --password-env CALIBRE_PASSWORD --lang ja
 ```

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run python
 from __future__ import annotations
 import argparse, datetime as dt, hashlib, json, os, re, subprocess, tempfile
 from pathlib import Path
@@ -176,12 +176,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--with-library", required=True)
     ap.add_argument("--book-id", required=True, type=int)
-    ap.add_argument("--db", default="/home/altair/clawd/data/calibre_analysis.sqlite")
-    ap.add_argument("--username")
+    ap.add_argument("--db", default=str(SKILL_ROOT / "state" / "calibre_analysis.sqlite"))
+    ap.add_argument("--username", default=os.environ.get("CALIBRE_USERNAME", ""))
     ap.add_argument("--password-env", default="CALIBRE_PASSWORD")
     ap.add_argument("--format", default="EPUB")
     ap.add_argument("--lang", default="ja", choices=["ja", "en"])
-    ap.add_argument("--cache-dir", default="/home/altair/clawd/.cache/calibre/pipeline")
+    ap.add_argument("--cache-dir", default=str(SKILL_ROOT / "state" / "cache" / "pipeline"))
     ap.add_argument("--analysis-json", help="Optional path to subagent-produced analysis JSON (schema in references/subagent-analysis.schema.json)")
     ap.add_argument("--min-text-chars", type=int, default=1200, help="Minimum extracted text chars before proceeding without confirmation")
     ap.add_argument("--force-low-text", action="store_true", help="Proceed even when extracted text is below threshold")
@@ -217,7 +217,7 @@ def main():
     fhash = "sha256:" + hashlib.sha256(src.read_bytes()).hexdigest()
 
     # status check
-    st = json.loads(run(["python3", str(SCRIPT_DIR / "analysis_db.py"), "status", "--db", ns.db, "--book-id", str(ns.book_id), "--format", ns.format]))
+    st = json.loads(run(["uv", "run", "python", str(SCRIPT_DIR / "analysis_db.py"), "status", "--db", ns.db, "--book-id", str(ns.book_id), "--format", ns.format]))
     if st.get("status") and st["status"].get("file_hash") == fhash:
         print(json.dumps({"ok": True, "skipped": True, "reason": "same_hash", "book_id": ns.book_id, "file_hash": fhash}, ensure_ascii=False))
         return
@@ -259,7 +259,7 @@ def main():
     }
 
     # upsert cache record
-    subprocess.run(["python3", str(SCRIPT_DIR / "analysis_db.py"), "upsert", "--db", ns.db],
+    subprocess.run(["uv", "run", "python", str(SCRIPT_DIR / "analysis_db.py"), "upsert", "--db", ns.db],
                    input=json.dumps(record, ensure_ascii=False), text=True, check=True)
 
     # Apply comments update directly here to keep this skill independent.

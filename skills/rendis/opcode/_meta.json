@@ -3,11 +3,16 @@
   "slug": "opcode",
   "displayName": "Opcode",
   "latest": {
-    "version": "1.2.1",
-    "publishedAt": 1770846838991,
-    "commit": "https://github.com/openclaw/skills/commit/fb89c5d1344f68a86c1f1fb8d966c95896e7f514"
+    "version": "1.2.2",
+    "publishedAt": 1770958664660,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.1",
+      "publishedAt": 1770846838991,
+      "commit": "https://github.com/openclaw/skills/commit/fb89c5d1344f68a86c1f1fb8d966c95896e7f514"
+    },
     {
       "version": "1.2.0",
       "publishedAt": 1770773649285,

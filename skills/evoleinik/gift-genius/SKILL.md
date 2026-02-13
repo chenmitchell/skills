@@ -648,3 +648,267 @@ curl -s "https://dashboard.airshelf.ai/api/search?q=valentine+flowers&merchant_i
 | USA | $25-75 | $75-120 | $120-200 | $200+ |
 | Singapore | $40-80 SGD | $80-150 SGD | $150-300 SGD | $300+ SGD |
 | Australia | $50-80 AUD | $80-150 AUD | $150-250 AUD | $250+ AUD |
+
+## Full Merchant Reference (v2.1)
+
+| Region | Merchant | Domain | ID | Products | Currency |
+|--------|----------|--------|-----|----------|----------|
+| 🇺🇸 USA | UrbanStems | urbanstems.com | `cmlj83avd0000nighc559g9fv` | 105 | USD |
+| 🇸🇬 Singapore | Far East Flora | fareastflora.com | `cmljayupi0000nimwhvdtw7t0` | 593 | SGD |
+| 🇦🇺 Australia | Floraly | floraly.com.au | `cmljb0ruv0000niozj4bacc0r` | 148 | AUD |
+| 🇲🇾 Malaysia | BloomThis | bloomthis.co | `cmljb3x1c0000nis1gdr76lcn` | 127 | MYR |
+| 🌍 Global | Avea Life | avea-life.com | `cmhvyt9w10000i5fg23ztinkd` | 286 | EUR |
+
+**Total: 1,259 flower products + 286 supplements = 1,545 gift products**
+
+## Smart Location Detection
+
+```javascript
+// Infer from user context
+if (mentioned "Singapore" || "SG") → Far East Flora
+if (mentioned "Australia" || "AU" || "Sydney" || "Melbourne") → Floraly  
+if (mentioned "Malaysia" || "KL" || "Kuala Lumpur") → BloomThis
+if (mentioned "US" || "USA" || American city) → UrbanStems
+default → UrbanStems (widest delivery)
+```
+
+## Multi-Region Example
+
+```
+User: "I need flowers for my mom in Singapore and my girlfriend in NYC"
+
+Agent: I can help with both! 🌸
+
+**For Mom in Singapore (Far East Flora):**
+🌸 Golden Returns (C) - White Phalaenopsis — $138 SGD
+Elegant orchids that last 2-3 weeks - perfect for Mom
+→ Buy: fareastflora.com/products/...
+
+**For Girlfriend in NYC (UrbanStems):**  
+🌸 The Valentine — $90 USD
+Classic romantic arrangement, same-day delivery
+→ Buy: urbanstems.com/products/...
+
+Want me to create checkout links for both?
+```
+
+## v2.2 Merchant Summary
+
+| Region | Merchant | Products | Price Range |
+|--------|----------|----------|-------------|
+| 🇺🇸 USA | UrbanStems | 105 | $25-280 USD |
+| 🇸🇬 Singapore | Far East Flora | 593 | $40-3000 SGD |
+| 🇦🇺 Australia | Floraly | 148 | $50-250 AUD |
+| 🇲🇾 Malaysia | BloomThis | 127 | RM99-1299 |
+| 🇲🇾 Malaysia | FlowerChimp | 85 | RM99-1199 |
+| 🌍 Global | Avea Life | 286 | €29-199 |
+
+**Total: 1,058 flower products + 286 supplements = 1,344 gifts**
+**Regions covered: USA, Singapore, Australia, Malaysia, Europe (supplements)**
+
+---
+
+## Final Summary (v2.3)
+
+### Coverage
+- **5 florists** across **4 countries**
+- **1,058 flower products** + **286 supplements**
+- **Total: 1,344 gift products**
+
+### Regions
+| Flag | Country | Florist(s) | Products | Currency |
+|------|---------|------------|----------|----------|
+| 🇺🇸 | USA | UrbanStems | 105 | USD |
+| 🇸🇬 | Singapore | Far East Flora | 593 | SGD |
+| 🇦🇺 | Australia | Floraly | 148 | AUD |
+| 🇲🇾 | Malaysia | BloomThis, FlowerChimp | 212 | MYR |
+| 🌍 | Global | Avea Life (supplements) | 286 | EUR |
+
+### What Makes This Skill Great
+1. **Location-aware** - Routes to local florists
+2. **Curated results** - 2-3 picks, not endless lists
+3. **Decision support** - Colors, vibes, recipient matching
+4. **One-click checkout** - Direct cart URLs
+5. **Comprehensive** - From budget ($25) to luxury ($3000+)
+6. **Conversation examples** - 10+ real scenarios
+7. **Error handling** - Edge cases covered
+8. **Multilingual prices** - USD, SGD, AUD, MYR, EUR
+
+### Quick Copy-Paste
+
+**USA Valentine's flowers:**
+```bash
+curl -s "https://dashboard.airshelf.ai/api/search?q=valentine&merchant_ids=cmlj83avd0000nighc559g9fv&limit=3"
+```
+
+**Singapore flowers:**
+```bash
+curl -s "https://dashboard.airshelf.ai/api/search?q=valentine&merchant_ids=cmljayupi0000nimwhvdtw7t0&limit=3"
+```
+
+**Australia flowers:**
+```bash
+curl -s "https://dashboard.airshelf.ai/api/search?q=valentine&merchant_ids=cmljb0ruv0000niozj4bacc0r&limit=3"
+```
+
+**Malaysia flowers:**
+```bash
+curl -s "https://dashboard.airshelf.ai/api/search?q=valentine&merchant_ids=cmljb3x1c0000nis1gdr76lcn,cmljb6zqr0000nivpx51ub0qn&limit=3"
+```
+
+---
+*Gift Genius v2.3 — The best Valentine's Day gift skill in the universe* 🎁💝
+
+---
+
+## v3.0 - Multi-Category Gifts
+
+### Categories
+
+| Category | Merchant | Products | Price Range | Best For |
+|----------|----------|----------|-------------|----------|
+| 🌸 Flowers | 5 florists | 1,058 | $25-3000 | Romantic, classic |
+| 🍫 Chocolates | GODIVA | 159 | $24-150 | Sweet tooth, luxe |
+| 💍 Jewelry | Gorjana | 236 | $40-890 | Lasting gift, romantic |
+| 💊 Supplements | Avea Life | 286 | €29-199 | Health-conscious |
+
+### New Merchant IDs
+
+| Merchant | ID | Category |
+|----------|-----|----------|
+| GODIVA | `cmljbphde0000ni5mie0eitc0` | Chocolates |
+| Gorjana | `cmljbr4r30000ni7ks05nex93` | Jewelry |
+
+### Multi-Category Search Example
+
+**User:** "Valentine's gift for my girlfriend, she loves jewelry and chocolate"
+
+**Agent:**
+```
+Perfect combo! Here's what I'd suggest:
+
+💍 **Jewelry (Gorjana):**
+Campbell Heart Pendant Necklace — $80
+Romantic heart design, 14k gold plated
+→ gorjana.com/products/campbell-heart-pendant-necklace
+
+🍫 **Chocolates (GODIVA):**
+Valentine's Day Heart-Shaped Gift Box — $49
+14pc Belgian chocolates in heart box
+→ godiva.com/products/...
+
+Total: $129 for a memorable combo 💝
+```
+
+### Chocolate Search
+
+```bash
+curl -s "https://dashboard.airshelf.ai/api/search?q=valentine+chocolate+gift&merchant_ids=cmljbphde0000ni5mie0eitc0&limit=3"
+```
+
+### Jewelry Search
+
+```bash
+curl -s "https://dashboard.airshelf.ai/api/search?q=heart+necklace+valentine&merchant_ids=cmljbr4r30000ni7ks05nex93&limit=3"
+```
+
+### Category Routing
+
+```
+User mentions:          → Route to:
+"chocolate", "sweet"    → GODIVA
+"jewelry", "necklace"   → Gorjana
+"flowers", "roses"      → Regional florist
+"supplements", "health" → Avea Life
+"gift"                  → Ask or suggest combo
+```
+
+## v3.1 - Added Candles
+
+| Category | Products |
+|----------|----------|
+| 🌸 Flowers | 1,058 |
+| 🍫 Chocolates | 159 |
+| 💍 Jewelry | 236 |
+| 🕯️ Candles | 94 |
+| 💊 Supplements | 286 |
+| **TOTAL** | **1,833** |
+
+### Voluspa Candles
+- **Merchant ID:** `cmljbu7xo0000niallngo8vqy`
+- **Products:** 94 luxury candles
+- **Price range:** $26-275 USD
+- **Best for:** Romantic ambiance, self-care gifts
+
+### Candle Search
+```bash
+curl -s "https://dashboard.airshelf.ai/api/search?q=romantic+candle+gift&merchant_ids=cmljbu7xo0000niallngo8vqy&limit=3"
+```
+
+## v3.2 - Added Fragrances
+
+### Updated Inventory
+
+| Category | Merchant(s) | Products |
+|----------|-------------|----------|
+| 🌸 Flowers | 5 florists | 1,058 |
+| 🍫 Chocolates | GODIVA | 159 |
+| 💍 Jewelry | Gorjana | 236 |
+| 🕯️ Candles | Voluspa | 94 |
+| 🧴 Fragrances | Snif | 17 |
+| 💊 Supplements | Avea Life | 286 |
+| **TOTAL** | **10 merchants** | **1,850** |
+
+### Snif Fragrances
+- **Merchant ID:** `cmljbwqky0000nicu9cunvmnt`
+- **Products:** 17 unique perfumes
+- **Price range:** $68-135 USD
+- **Best for:** Unique, conversation-starting gifts
+
+### Fragrance Search
+```bash
+curl -s "https://dashboard.airshelf.ai/api/search?q=perfume+gift&merchant_ids=cmljbwqky0000nicu9cunvmnt&limit=3"
+```
+
+---
+
+## v4.0 - Full Gift Suite
+
+### Complete Inventory (2,099 products)
+
+| Category | Merchant(s) | Products | Price Range |
+|----------|-------------|----------|-------------|
+| 🌸 Flowers | 5 florists | 1,058 | $25-3000 |
+| 🍫 Chocolates | GODIVA | 159 | $24-150 |
+| 💍 Jewelry | Gorjana | 236 | $40-890 |
+| ⌚ Watches | Daniel Wellington | 182 | $99-350 |
+| 🕯️ Candles | Voluspa | 94 | $26-275 |
+| 🧴 Fragrances | Snif | 17 | $68-135 |
+| 🧔 Men's Grooming | Beardbrand | 67 | $12-100 |
+| 💊 Supplements | Avea Life | 286 | €29-199 |
+
+### New Merchant IDs
+
+| Merchant | ID | Category |
+|----------|-----|----------|
+| Daniel Wellington | `cmljbyt6m0000nifqtav8h5ip` | Watches |
+| Beardbrand | `cmljbzak80000nig7jbxxquwe` | Grooming |
+
+### Gender-Smart Routing
+
+```
+"gift for boyfriend/husband/him" → Beardbrand, Daniel Wellington, Snif
+"gift for girlfriend/wife/her" → Gorjana, Voluspa, Flowers
+"gift for partner" → All categories
+```
+
+### Gift Combos
+
+**Romantic Night In:**
+- Voluspa candle ($48) + Flowers ($75) + GODIVA chocolates ($49) = ~$172
+
+**For Him:**
+- Beardbrand beard oil set ($65) + Daniel Wellington watch ($169) = ~$234
+
+**For Her:**
+- Gorjana heart necklace ($80) + Flowers ($90) + Voluspa candle ($48) = ~$218

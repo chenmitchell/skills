@@ -3,11 +3,16 @@
   "slug": "gift-genius",
   "displayName": "Gift Genius",
   "latest": {
-    "version": "2.0.0",
-    "publishedAt": 1770891484526,
-    "commit": "https://github.com/openclaw/skills/commit/8dbadcfddf9c4ba905d55f00ed622d3482b6dcf0"
+    "version": "4.0.0",
+    "publishedAt": 1770893350130,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.0.0",
+      "publishedAt": 1770891484526,
+      "commit": "https://github.com/openclaw/skills/commit/8dbadcfddf9c4ba905d55f00ed622d3482b6dcf0"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770890067331,

@@ -3,11 +3,16 @@
   "slug": "george",
   "displayName": "George",
   "latest": {
-    "version": "1.3.0",
-    "publishedAt": 1770903579399,
-    "commit": "https://github.com/openclaw/skills/commit/a06b25e59be94ba986aea604a089107ef3efb292"
+    "version": "1.3.1",
+    "publishedAt": 1770912978012,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.3.0",
+      "publishedAt": 1770903579399,
+      "commit": "https://github.com/openclaw/skills/commit/a06b25e59be94ba986aea604a089107ef3efb292"
+    },
     {
       "version": "1.2.0",
       "publishedAt": 1770874094816,

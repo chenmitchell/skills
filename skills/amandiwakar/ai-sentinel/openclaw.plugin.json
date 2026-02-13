@@ -1,0 +1,102 @@
+{
+  "id": "ai-sentinel",
+  "name": "AI Sentinel",
+  "version": "0.1.1",
+  "description": "Prompt injection detection and security scanning for OpenClaw agents",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "enum": ["monitor", "enforce"],
+        "default": "monitor",
+        "description": "Detection mode: monitor (log only) or enforce (block threats)"
+      },
+      "logLevel": {
+        "type": "string",
+        "enum": ["debug", "info", "warn", "error"],
+        "default": "info",
+        "description": "Logging verbosity"
+      },
+      "threatThreshold": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "default": 0.7,
+        "description": "Confidence threshold for blocking (enforce mode)"
+      },
+      "allowlist": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": [],
+        "description": "Session keys to skip scanning"
+      },
+      "apiUrl": {
+        "type": "string",
+        "default": "https://api.zetro.ai",
+        "description": "AI Sentinel API base URL for telemetry and cloud scanning"
+      },
+      "apiKey": {
+        "type": "string",
+        "default": "",
+        "description": "API key for AI Sentinel Pro. Also reads AI_SENTINEL_API_KEY env var."
+      },
+      "reportMode": {
+        "type": "string",
+        "enum": ["telemetry", "cloud-scan", "none"],
+        "default": "telemetry",
+        "description": "Reporting mode: telemetry (send scan results), cloud-scan (send raw text for full rule engine), or none (local only)"
+      },
+      "reportFilter": {
+        "type": "string",
+        "enum": ["all", "threats-only"],
+        "default": "all",
+        "description": "Filter which events are reported: all scans or only detected threats"
+      },
+      "agentId": {
+        "type": "string",
+        "default": "openclaw-agent",
+        "description": "Agent identifier for cloud-scan mode API requests"
+      },
+      "includeRawInput": {
+        "type": "boolean",
+        "default": false,
+        "description": "Include raw input text in telemetry events (privacy-sensitive)"
+      },
+      "flushIntervalMs": {
+        "type": "number",
+        "minimum": 1000,
+        "default": 10000,
+        "description": "Telemetry batch flush interval in milliseconds"
+      },
+      "flushBatchSize": {
+        "type": "number",
+        "minimum": 1,
+        "maximum": 500,
+        "default": 25,
+        "description": "Maximum events per telemetry batch before auto-flush"
+      },
+      "excludeAgents": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": [],
+        "description": "Agent IDs to exclude from scanning"
+      },
+      "agentOverrides": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "agentId": { "type": "string" },
+            "mode": { "type": "string", "enum": ["monitor", "enforce"] },
+            "threatThreshold": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "required": ["agentId"]
+        },
+        "default": [],
+        "description": "Per-agent configuration overrides for mode and threshold"
+      }
+    },
+    "additionalProperties": false
+  }
+}

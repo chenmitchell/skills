@@ -1,11 +1,17 @@
 {
   "owner": "amandiwakar",
   "slug": "ai-sentinel",
-  "displayName": "AI Sentinel - Prompt Injection Firewall",
+  "displayName": "AI Sentinel",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1770788959709,
-    "commit": "https://github.com/openclaw/skills/commit/4a7e89ef5200f0eb007601638f2f18e27e00f7d8"
+    "version": "0.1.1",
+    "publishedAt": 1770876611886,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1770788959709,
+      "commit": "https://github.com/openclaw/skills/commit/4a7e89ef5200f0eb007601638f2f18e27e00f7d8"
+    }
+  ]
 }

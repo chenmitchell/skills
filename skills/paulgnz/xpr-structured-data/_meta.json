@@ -3,9 +3,15 @@
   "slug": "xpr-structured-data",
   "displayName": "XPR Structured Data",
   "latest": {
-    "version": "0.2.11",
-    "publishedAt": 1771021724006,
-    "commit": "https://github.com/openclaw/skills/commit/3a908f93d97f9a79323bf87740a4a7a503ca0ed3"
+    "version": "1.0.0",
+    "publishedAt": 1771045842073,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.2.11",
+      "publishedAt": 1771021724006,
+      "commit": "https://github.com/openclaw/skills/commit/3a908f93d97f9a79323bf87740a4a7a503ca0ed3"
+    }
+  ]
 }

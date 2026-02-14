@@ -27,23 +27,23 @@ All commands via `scripts/wal.py` (relative to this skill directory):
 
 ```bash
 # Write before responding
-python3 scripts/wal.py append alexchen correction "Use Podman not Docker for all EvoClaw tooling"
-python3 scripts/wal.py append alexchen decision "CogVideoX-5B with multi-GPU via accelerate"
-python3 scripts/wal.py append alexchen analysis "Signed constraints prevent genome tampering"
+python3 scripts/wal.py append agent1 correction "Use Podman not Docker for all EvoClaw tooling"
+python3 scripts/wal.py append agent1 decision "CogVideoX-5B with multi-GPU via accelerate"
+python3 scripts/wal.py append agent1 analysis "Signed constraints prevent genome tampering"
 
 # Working buffer (batch writes during conversation, flush before compaction)
-python3 scripts/wal.py buffer-add alexchen decision "Some decision"
-python3 scripts/wal.py flush-buffer alexchen
+python3 scripts/wal.py buffer-add agent1 decision "Some decision"
+python3 scripts/wal.py flush-buffer agent1
 
 # Session start: replay lost context
-python3 scripts/wal.py replay alexchen
+python3 scripts/wal.py replay agent1
 
 # After applying a replayed entry
-python3 scripts/wal.py mark-applied alexchen <entry_id>
+python3 scripts/wal.py mark-applied agent1 <entry_id>
 
 # Maintenance
-python3 scripts/wal.py status alexchen
-python3 scripts/wal.py prune alexchen --keep 50
+python3 scripts/wal.py status agent1
+python3 scripts/wal.py prune agent1 --keep 50
 ```
 
 ## Integration Points
@@ -71,5 +71,5 @@ Buffer files: `~/clawd/memory/wal/<agent_id>.buffer.jsonl`
 
 Entries are append-only JSONL. Each entry:
 ```json
-{"id": "abc123", "timestamp": "ISO8601", "agent_id": "alexchen", "action_type": "correction", "payload": "Use Podman not Docker", "applied": false}
+{"id": "abc123", "timestamp": "ISO8601", "agent_id": "agent1", "action_type": "correction", "payload": "Use Podman not Docker", "applied": false}
 ```

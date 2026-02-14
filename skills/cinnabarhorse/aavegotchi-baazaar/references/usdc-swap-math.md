@@ -61,6 +61,6 @@ PY
 
 If `GHST_USD_PRICE` is unset, fetch it:
 ```bash
-curl -s 'https://api.coingecko.com/api/v3/simple/price?ids=aavegotchi&vs_currencies=usd' | jq -r '.aavegotchi.usd'
+curl -s 'https://api.coingecko.com/api/v3/simple/price?ids=aavegotchi&vs_currencies=usd' \
+  | python3 -c 'import json,sys; print(json.load(sys.stdin)["aavegotchi"]["usd"])'
 ```
-

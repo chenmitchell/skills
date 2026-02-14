@@ -40,14 +40,14 @@ USDC allowance to Diamond:
 
 Approve GHST (broadcast; do this only when explicitly instructed):
 ```bash
-~/.foundry/bin/cast send "$GHST" 'approve(address,uint256)' "$DIAMOND" "$AMOUNT_WEI" \
+~/.foundry/bin/cast send "$GHST" 'approve(address,uint256)' "$DIAMOND" "<AMOUNT_GHST_WEI>" \
   --private-key "$PRIVATE_KEY" \
   --rpc-url "$BASE_MAINNET_RPC"
 ```
 
 Approve USDC (broadcast; do this only when explicitly instructed):
 ```bash
-~/.foundry/bin/cast send "$USDC" 'approve(address,uint256)' "$DIAMOND" "$AMOUNT_6_DECIMALS" \
+~/.foundry/bin/cast send "$USDC" 'approve(address,uint256)' "$DIAMOND" "<AMOUNT_USDC_6DP>" \
   --private-key "$PRIVATE_KEY" \
   --rpc-url "$BASE_MAINNET_RPC"
 ```
@@ -56,13 +56,13 @@ Approve USDC (broadcast; do this only when explicitly instructed):
 
 Check (ERC721 or ERC1155 contract):
 ```bash
-~/.foundry/bin/cast call "$NFT_CONTRACT" 'isApprovedForAll(address,address)(bool)' "$FROM_ADDRESS" "$DIAMOND" \
+~/.foundry/bin/cast call "<NFT_CONTRACT_ADDRESS>" 'isApprovedForAll(address,address)(bool)' "$FROM_ADDRESS" "$DIAMOND" \
   --rpc-url "$BASE_MAINNET_RPC"
 ```
 
 Set approval (broadcast; do this only when explicitly instructed):
 ```bash
-~/.foundry/bin/cast send "$NFT_CONTRACT" 'setApprovalForAll(address,bool)' "$DIAMOND" true \
+~/.foundry/bin/cast send "<NFT_CONTRACT_ADDRESS>" 'setApprovalForAll(address,bool)' "$DIAMOND" true \
   --private-key "$PRIVATE_KEY" \
   --rpc-url "$BASE_MAINNET_RPC"
 ```
@@ -77,9 +77,10 @@ Listing fee (GHST wei) on the Diamond:
 ## Swap Deadline (now + 600)
 
 ```bash
-NOW="$(date +%s)"
-SWAP_DEADLINE="$((NOW + 600))"
-echo "$SWAP_DEADLINE"
+python3 - <<'PY'
+import time
+print(int(time.time()) + 600)
+PY
 ```
 
 ## Multiply Big Ints (ERC1155 total cost)
@@ -96,7 +97,8 @@ PY
 ## Fetch GHST/USD (CoinGecko)
 
 ```bash
-curl -s 'https://api.coingecko.com/api/v3/simple/price?ids=aavegotchi&vs_currencies=usd' | jq -r '.aavegotchi.usd'
+curl -s 'https://api.coingecko.com/api/v3/simple/price?ids=aavegotchi&vs_currencies=usd' \
+  | python3 -c 'import json,sys; print(json.load(sys.stdin)[\"aavegotchi\"][\"usd\"])'
 ```
 
 ## Smoke Tests (No Funds Required)

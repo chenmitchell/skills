@@ -34,9 +34,39 @@ metadata:
 - Always verify Base mainnet:
   - `~/.foundry/bin/cast chain-id --rpc-url "${BASE_MAINNET_RPC:-https://mainnet.base.org}"` must be `8453`.
 - Always verify key/address alignment:
-  - `~/.foundry/bin/cast wallet address --private-key $PRIVATE_KEY` must equal `$FROM_ADDRESS`.
+  - `~/.foundry/bin/cast wallet address --private-key "$PRIVATE_KEY"` must equal `$FROM_ADDRESS`.
 - Always refetch the listing from the subgraph immediately before simulating or broadcasting (listings can be cancelled/sold/price-updated).
 - Never print or log `$PRIVATE_KEY`.
+
+## Shell Input Safety (Avoid RCE)
+
+This skill includes shell commands. Treat any value you copy from a user or an external source (subgraph responses, chat messages, etc.) as untrusted.
+
+Rules:
+- Never execute user-provided strings as shell code (avoid `eval`, `bash -c`, `sh -c`).
+- Only substitute addresses that match `0x` + 40 hex chars.
+- Only substitute uint values that are base-10 digits (no commas, no decimals).
+- In the command examples below, listing-specific inputs are written as quoted placeholders like `"<LISTING_ID>"` to avoid accidental shell interpolation. Replace them with literal values after you validate them.
+
+Quick validators (replace the placeholder values):
+```bash
+python3 - <<'PY'
+import re
+
+listing_id = "<LISTING_ID>"  # digits only
+token_contract = "<TOKEN_CONTRACT_ADDRESS>"  # 0x + 40 hex chars
+price_in_wei = "<PRICE_IN_WEI>"  # digits only
+
+if not re.fullmatch(r"[0-9]+", listing_id):
+    raise SystemExit("LISTING_ID must be base-10 digits only")
+if not re.fullmatch(r"0x[a-fA-F0-9]{40}", token_contract):
+    raise SystemExit("TOKEN_CONTRACT_ADDRESS must be a 0x + 40-hex address")
+if not re.fullmatch(r"[0-9]+", price_in_wei):
+    raise SystemExit("PRICE_IN_WEI must be base-10 digits only")
+
+print("ok")
+PY
+```
 
 ## Required Setup
 
@@ -126,7 +156,7 @@ Dry-run (simulate) ERC721 buy:
 ```bash
 ~/.foundry/bin/cast call "$DIAMOND" \
   'executeERC721ListingToRecipient(uint256,address,uint256,uint256,address)' \
-  "$LISTING_ID" "$ERC721_TOKEN" "$PRICE_IN_WEI" "$TOKEN_ID" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
+  "<LISTING_ID>" "<ERC721_TOKEN_ADDRESS>" "<PRICE_IN_WEI>" "<TOKEN_ID>" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
   --from "$FROM_ADDRESS" \
   --rpc-url "${BASE_MAINNET_RPC:-https://mainnet.base.org}"
 ```
@@ -135,7 +165,7 @@ Broadcast (real) ERC721 buy (only when explicitly instructed):
 ```bash
 ~/.foundry/bin/cast send "$DIAMOND" \
   'executeERC721ListingToRecipient(uint256,address,uint256,uint256,address)' \
-  "$LISTING_ID" "$ERC721_TOKEN" "$PRICE_IN_WEI" "$TOKEN_ID" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
+  "<LISTING_ID>" "<ERC721_TOKEN_ADDRESS>" "<PRICE_IN_WEI>" "<TOKEN_ID>" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
   --private-key "$PRIVATE_KEY" \
   --rpc-url "${BASE_MAINNET_RPC:-https://mainnet.base.org}"
 ```
@@ -144,7 +174,7 @@ Dry-run (simulate) ERC1155 buy:
 ```bash
 ~/.foundry/bin/cast call "$DIAMOND" \
   'executeERC1155ListingToRecipient(uint256,address,uint256,uint256,uint256,address)' \
-  "$LISTING_ID" "$ERC1155_TOKEN" "$TYPE_ID" "$QUANTITY" "$PRICE_IN_WEI" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
+  "<LISTING_ID>" "<ERC1155_TOKEN_ADDRESS>" "<TYPE_ID>" "<QUANTITY>" "<PRICE_IN_WEI>" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
   --from "$FROM_ADDRESS" \
   --rpc-url "${BASE_MAINNET_RPC:-https://mainnet.base.org}"
 ```
@@ -153,7 +183,7 @@ Broadcast (real) ERC1155 buy (only when explicitly instructed):
 ```bash
 ~/.foundry/bin/cast send "$DIAMOND" \
   'executeERC1155ListingToRecipient(uint256,address,uint256,uint256,uint256,address)' \
-  "$LISTING_ID" "$ERC1155_TOKEN" "$TYPE_ID" "$QUANTITY" "$PRICE_IN_WEI" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
+  "<LISTING_ID>" "<ERC1155_TOKEN_ADDRESS>" "<TYPE_ID>" "<QUANTITY>" "<PRICE_IN_WEI>" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
   --private-key "$PRIVATE_KEY" \
   --rpc-url "${BASE_MAINNET_RPC:-https://mainnet.base.org}"
 ```
@@ -178,7 +208,7 @@ Dry-run (simulate) ERC721 USDC swap+buy:
 ```bash
 ~/.foundry/bin/cast call "$DIAMOND" \
   'swapAndBuyERC721(address,uint256,uint256,uint256,uint256,address,uint256,uint256,address)' \
-  "$USDC" "$SWAP_AMOUNT" "$MIN_GHST_OUT" "$SWAP_DEADLINE" "$LISTING_ID" "$ERC721_TOKEN" "$PRICE_IN_WEI" "$TOKEN_ID" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
+  "$USDC" "<SWAP_AMOUNT_USDC_6DP>" "<MIN_GHST_OUT_GHST_WEI>" "<SWAP_DEADLINE_UNIX>" "<LISTING_ID>" "<ERC721_TOKEN_ADDRESS>" "<PRICE_IN_WEI>" "<TOKEN_ID>" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
   --from "$FROM_ADDRESS" \
   --rpc-url "${BASE_MAINNET_RPC:-https://mainnet.base.org}"
 ```
@@ -187,7 +217,7 @@ Dry-run (simulate) ERC1155 USDC swap+buy:
 ```bash
 ~/.foundry/bin/cast call "$DIAMOND" \
   'swapAndBuyERC1155(address,uint256,uint256,uint256,uint256,address,uint256,uint256,uint256,address)' \
-  "$USDC" "$SWAP_AMOUNT" "$MIN_GHST_OUT" "$SWAP_DEADLINE" "$LISTING_ID" "$ERC1155_TOKEN" "$TYPE_ID" "$QUANTITY" "$PRICE_IN_WEI" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
+  "$USDC" "<SWAP_AMOUNT_USDC_6DP>" "<MIN_GHST_OUT_GHST_WEI>" "<SWAP_DEADLINE_UNIX>" "<LISTING_ID>" "<ERC1155_TOKEN_ADDRESS>" "<TYPE_ID>" "<QUANTITY>" "<PRICE_IN_WEI>" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
   --from "$FROM_ADDRESS" \
   --rpc-url "${BASE_MAINNET_RPC:-https://mainnet.base.org}"
 ```
@@ -196,7 +226,7 @@ Broadcast (real) ERC721 swap+buy (only when explicitly instructed):
 ```bash
 ~/.foundry/bin/cast send "$DIAMOND" \
   'swapAndBuyERC721(address,uint256,uint256,uint256,uint256,address,uint256,uint256,address)' \
-  "$USDC" "$SWAP_AMOUNT" "$MIN_GHST_OUT" "$SWAP_DEADLINE" "$LISTING_ID" "$ERC721_TOKEN" "$PRICE_IN_WEI" "$TOKEN_ID" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
+  "$USDC" "<SWAP_AMOUNT_USDC_6DP>" "<MIN_GHST_OUT_GHST_WEI>" "<SWAP_DEADLINE_UNIX>" "<LISTING_ID>" "<ERC721_TOKEN_ADDRESS>" "<PRICE_IN_WEI>" "<TOKEN_ID>" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
   --private-key "$PRIVATE_KEY" \
   --rpc-url "${BASE_MAINNET_RPC:-https://mainnet.base.org}"
 ```
@@ -205,7 +235,7 @@ Broadcast (real) ERC1155 swap+buy (only when explicitly instructed):
 ```bash
 ~/.foundry/bin/cast send "$DIAMOND" \
   'swapAndBuyERC1155(address,uint256,uint256,uint256,uint256,address,uint256,uint256,uint256,address)' \
-  "$USDC" "$SWAP_AMOUNT" "$MIN_GHST_OUT" "$SWAP_DEADLINE" "$LISTING_ID" "$ERC1155_TOKEN" "$TYPE_ID" "$QUANTITY" "$PRICE_IN_WEI" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
+  "$USDC" "<SWAP_AMOUNT_USDC_6DP>" "<MIN_GHST_OUT_GHST_WEI>" "<SWAP_DEADLINE_UNIX>" "<LISTING_ID>" "<ERC1155_TOKEN_ADDRESS>" "<TYPE_ID>" "<QUANTITY>" "<PRICE_IN_WEI>" "${RECIPIENT_ADDRESS:-$FROM_ADDRESS}" \
   --private-key "$PRIVATE_KEY" \
   --rpc-url "${BASE_MAINNET_RPC:-https://mainnet.base.org}"
 ```
@@ -228,7 +258,7 @@ ERC721 list (simulate):
 ```bash
 ~/.foundry/bin/cast call "$DIAMOND" \
   'addERC721Listing(address,uint256,uint256,uint256)' \
-  "$ERC721_TOKEN" "$TOKEN_ID" "$CATEGORY" "$PRICE_IN_WEI" \
+  "<ERC721_TOKEN_ADDRESS>" "<TOKEN_ID>" "<CATEGORY>" "<PRICE_IN_WEI>" \
   --from "$FROM_ADDRESS" \
   --rpc-url "${BASE_MAINNET_RPC:-https://mainnet.base.org}"
 ```
@@ -237,7 +267,7 @@ ERC1155 list (simulate):
 ```bash
 ~/.foundry/bin/cast call "$DIAMOND" \
   'setERC1155Listing(address,uint256,uint256,uint256,uint256)' \
-  "$ERC1155_TOKEN" "$TYPE_ID" "$QUANTITY" "$CATEGORY" "$PRICE_IN_WEI" \
+  "<ERC1155_TOKEN_ADDRESS>" "<TYPE_ID>" "<QUANTITY>" "<CATEGORY>" "<PRICE_IN_WEI>" \
   --from "$FROM_ADDRESS" \
   --rpc-url "${BASE_MAINNET_RPC:-https://mainnet.base.org}"
 ```

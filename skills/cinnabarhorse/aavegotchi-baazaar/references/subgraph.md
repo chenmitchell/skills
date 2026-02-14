@@ -105,12 +105,10 @@ query($seller: Bytes!, $first: Int!) {
 }
 ```
 
-Example curl (remember to lowercase the address):
+Example curl (seller should be lowercase):
 ```bash
-SELLER="$(echo "$FROM_ADDRESS" | tr '[:upper:]' '[:lower:]')"
-curl -s "$SUBGRAPH_URL" -H 'content-type: application/json' --data "{
-  \"query\":\"query(\\$seller: Bytes!, \\$first: Int!){ erc721Listings(first: \\$first, orderBy: timeCreated, orderDirection: desc, where:{seller: \\$seller}){ id erc721TokenAddress tokenId priceInWei timeCreated cancelled timePurchased } }\",
-  \"variables\":{ \"seller\":\"$SELLER\", \"first\":10 }
-}" | jq
+curl -s "$SUBGRAPH_URL" -H 'content-type: application/json' --data '{
+  "query":"query($seller: Bytes!, $first: Int!){ erc721Listings(first: $first, orderBy: timeCreated, orderDirection: desc, where:{seller: $seller}){ id erc721TokenAddress tokenId priceInWei timeCreated cancelled timePurchased } }",
+  "variables":{ "seller":"<SELLER_ADDRESS_LOWERCASE>", "first":10 }
+}'
 ```
-

@@ -1,7 +1,11 @@
 ---
 name: Browser Automation
 description: |
-  AI-powered browser automation using Midscene. Use this skill when the user wants to:
+  Vision-driven browser automation using Midscene. Operates entirely from screenshots — no DOM or accessibility labels required. Can interact with all visible elements on screen regardless of technology stack.
+
+  Opens a new browser tab for each target URL via Puppeteer (headless Chrome).
+
+  Use this skill when the user wants to:
   - Browse, navigate, or open web pages
   - Scrape, extract, or collect data from websites
   - Fill out forms, click buttons, or interact with web elements
@@ -10,11 +14,8 @@ description: |
   - Automate multi-step web workflows
   - Run browser automation or check website content
 
-  Opens a new browser tab for each target URL via Puppeteer (headless Chrome).
 
-  Trigger keywords: browse, navigate, open url, web page, website, scrape, extract, crawl,
-  fill form, click, interact, verify, validate, test, assert, screenshot, frontend, UI test,
-  web automation, search web, check page, puppeteer, headless, CI
+  Powered by Midscene.js (https://midscenejs.com)
 allowed-tools:
   - Bash
 ---
@@ -23,11 +24,11 @@ allowed-tools:
 
 > **CRITICAL RULES — VIOLATIONS WILL BREAK THE WORKFLOW:**
 >
-> 1. **NEVER set `run_in_background: true`** on any Bash tool call for midscene commands. Every `npx @midscene/web` command MUST use `run_in_background: false` (or omit the parameter entirely). Background execution causes notification spam after the task ends and breaks the screenshot-analyze-act loop.
-> 2. **Send only ONE midscene CLI command per Bash tool call.** Wait for its result, read the screenshot, then decide the next action. Do NOT chain commands with `&&`, `;`, or `sleep`.
-> 3. **Set `timeout: 60000`** (60 seconds) on each Bash tool call to allow sufficient time for midscene commands to complete synchronously.
+> 1. **Never run midscene commands in the background.** Each command must run synchronously so you can read its output (especially screenshots) before deciding the next action. Background execution breaks the screenshot-analyze-act loop.
+> 2. **Run only one midscene command at a time.** Wait for the previous command to finish, read the screenshot, then decide the next action. Never chain multiple commands together.
+> 3. **Allow enough time for each command to complete.** Midscene commands involve AI inference and screen interaction, which can take longer than typical shell commands. A typical command needs about 1 minute; complex `act` commands may need even longer.
 
-Automate web browsing using `npx @midscene/web`. Launches a headless Chrome via Puppeteer that **persists across CLI calls** — no session loss between commands. Each CLI command maps directly to an MCP tool — you (the AI agent) act as the brain, deciding which actions to take based on screenshots.
+Automate web browsing using `npx @midscene/web@1`. Launches a headless Chrome via Puppeteer that **persists across CLI calls** — no session loss between commands. Each CLI command maps directly to an MCP tool — you (the AI agent) act as the brain, deciding which actions to take based on screenshots.
 
 ## When to Use
 
@@ -41,51 +42,73 @@ If you need to preserve login sessions or work with the user's existing browser 
 
 ## Prerequisites
 
-The CLI automatically loads `.env` from the current working directory. Before first use, verify the `.env` file exists and contains the API key:
+Midscene requires models with strong visual grounding capabilities. The following environment variables must be configured — either as system environment variables or in a `.env` file in the current working directory (Midscene loads `.env` automatically):
 
 ```bash
-cat .env | grep MIDSCENE_MODEL_API_KEY | head -c 30
+MIDSCENE_MODEL_API_KEY="your-api-key"
+MIDSCENE_MODEL_NAME="model-name"
+MIDSCENE_MODEL_BASE_URL="https://..."
+MIDSCENE_MODEL_FAMILY="family-identifier"
 ```
 
-If no `.env` file or no API key, ask the user to create one. See [Model Configuration](https://midscenejs.com/zh/model-common-config.html) for supported providers.
+Example: Gemini (Gemini-3-Flash)
 
-**Do NOT run `echo $MIDSCENE_MODEL_API_KEY`** — the key is loaded from `.env` at runtime, not from shell environment.
+```bash
+MIDSCENE_MODEL_API_KEY="your-google-api-key"
+MIDSCENE_MODEL_NAME="gemini-3-flash"
+MIDSCENE_MODEL_BASE_URL="https://generativelanguage.googleapis.com/v1beta/openai/"
+MIDSCENE_MODEL_FAMILY="gemini"
+```
+
+Example: Qwen3-VL
+
+```bash
+MIDSCENE_MODEL_API_KEY="your-openrouter-api-key"
+MIDSCENE_MODEL_NAME="qwen/qwen3-vl-235b-a22b-instruct"
+MIDSCENE_MODEL_BASE_URL="https://openrouter.ai/api/v1"
+MIDSCENE_MODEL_FAMILY="qwen3-vl"
+```
+
+Example: Doubao Seed 1.6
+
+```bash
+MIDSCENE_MODEL_API_KEY="your-doubao-api-key"
+MIDSCENE_MODEL_NAME="doubao-seed-1-6-250615"
+MIDSCENE_MODEL_BASE_URL="https://ark.cn-beijing.volces.com/api/v3"
+MIDSCENE_MODEL_FAMILY="doubao-vision"
+```
+
+Commonly used models: Doubao Seed 1.6, Qwen3-VL, Zhipu GLM-4.6V, Gemini-3-Pro, Gemini-3-Flash.
+
+If the model is not configured, ask the user to set it up. See [Model Configuration](https://midscenejs.com/model-common-config) for supported providers.
 
 ## Commands
 
 ### Connect to a Web Page
 
 ```bash
-npx @midscene/web connect --url https://example.com
+npx @midscene/web@1 connect --url https://example.com
 ```
 
 ### Take Screenshot
 
 ```bash
-npx @midscene/web take_screenshot
+npx @midscene/web@1 take_screenshot
 ```
 
 After taking a screenshot, read the saved image file to understand the current page state before deciding the next action.
 
-### Perform Actions
+### Perform Action
 
-Use actionSpace tools to interact with the page:
-
-```bash
-npx @midscene/web Tap --locate '{"prompt":"the Login button"}'
-npx @midscene/web Input --locate '{"prompt":"the email field"}' --value 'user@example.com'
-npx @midscene/web Scroll --direction down
-npx @midscene/web Hover --locate '{"prompt":"the navigation menu"}'
-npx @midscene/web KeyboardPress --value Enter
-npx @midscene/web DragAndDrop --locate '{"prompt":"the draggable item"}' --target '{"prompt":"the drop zone"}'
-```
-
-### Natural Language Action
-
-Use `act` to execute multi-step operations in a single command — useful for transient UI interactions:
+Use `act` to interact with the page and get the result. It autonomously handles all UI interactions internally — clicking, typing, scrolling, hovering, waiting, and navigating — so you should give it complex, high-level tasks as a whole rather than breaking them into small steps. Describe **what you want to do and the desired effect** in natural language:
 
 ```bash
-npx @midscene/web act --prompt "click the country dropdown and select Japan"
+# specific instructions
+npx @midscene/web@1 act --prompt "click the Login button and fill in the email field with 'user@example.com'"
+npx @midscene/web@1 act --prompt "scroll down and click the Submit button"
+
+# or target-driven instructions
+npx @midscene/web@1 act --prompt "click the country dropdown and select Japan"
 ```
 
 ### Disconnect
@@ -93,7 +116,7 @@ npx @midscene/web act --prompt "click the country dropdown and select Japan"
 Disconnect from the page but keep the browser running:
 
 ```bash
-npx @midscene/web disconnect
+npx @midscene/web@1 disconnect
 ```
 
 ### Close Browser
@@ -101,7 +124,7 @@ npx @midscene/web disconnect
 Close the browser completely when finished:
 
 ```bash
-npx @midscene/web close
+npx @midscene/web@1 close
 ```
 
 ## Workflow Pattern
@@ -109,107 +132,34 @@ npx @midscene/web close
 The browser **persists across CLI calls** via a background Chrome process. Follow this pattern:
 
 1. **Connect** to a URL to open a new tab
-2. **Take screenshot** to see the current state
-3. **Analyze** the screenshot to decide the next action
-4. **Execute action** (Tap, Input, Scroll, etc.)
-5. **Take screenshot** again to verify the result
-6. **Repeat** steps 3-5 until the task is complete
-7. **Close** the browser when done (or **disconnect** to keep it for later)
+2. **Take screenshot** to see the current state, make sure the page is loaded.
+3. **Execute action** using `act` to perform the desired action or target-driven instructions.
+4. **Close** the browser when done (or **disconnect** to keep it for later)
 
 ## Best Practices
 
 1. **Always connect first**: Navigate to the target URL with `connect --url` before any interaction.
-2. **Take screenshots frequently**: Before and after each action to verify state changes.
-3. **Be specific in locate prompts**: Instead of `"the button"`, say `"the blue Submit button in the contact form"`.
-4. **Use natural language**: Describe what you see on the page, not CSS selectors. Say `"the red Buy Now button"` instead of `"#buy-btn"`.
-5. **Handle loading states**: After navigation or actions that trigger page loads, take a screenshot to verify the page has loaded.
-6. **Close when done**: Use `close` to shut down the browser and free resources.
-7. **Never run in background**: On every Bash tool call, either omit `run_in_background` or explicitly set it to `false`. Never set `run_in_background: true`.
+2. **Be specific about UI elements**: Instead of `"the button"`, say `"the blue Submit button in the contact form"`.
+3. **Use natural language**: Describe what you see on the page, not CSS selectors. Say `"the red Buy Now button"` instead of `"#buy-btn"`.
+4. **Handle loading states**: After navigation or actions that trigger page loads, take a screenshot to verify the page has loaded.
+5. **Close when done**: Use `close` to shut down the browser and free resources.
+6. **Never run in background**: Every midscene command must run synchronously — background execution breaks the screenshot-analyze-act loop.
+7. **Batch related operations into a single `act` command**: When performing consecutive operations within the same page, combine them into one `act` prompt instead of splitting them into separate commands. For example, "fill in the email and password fields, then click the Login button" should be a single `act` call, not three. This reduces round-trips, avoids unnecessary screenshot-analyze cycles, and is significantly faster.
+8. **Summarize report files after completion**: After finishing the automation task, collect and summarize all report files (screenshots, logs, output files, etc.) for the user. Present a clear summary of what was accomplished, what files were generated, and where they are located, making it easy for the user to review the results.
 
-### Handle Transient UI
-
-Dropdowns, autocomplete popups, tooltips, and confirm dialogs **disappear** between commands. When interacting with transient UI:
-
-- **Use `act` for multi-step transient interactions** — it executes everything in a single process
-- **Or execute commands rapidly in sequence** — do NOT take screenshots between steps
-- **Do NOT pause to analyze** — run all commands for the transient interaction back-to-back
-- Persistent UI (page content, navigation bars, sidebars) is fine to interact with across separate commands
-
-**Example — Dropdown selection using `act` (recommended for transient UI):**
+**Example — Dropdown selection:**
 
 ```bash
-npx @midscene/web act --prompt "click the country dropdown and select Japan"
-npx @midscene/web take_screenshot
+npx @midscene/web@1 act --prompt "click the country dropdown and select Japan"
+npx @midscene/web@1 take_screenshot
 ```
 
-**Example — Dropdown selection using individual commands (alternative):**
+**Example — Form interaction:**
 
 ```bash
-# These commands must be run back-to-back WITHOUT screenshots in between
-npx @midscene/web Tap --locate '{"prompt":"the country dropdown"}'
-npx @midscene/web Tap --locate '{"prompt":"Japan option in the dropdown list"}'
-# NOW take a screenshot to verify the result
-npx @midscene/web take_screenshot
+npx @midscene/web@1 act --prompt "fill in the email field with 'user@example.com' and the password field with 'pass123', then click the Log In button"
+npx @midscene/web@1 take_screenshot
 ```
-
-## Common Patterns
-
-### Simple Browsing
-
-```bash
-npx @midscene/web connect --url 'https://news.ycombinator.com'
-npx @midscene/web take_screenshot
-# Read the screenshot, then decide next action
-npx @midscene/web close
-```
-
-### Multi-Step Interaction
-
-```bash
-npx @midscene/web connect --url 'https://example.com'
-npx @midscene/web Tap --locate '{"prompt":"the Sign In link"}'
-npx @midscene/web take_screenshot
-npx @midscene/web Input --locate '{"prompt":"the email field"}' --value 'user@example.com'
-npx @midscene/web Input --locate '{"prompt":"the password field"}' --value 'password123'
-npx @midscene/web Tap --locate '{"prompt":"the Log In button"}'
-npx @midscene/web take_screenshot
-npx @midscene/web close
-```
-
-### Frontend Verification
-
-```bash
-npx @midscene/web connect --url 'http://localhost:3000'
-npx @midscene/web take_screenshot
-# Analyze: verify login form is visible
-npx @midscene/web Input --locate '{"prompt":"the email field"}' --value 'test@example.com'
-npx @midscene/web Input --locate '{"prompt":"the password field"}' --value 'password'
-npx @midscene/web Tap --locate '{"prompt":"the Submit button"}'
-npx @midscene/web take_screenshot
-# Analyze: verify the welcome message is displayed
-npx @midscene/web close
-```
-
-### Data Extraction
-
-```bash
-npx @midscene/web connect --url 'https://example.com/products'
-npx @midscene/web take_screenshot
-# Read the screenshot to extract product names, prices, and ratings
-npx @midscene/web close
-```
-
-## Frontend Verification Workflow
-
-When asked to verify or test a frontend application:
-
-1. **Start the dev server** if not already running (e.g., `npm run dev`).
-2. **Connect** to the local URL (e.g., `http://localhost:3000`).
-3. **Take a screenshot** to see the initial state.
-4. **Analyze the screenshot** to verify expected UI elements are present.
-5. **Perform interactions** (Tap, Input, Scroll) to test user flows.
-6. **Take screenshots** after each step to verify outcomes.
-7. **Close** the browser when finished.
 
 ## Troubleshooting
 

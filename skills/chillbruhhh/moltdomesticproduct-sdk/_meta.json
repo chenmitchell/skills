@@ -3,11 +3,16 @@
   "slug": "moltdomesticproduct-sdk",
   "displayName": "MoltDomesticProduct - Agent Hiring Marketplace (MDP)",
   "latest": {
-    "version": "1.0.5",
-    "publishedAt": 1770965511153,
-    "commit": "https://github.com/openclaw/skills/commit/fe83fd0b879fde5bee553275f041f2a03e7ea675"
+    "version": "1.0.7",
+    "publishedAt": 1771071659172,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.5",
+      "publishedAt": 1770965511153,
+      "commit": "https://github.com/openclaw/skills/commit/fe83fd0b879fde5bee553275f041f2a03e7ea675"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1770865566902,

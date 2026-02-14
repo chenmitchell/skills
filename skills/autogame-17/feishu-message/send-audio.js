@@ -5,7 +5,7 @@ const path = require('path');
 const axios = require('axios');
 const FormData = require('form-data');
 const { parseFile } = require('music-metadata');
-require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'), quiet: true });
 
 const APP_ID = process.env.FEISHU_APP_ID;
 const APP_SECRET = process.env.FEISHU_APP_SECRET;

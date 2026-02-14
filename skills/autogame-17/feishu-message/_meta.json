@@ -1,13 +1,18 @@
 {
   "owner": "autogame-17",
   "slug": "feishu-message",
-  "displayName": "Feishu Message",
+  "displayName": "feishu-message",
   "latest": {
-    "version": "1.0.6",
-    "publishedAt": 1770791718829,
-    "commit": "https://github.com/openclaw/skills/commit/711b7028bb38f9e8423f0e7e026017f8f6fbc71f"
+    "version": "1.0.5",
+    "publishedAt": 1771046447123,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.6",
+      "publishedAt": 1770791718829,
+      "commit": "https://github.com/openclaw/skills/commit/711b7028bb38f9e8423f0e7e026017f8f6fbc71f"
+    },
     {
       "version": "1.0.5",
       "publishedAt": 1770561356736,

@@ -12,7 +12,6 @@ Examples:
     ./sudoku_fetcher.py https://www.sudokuonline.io/kids/letters-4-4 --letters
 """
 
-import ast
 import requests
 import re
 import random
@@ -26,8 +25,6 @@ DEFAULT_URL = "https://www.sudokuonline.io/kids/numbers-6-6"
 
 # Repo-local helpers (avoid absolute paths; makes this portable)
 REPO_ROOT = Path(__file__).resolve().parent
-ENCODE_LZ_JS = REPO_ROOT / "encode_lz.js"
-ENCODE_NATIVE_JS = REPO_ROOT / "encode_native.js"
 
 def fetch_puzzles(url):
     """Fetch preloaded puzzles from the given URL."""
@@ -52,18 +49,21 @@ def fetch_puzzles(url):
     for puzzle_match in re.finditer(r"\{[^}]+\}", puzzles_str):
         puzzle_str = puzzle_match.group(0)
         # Convert JS object to JSON
-        # Convert a small JS object literal to a safe Python literal, then parse.
-        # IMPORTANT: Never execute fetched HTML as code.
+        # Convert JS object literal to valid JSON, then parse safely.
         s = puzzle_str
-        # Quote unquoted JS keys: {foo: 'bar'} -> {"foo": 'bar'}
+        # Replace single quotes with double quotes
+        s = s.replace("'", '"')
+        # Fix JS keywords → JSON
+        s = re.sub(r"\btrue\b", "true", s)
+        s = re.sub(r"\bfalse\b", "false", s)
+        s = re.sub(r"\bnull\b", "null", s)
+        # Quote unquoted JS keys: {foo: "bar"} -> {"foo": "bar"}
         s = re.sub(r'([\{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:', r'\1"\2":', s)
-        # JS -> Python literals
-        s = s.replace("false", "False").replace("true", "True").replace("null", "None")
         try:
-            puzzle = ast.literal_eval(s)
+            puzzle = json.loads(s)
             if isinstance(puzzle, dict):
                 puzzles.append(puzzle)
-        except Exception:
+        except (json.JSONDecodeError, ValueError):
             continue
             
     return puzzles
@@ -160,71 +160,74 @@ def generate_scl_link(grid, size, title="Sudoku", author="Moltbot"):
     link = f"https://sudokupad.app/scl/{b64}"
     return link
 
-import subprocess
+import lzstring as _lzstring
+
+_lz = _lzstring.LZString()
+
+# SudokuPad classic compact codec (zipClassicSudoku2)
+_BLANK_ENCODES = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwx"
+
+def _zip_classic_sudoku2(puzzle: str) -> str:
+    """Compress an 81-char puzzle string using SudokuPad's compact classic codec."""
+    if not puzzle:
+        return ""
+    is_digit = lambda ch: ch.isdigit() and ch != "0"
+    digit = puzzle[0] if is_digit(puzzle[0]) else "0"
+    res = []
+    blanks = 0
+    for i in range(1, len(puzzle)):
+        nxt = puzzle[i] if is_digit(puzzle[i]) else "0"
+        if blanks == 5 or nxt != "0":
+            res.append(_BLANK_ENCODES[int(digit) + blanks * 10])
+            digit = nxt
+            blanks = 0
+        else:
+            blanks += 1
+    res.append(_BLANK_ENCODES[int(digit) + blanks * 10])
+    return "".join(res)
+
 
 def generate_puzzle_link(grid, size, title="Sudoku", author="Moltbot"):
-    """
-    Generate a SudokuPad /puzzle/ link (LZString compressed).
-    Uses SCL-style JSON payload but compressed with LZString.
-    """
-    # Build JSON (SCL style)
+    """Generate a SudokuPad /puzzle/ link (LZString compressed)."""
     givens_str = ""
     for r in range(size):
         for c in range(size):
             val = grid[r][c]
             givens_str += str(val) if val != 0 else "."
-            
+
     scl_obj = {
         "size": size,
         "givens": givens_str,
-        "metadata": {
-            "title": title,
-            "author": author
-        }
+        "metadata": {"title": title, "author": author},
     }
     json_str = json.dumps(scl_obj)
-    
-    # Compress using Node.js script (since python lzstring can be finicky)
+
     try:
-        result = subprocess.run(
-            ['node', str(ENCODE_LZ_JS), json_str],
-            capture_output=True, text=True, check=True
-        )
-        compressed = result.stdout.strip()
-        # Oliver prefers svencodes.com domain
+        compressed = _lz.compressToBase64(json_str)
         return f"https://sudokupad.svencodes.com/puzzle/{compressed}"
     except Exception as e:
         return f"Error generating puzzle link: {e}"
 
+
 def generate_native_link(grid, size, title="Sudoku"):
-    """
-    Generate a *real* Sven SudokuPad `/puzzle/` share link for classic sudoku.
-
-    Note: The `title` is embedded into the SudokuPad puzzle metadata (not the URL).
-
-    This uses SudokuPad's compact classic codec (see `PuzzleTools.zipClassicSudoku2`):
-    - Build an 81-char row-major string using digits and `0` for blanks
-    - Encode to compact `p`
-    - Wrap as JSON and LZString-compress (base64)
-
-    Note: This is intended for classic 9x9 sudokus.
-    """
-
+    """Generate a SudokuPad /puzzle/ share link for classic 9x9 sudoku."""
     if size != 9:
         return "Native /puzzle/ classic format currently implemented for 9x9 only."
 
-    puzzle81 = ''.join(str(grid[r][c]) if grid[r][c] else '0' for r in range(9) for c in range(9))
+    puzzle81 = "".join(
+        str(grid[r][c]) if grid[r][c] else "0" for r in range(9) for c in range(9)
+    )
+    p = _zip_classic_sudoku2(puzzle81)
+    wrapper = {
+        "p": p,
+        "n": title,
+        "s": "",
+        "m": f'Hi, please take a look at this puzzle: "{title}"',
+    }
 
     try:
-        result = subprocess.run(
-            ['node', str(ENCODE_NATIVE_JS), puzzle81, title],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        payload = result.stdout.strip()
-        # Payload is already URL-safe (EncodedURIComponent alphabet). Do not URL-encode.
-        return f"https://sudokupad.svencodes.com/puzzle/{payload}"
+        compressed = _lz.compressToBase64(json.dumps(wrapper))
+        return f"https://sudokupad.svencodes.com/puzzle/{compressed}"
     except Exception as e:
         return f"Error generating native link: {e}"
 

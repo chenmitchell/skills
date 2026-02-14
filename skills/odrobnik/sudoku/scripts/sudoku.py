@@ -13,8 +13,8 @@ Data source: https://www.sudokuonline.io (pages embed a `preloadedPuzzles` array
 Commands:
   - list
   - get <preset> [--index N|--id ID|--seed S] [--render] [--json]
-  - puzzle [--latest|--file PATH|--id ID] [--json]
-  - reveal [--latest|--file PATH|--id ID] [--full|--box ...|--cell r c] [--image] [--json]
+  - puzzle [--latest|--id ID] [--json]
+  - reveal [--latest|--id ID] [--full|--box ...|--cell r c] [--image] [--json]
 
 Notes:
 - Only **Classic 9×9** puzzles produce a reliable SudokuPad share link.
@@ -24,7 +24,6 @@ Notes:
 from __future__ import annotations
 
 import argparse
-import ast
 import json
 import math
 import os
@@ -61,10 +60,6 @@ from sudoku_print_render import render_sudoku_a4_pdf  # type: ignore
 # Walk up from the script's location to find the workspace root (parent of "skills/").
 # Falls back to SUDOKU_WORKSPACE env var, then cwd.
 def _find_workspace_root() -> Path:
-    env = os.environ.get("SUDOKU_WORKSPACE")
-    if env:
-        return Path(env)
-    
     # Prefer CWD if it looks like a workspace (handles symlinks correctly)
     cwd = Path.cwd()
     if (cwd / "skills").is_dir():
@@ -163,17 +158,20 @@ def parse_preloaded_puzzles(html: str) -> List[Dict[str, Any]]:
     blob = m.group(1)
     puzzles: List[Dict[str, Any]] = []
 
-    # Entries are JS-ish object literals.
+    # Entries are JS/Python-ish object literals — convert to valid JSON and parse safely.
     for pm in re.finditer(r"\{[^}]+\}", blob):
         s = pm.group(0)
-        s = re.sub(r"\btrue\b", "True", s)
-        s = re.sub(r"\bfalse\b", "False", s)
-        s = re.sub(r"\bnull\b", "None", s)
+        # Fix JS keywords → JSON
+        s = re.sub(r"\btrue\b", "true", s)
+        s = re.sub(r"\bfalse\b", "false", s)
+        s = re.sub(r"\bnull\b", "null", s)
+        # Replace single quotes with double quotes (site uses Python-style 'key': 'value')
+        s = s.replace("'", '"')
         try:
-            obj = ast.literal_eval(s)
+            obj = json.loads(s)
             if isinstance(obj, dict) and "id" in obj and "data" in obj:
                 puzzles.append(obj)
-        except Exception:
+        except (json.JSONDecodeError, ValueError):
             continue
 
     return puzzles
@@ -299,15 +297,11 @@ def find_puzzle_json_by_id(puzzle_id: str) -> Path:
     raise FileNotFoundError(f"No stored puzzle JSON found for id={puzzle_id}")
 
 
-def load_puzzle_doc(*, file: Optional[str] = None, puzzle_id: Optional[str] = None, latest: bool = False) -> Tuple[Dict[str, Any], Path]:
-    if sum(1 for x in (file is not None, puzzle_id is not None, latest) if x) > 1:
-        raise SystemExit("Use only one of --file / --id / --latest")
+def load_puzzle_doc(*, puzzle_id: Optional[str] = None, latest: bool = False) -> Tuple[Dict[str, Any], Path]:
+    if puzzle_id is not None and latest:
+        raise SystemExit("Use only one of --id / --latest")
 
-    if file is not None:
-        p = Path(file).expanduser()
-        if not p.exists():
-            raise FileNotFoundError(p)
-    elif puzzle_id is not None:
+    if puzzle_id is not None:
         p = find_puzzle_json_by_id(puzzle_id)
     else:
         p = latest_puzzle_json()
@@ -612,7 +606,7 @@ def cmd_get(args: argparse.Namespace) -> int:
 
 
 def cmd_render(args: argparse.Namespace) -> int:
-    doc, json_path = load_puzzle_doc(file=args.file, puzzle_id=args.id, latest=args.latest)
+    doc, json_path = load_puzzle_doc(puzzle_id=args.id, latest=args.latest)
 
     if args.pdf:
         # PDF is primarily for printing; we include the small header by default.
@@ -630,7 +624,7 @@ def cmd_render(args: argparse.Namespace) -> int:
 
 
 def cmd_share(args: argparse.Namespace) -> int:
-    doc, json_path = load_puzzle_doc(file=args.file, puzzle_id=args.id, latest=args.latest)
+    doc, json_path = load_puzzle_doc(puzzle_id=args.id, latest=args.latest)
     
     clues = doc["clues"]
     size = int(doc["size"])
@@ -665,7 +659,7 @@ def cmd_share(args: argparse.Namespace) -> int:
 
 
 def cmd_reveal(args: argparse.Namespace) -> int:
-    doc, json_path = load_puzzle_doc(file=args.file, puzzle_id=args.id, latest=args.latest)
+    doc, json_path = load_puzzle_doc(puzzle_id=args.id, latest=args.latest)
 
     size = int(doc["size"])
     letters_mode = bool(doc.get("preset", {}).get("letters", False))
@@ -775,7 +769,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_ren = sub.add_parser("render", help="Render puzzle image from stored JSON")
     g = p_ren.add_mutually_exclusive_group(required=False)
     g.add_argument("--latest", action="store_true", help="Use latest stored puzzle (default)")
-    g.add_argument("--file", help="Path to a stored puzzle JSON")
     g.add_argument("--id", help="Puzzle ID (full UUID or short 8-char ID from filename)")
     p_ren.add_argument("--printable", action="store_true", help="Include small header (difficulty + short ID) for printout")
     p_ren.add_argument("--pdf", action="store_true", help="Render as A4 PDF (recommended for printing)")
@@ -786,7 +779,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_share = sub.add_parser("share", help="Generate share link")
     g_share = p_share.add_mutually_exclusive_group(required=False)
     g_share.add_argument("--latest", action="store_true", help="Use latest stored puzzle (default)")
-    g_share.add_argument("--file", help="Path to a stored puzzle JSON")
     g_share.add_argument("--id", help="Puzzle ID (full UUID or short 8-char ID from filename)")
     p_share.add_argument("--type", choices=["sudokupad", "fpuzzle", "scl"], default="sudokupad", help="Link type")
     p_share.add_argument("--text", dest="json", action="store_false", help="Output text instead of JSON")
@@ -796,7 +788,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_rev = sub.add_parser("reveal", help="Reveal solution from stored JSON (full/box/cell)")
     g2 = p_rev.add_mutually_exclusive_group(required=False)
     g2.add_argument("--latest", action="store_true", help="Use latest stored puzzle (default)")
-    g2.add_argument("--file", help="Path to a stored puzzle JSON")
     g2.add_argument("--id", help="Puzzle ID (full UUID or short 8-char ID from filename)")
     p_rev.add_argument("--printable", action="store_true", help="Include small header (difficulty + short ID) for printout")
     p_rev.add_argument("--pdf", action="store_true", help="Render as A4 PDF (recommended for printing)")

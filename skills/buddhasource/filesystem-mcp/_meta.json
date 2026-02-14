@@ -1,0 +1,11 @@
+{
+  "owner": "buddhasource",
+  "slug": "filesystem-mcp",
+  "displayName": "Filesystem MCP Server",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771085072584,
+    "commit": null
+  },
+  "history": []
+}

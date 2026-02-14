@@ -12,136 +12,139 @@ tags:
   - gift
   - order
   - delivery
+env:
+  - name: BUYSTUFF_AGENT_ID
+    required: false
+    description: "Optional identifier for your agent, used to track orders. If omitted, orders are anonymous."
+data_sent:
+  - field: shipping address
+    destination: https://buystuff.ai
+    purpose: "Required to fulfill the Amazon order. Stored only for order processing."
+  - field: email address
+    destination: https://buystuff.ai
+    purpose: "Used to send payment link and order updates. Not shared with third parties."
+  - field: agentId
+    destination: https://buystuff.ai
+    purpose: "Optional agent identifier for order tracking. Not shared with third parties."
+permissions:
+  - network: https://buystuff.ai
+    reason: "All API calls go to buystuff.ai which proxies Amazon product data and manages orders."
 ---
 
-Your user wants to buy something. You can search Amazon for any product, see real prices and ratings, and place a real order shipped to any US address. No account needed — just search, pick, and checkout.
+## When to Use This Skill
 
-The service fee is 10% of (subtotal + shipping). Always show the full price breakdown to your user before confirming.
+Activate this skill when your user wants to:
+- **Buy something** — "buy me headphones," "order a birthday gift," "I need a new keyboard"
+- **Shop on Amazon** — "find me something on Amazon," "what's a good laptop stand?"
+- **Compare products** — "what are the best wireless earbuds under $50?"
+- **Send a gift** — "order a gift for my mom," "buy something nice for under $30"
+- **Reorder or track** — "where's my order?" "check on order AC-047"
+
+If the user mentions buying, ordering, shopping, gifting, or purchasing — this is your skill.
+
+## How It Works (The Short Version)
+
+Search Amazon → pick a product → checkout with a shipping address and email → confirm → done. The user gets an email with a payment link. They pay, we ship. That's it.
+
+All API calls go to **https://buystuff.ai** — one endpoint, no setup, no API keys needed.
+
+## Payment Model
+
+**No payment info is collected through this API.** Zero credit cards, zero tokens, zero wallets.
+
+After an order is confirmed, buystuff.ai emails the user a simple payment link. They click, pay securely on buystuff.ai, and we handle the rest — purchase from Amazon, ship to their door.
+
+- **Service fee:** 10% of (subtotal + shipping)
+- **Payment:** User gets an email with a payment link — not through this API
+- **Fulfillment:** Once paid, we buy from Amazon and ship within 24-48 hours
+- **Refunds:** support@buystuff.ai
+
+Always show the full price breakdown before confirming.
+
+## Data Handling
+
+All data goes to `https://buystuff.ai` only. No third parties receive user data.
+
+| Data | When | Purpose |
+|------|------|---------|
+| Search queries | Step 1 | Find products (no PII) |
+| Shipping address | Step 4 | Deliver the order |
+| Email | Step 4 | Send payment link + updates |
+| Agent ID (optional) | Step 4 | Track your agent's orders |
+
+## User Confirmation Requirement
+
+**You MUST get explicit user confirmation before confirming an order (Step 5).** Show the price breakdown, wait for "yes." No autonomous purchases. Even after confirmation, no money is charged through this API — the user pays via email link on their own terms.
+
+---
 
 ## Step 1: Search Products
 
 `/buy-amazon-search`
 
 ```bash
-curl "{{BASE_URL}}/search?q=wireless+earbuds&sort_by=price_low_to_high&number_of_results=10"
+curl "https://buystuff.ai/search?q=wireless+earbuds&sort_by=price_low_to_high&number_of_results=10"
 ```
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `q` | string | Yes | Search query |
-| `sort_by` | string | No | `price_low_to_high`, `price_high_to_low`, `average_review`, `most_recent`, `bestseller_rankings` |
+| `sort_by` | string | No | `price_low_to_high`, `price_high_to_low`, `average_review`, `most_recent` |
 | `number_of_results` | integer | No | Limit results (default 20) |
 | `exclude_sponsored` | boolean | No | Remove sponsored results |
 | `page` | integer | No | Results page number |
 
-Response:
+Response includes `results[]` with `asin`, `title`, `price`, `rating`, `ratingsTotal`, `isPrime`, `isBestseller`, `isDeal`.
 
-```json
-{
-  "success": true,
-  "results": [
-    {
-      "position": 1,
-      "asin": "B09F5RKG8P",
-      "title": "Sony WF-C500 Wireless Earbuds",
-      "price": { "value": 38.00, "currency": "USD", "raw": "$38.00" },
-      "rating": 4.5,
-      "ratingsTotal": 12420,
-      "image": "https://m.media-amazon.com/...",
-      "isPrime": true,
-      "isBestseller": false,
-      "isDeal": false,
-      "isSponsored": false,
-      "link": "https://amazon.com/dp/B09F5RKG8P"
-    }
-  ],
-  "pagination": { "currentPage": 1, "totalPages": 20, "totalResults": 400 },
-  "searchTerm": "wireless earbuds"
-}
-```
-
-Show at least 3-5 results so the user can compare. The `isPrime` flag usually means free shipping.
+**Agent tips:**
+- Show 3-5 results so the user can compare — don't just pick the first one
+- Mention ⭐ ratings and review counts — users trust social proof
+- Highlight Prime items (free shipping) and deals
+- If no results found, suggest broadening the search terms or trying different keywords
+- If the user has a budget, use `sort_by=price_low_to_high` and mention which ones fit
 
 ## Step 2: Check Product Details
 
 `/buy-amazon-details`
 
 ```bash
-curl "{{BASE_URL}}/product/B09F5RKG8P"
+curl "https://buystuff.ai/product/B09F5RKG8P"
 ```
 
-Response:
+Response includes full product info: `title`, `brand`, `price`, `buyboxWinner` (shipping cost, availability, Prime status), `rating`, `ratingBreakdown`, `specifications`, `variants`.
 
-```json
-{
-  "success": true,
-  "product": {
-    "asin": "B09F5RKG8P",
-    "title": "Sony WF-C500 Wireless Earbuds",
-    "description": "True wireless earbuds with...",
-    "brand": "Sony",
-    "price": { "value": 38.00, "currency": "USD", "raw": "$38.00" },
-    "buyboxWinner": {
-      "price": { "value": 38.00, "currency": "USD", "raw": "$38.00" },
-      "shipping": { "value": null, "raw": "FREE" },
-      "isPrime": true,
-      "fulfillment": "1p",
-      "availability": "In Stock"
-    },
-    "rating": 4.5,
-    "ratingsTotal": 12420,
-    "ratingBreakdown": { "5": 68, "4": 20, "3": 8, "2": 2, "1": 2 },
-    "mainImage": "https://m.media-amazon.com/...",
-    "specifications": [
-      { "name": "Battery Life", "value": "8 hours" }
-    ],
-    "variants": [
-      { "asin": "B09F5RKG8P", "title": "Black", "isCurrent": true },
-      { "asin": "B0CKFBWVPL", "title": "White", "isCurrent": false }
-    ]
-  }
-}
-```
-
-Check `buyboxWinner.shipping` — if it says "FREE", your user saves on shipping. Show the `ratingBreakdown` so users can gauge quality. If variants exist in different colors/sizes, let the user pick before adding to cart.
+**Agent tips:**
+- Check `buyboxWinner.availability` — if "Out of Stock," tell the user and suggest alternatives
+- If `buyboxWinner.shipping.raw` is "FREE", highlight it — users love free shipping
+- Show the `ratingBreakdown` percentages so users can see if ratings are legit (watch for lots of 1-stars)
+- If `variants` exist (colors, sizes), ask the user which one before adding to cart
+- Mention key `specifications` that match what the user asked about
 
 ## Step 3: Add to Cart
 
 `/buy-amazon-cart`
 
 ```bash
-curl -X POST {{BASE_URL}}/cart \
+curl -X POST https://buystuff.ai/cart \
   -H "Content-Type: application/json" \
   -d '{"asin": "B09F5RKG8P", "quantity": 1}'
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `asin` | string | Yes | Amazon product ID from search/product results |
-| `quantity` | integer | No | Number of items (default: 1) |
+| `asin` | string | Yes | Amazon product ID |
+| `quantity` | integer | No | Default: 1 |
 
-Response:
+Save the `cartId` from the response — you need it for checkout.
 
-```json
-{
-  "success": true,
-  "cartId": "cart_abc123",
-  "items": [
-    { "asin": "B09F5RKG8P", "title": "Sony WF-C500 Wireless Earbuds", "price": 38.00, "quantity": 1, "image": "https://..." }
-  ],
-  "subtotal": 38.00,
-  "status": "OPEN"
-}
-```
+**If this fails:** The ASIN might be invalid or the product unavailable. Go back to search and help the user pick another option.
 
-Save the `cartId` — you need it for checkout and confirmation.
-
-## Step 4: Checkout with Shipping Address
+## Step 4: Checkout
 
 `/buy-amazon-checkout`
 
 ```bash
-curl -X POST {{BASE_URL}}/cart/cart_abc123/checkout \
+curl -X POST https://buystuff.ai/cart/cart_abc123/checkout \
   -H "Content-Type: application/json" \
   -d '{
     "shipping": {
@@ -153,6 +156,7 @@ curl -X POST {{BASE_URL}}/cart/cart_abc123/checkout \
       "zip": "94105",
       "country": "US"
     },
+    "email": "john@example.com",
     "agentId": "your-agent-id"
   }'
 ```
@@ -161,156 +165,138 @@ curl -X POST {{BASE_URL}}/cart/cart_abc123/checkout \
 |-------|------|----------|-------------|
 | `shipping.name` | string | Yes | Recipient full name |
 | `shipping.line1` | string | Yes | Street address |
-| `shipping.line2` | string | No | Apartment, suite, unit |
+| `shipping.line2` | string | No | Apt, suite, unit |
 | `shipping.city` | string | Yes | City |
-| `shipping.state` | string | Yes | 2-letter state code (e.g. "CA") |
-| `shipping.zip` | string | Yes | ZIP code (5+ digits) |
-| `shipping.country` | string | No | Country code (default: "US") |
-| `agentId` | string | No | Your agent identifier for order tracking |
+| `shipping.state` | string | Yes | 2-letter state code |
+| `shipping.zip` | string | Yes | ZIP code |
+| `shipping.country` | string | No | Default: "US" |
+| `email` | string | Yes | For payment link + order updates |
+| `agentId` | string | No | Your agent ID |
 
-Response:
+Response returns `summary` with `subtotal`, `shipping`, `serviceFee`, `total`.
 
-```json
-{
-  "success": true,
-  "cartId": "cart_abc123",
-  "summary": {
-    "items": [{ "asin": "B09F5RKG8P", "title": "Sony WF-C500 Wireless Earbuds", "price": 38.00, "quantity": 1 }],
-    "subtotal": 38.00,
-    "shipping": 5.99,
-    "serviceFee": 4.40,
-    "total": 48.39
-  },
-  "shippingAddress": {
-    "name": "John Doe",
-    "line1": "123 Main St",
-    "line2": "Apt 4B",
-    "city": "San Francisco",
-    "state": "CA",
-    "zip": "94105",
-    "country": "US"
-  },
-  "message": "Review your order and confirm to place it."
-}
-```
-
-**Always present this breakdown to the user before confirming:**
-- Subtotal: product price
-- Shipping: from Amazon (often FREE with Prime)
-- Service fee: 10% of (subtotal + shipping)
-- Total: what they'll pay
+**Agent tips:**
+- If the user hasn't given a shipping address, ask for it naturally: "Where should I ship it?"
+- If no email provided, ask: "What email should we send the payment link to?"
+- Always present the full breakdown before confirming:
+  - Subtotal, Shipping (often FREE with Prime), Service fee (10%), **Total**
+- If the user seems surprised by the price, remind them of the 10% service fee and offer to find alternatives
 
 ## Step 5: Confirm Order
 
 `/buy-amazon-confirm`
 
+**Only call this after the user says yes.**
+
 ```bash
-curl -X POST {{BASE_URL}}/cart/cart_abc123/confirm
+curl -X POST https://buystuff.ai/cart/cart_abc123/confirm
 ```
 
-Response:
+Response returns `orderId`, `status`, `total`, and a confirmation message.
 
-```json
-{
-  "success": true,
-  "orderId": "AC-MLLZVLMB-001",
-  "status": "PENDING_FULFILLMENT",
-  "items": [{ "asin": "B09F5RKG8P", "title": "Sony WF-C500 Wireless Earbuds", "price": 38.00, "quantity": 1 }],
-  "total": 48.39,
-  "shippingAddress": { "name": "John Doe", "line1": "123 Main St", "city": "San Francisco", "state": "CA", "zip": "94105", "country": "US" },
-  "message": "Order confirmed! We'll process it within 24-48 hours."
-}
-```
-
-Save the `orderId` to track status later. The order will be fulfilled within 24-48 hours.
+Tell the user: "Check your email for the payment link — once you pay, we'll ship it within 24-48 hours!"
 
 ## Step 6: Track Order
 
 `/buy-amazon-status`
 
 ```bash
-curl "{{BASE_URL}}/order/AC-MLLZVLMB-001"
+curl "https://buystuff.ai/order/AC-MLLZVLMB-001"
 ```
 
-Response:
+**Statuses:** `PENDING_FULFILLMENT` → `PROCESSING` → `SHIPPED` → `DELIVERED`
 
-```json
-{
-  "success": true,
-  "order": {
-    "orderId": "AC-MLLZVLMB-001",
-    "status": "PENDING_FULFILLMENT",
-    "items": [{ "asin": "B09F5RKG8P", "title": "Sony WF-C500 Wireless Earbuds", "price": 38.00, "quantity": 1 }],
-    "total": 48.39,
-    "trackingNumber": null,
-    "createdAt": "2026-02-14T07:28:09Z"
-  }
-}
-```
+When status is `SHIPPED`, there will be a `trackingNumber` — share it with the user.
 
-**Order statuses:** `PENDING_FULFILLMENT` → `PROCESSING` → `SHIPPED` (tracking number added) → `DELIVERED`
+To list all orders: `GET https://buystuff.ai/orders`
 
-To list all orders: `GET {{BASE_URL}}/orders`
+---
 
-## Example Conversation
+## Example: Buying Earbuds
 
 ```
 User: Find me wireless earbuds under $50
 
-Agent: Here are the top wireless earbuds under $50:
+Agent: Here are the top wireless earbuds under $50 on Amazon:
 
-1. Sony WF-C500 - $38.00 ⭐4.5 (12,420 reviews) Prime
-2. JBL Tune 130NC - $49.95 ⭐4.3 (8,200 reviews) Prime
-3. Soundcore A20i - $29.99 ⭐4.4 (45,000 reviews) Prime
+1. 🏆 Sony WF-C500 — $38.00 ⭐4.5 (12,420 reviews) ✓Prime
+2. JBL Tune 130NC — $49.95 ⭐4.3 (8,200 reviews) ✓Prime
+3. Soundcore A20i — $29.99 ⭐4.4 (45,000 reviews) ✓Prime
 
-Want details on any of these?
+All three have Prime (free shipping). The Sony has the best rating, and the Soundcore has the most reviews. Want details on any of these?
 
-User: The Sony ones look good. Buy them for me. Ship to John Doe, 123 Main St, San Francisco CA 94105
+User: Get the Sony ones. Ship to John Doe, 123 Main St, San Francisco CA 94105. Email is john@example.com
 
-Agent: Here's your order summary:
+Agent: Here's your order:
 
   Sony WF-C500 Wireless Earbuds    $38.00
-  Shipping                          $5.99
-  Service fee (10%)                 $4.40
+  Shipping (Prime)                  FREE
+  Service fee (10%)                 $3.80
   ─────────────────────────────────
-  Total                            $48.39
+  Total                            $41.80
 
 Ship to: John Doe, 123 Main St, San Francisco, CA 94105
 
-Confirm order?
+Ready to confirm?
 
-User: Yes
+User: Yes!
 
-Agent: Order confirmed! 🎉
+Agent: Done! Order #AC-MLLZVLMB-001 is confirmed. 🎉
 
-  Order #AC-MLLZVLMB-001
-  Status: Processing
-  Estimated fulfillment: 24-48 hours
-
-I'll track this for you — just ask anytime.
+We've sent a payment link to john@example.com — just click, pay, and we'll ship within 24-48 hours.
 ```
+
+## Example: Birthday Gift
+
+```
+User: I need a birthday gift for my sister, she's into yoga. Budget is $30.
+
+Agent: Here are some great yoga gifts under $30 on Amazon:
+
+1. Manduka eKO Yoga Mat Towel — $24.99 ⭐4.6 (3,200 reviews) ✓Prime
+2. Yoga Wheel Set (3-pack) — $27.95 ⭐4.5 (8,100 reviews) ✓Prime
+3. Essential Oils Gift Set — $19.99 ⭐4.4 (22,000 reviews) ✓Prime 🔥Deal
+
+The essential oils set is on sale and fits your budget with room to spare. The yoga wheel set is really popular. Want to see details on any?
+
+User: The yoga wheel set! Ship to Sarah Chen, 456 Oak Ave, Austin TX 78701. My email is mike@example.com
+
+Agent: Perfect gift choice! Here's the summary:
+
+  Yoga Wheel Set (3-pack)          $27.95
+  Shipping (Prime)                  FREE
+  Service fee (10%)                 $2.80
+  ─────────────────────────────────
+  Total                            $30.75
+
+Ship to: Sarah Chen, 456 Oak Ave, Austin, TX 78701
+
+Confirm?
+
+User: Do it
+
+Agent: Order #AC-MLLZVLMB-002 confirmed! 🎁
+
+Payment link sent to mike@example.com. Pay and we'll have it shipped to Sarah within 24-48 hours. Happy birthday to your sister!
+```
+
+## Handling Common Situations
+
+- **User doesn't give a budget:** Search normally and show a range of prices. Ask "Do you have a price range in mind?" if results vary widely.
+- **Product out of stock:** Say "That one's currently unavailable" and suggest similar alternatives from the search results.
+- **User wants to compare two products:** Pull details on both and present a quick comparison (price, rating, key specs).
+- **User changes their mind after checkout:** They can simply not pay the email link. The order expires if unpaid.
+- **User asks about returns:** Direct them to support@buystuff.ai.
+- **Search returns too many results:** Narrow with `sort_by`, `exclude_sponsored`, or a more specific query.
 
 ## Quick Reference
 
-```bash
-# Search
-GET {{BASE_URL}}/search?q=wireless+earbuds
-
-# Product details
-GET {{BASE_URL}}/product/B09F5RKG8P
-
-# Create cart
-POST {{BASE_URL}}/cart  {"asin":"B09F5RKG8P","quantity":1}
-
-# Checkout
-POST {{BASE_URL}}/cart/{cartId}/checkout  {"shipping":{"name":"...","line1":"...","city":"...","state":"CA","zip":"94105"}}
-
-# Confirm
-POST {{BASE_URL}}/cart/{cartId}/confirm
-
-# Track order
-GET {{BASE_URL}}/order/{orderId}
-
-# List all orders
-GET {{BASE_URL}}/orders
+```
+GET  https://buystuff.ai/search?q={query}           Search products
+GET  https://buystuff.ai/product/{asin}              Product details
+POST https://buystuff.ai/cart                        Create cart
+POST https://buystuff.ai/cart/{cartId}/checkout      Checkout
+POST https://buystuff.ai/cart/{cartId}/confirm       Confirm order
+GET  https://buystuff.ai/order/{orderId}             Track order
+GET  https://buystuff.ai/orders                      List all orders
 ```

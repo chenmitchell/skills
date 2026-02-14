@@ -1,0 +1,11 @@
+{
+  "owner": "saschabuehrle",
+  "slug": "cascadeflow",
+  "displayName": "cascadeflow: Cost + Latency Reduction",
+  "latest": {
+    "version": "0.7.1",
+    "publishedAt": 1771100154469,
+    "commit": null
+  },
+  "history": []
+}

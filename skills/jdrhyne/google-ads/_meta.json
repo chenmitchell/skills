@@ -3,11 +3,16 @@
   "slug": "google-ads",
   "displayName": "Google Ads",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1768840602714,
-    "commit": "https://github.com/clawdbot/skills/commit/e1dcb3f2efe0b09dd8f5eafc2329c4e54cde25b7"
+    "version": "1.1.0",
+    "publishedAt": 1770969683223,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1768840602714,
+      "commit": "https://github.com/clawdbot/skills/commit/e1dcb3f2efe0b09dd8f5eafc2329c4e54cde25b7"
+    },
     {
       "version": "1.0.2",
       "publishedAt": 1768840295506,

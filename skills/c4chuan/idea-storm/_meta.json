@@ -3,9 +3,15 @@
   "slug": "idea-storm",
   "displayName": "Idea Storm",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1770981919423,
-    "commit": "https://github.com/openclaw/skills/commit/ed731abf03c9abbbda0d7d89601439a1c8a51405"
+    "version": "1.1.0",
+    "publishedAt": 1771065476084,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1770981919423,
+      "commit": "https://github.com/openclaw/skills/commit/ed731abf03c9abbbda0d7d89601439a1c8a51405"
+    }
+  ]
 }

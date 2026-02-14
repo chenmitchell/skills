@@ -1,10 +1,10 @@
 ---
-name: idea-lab
+name: idea-storm
 version: 1.0.0
-description: 工程问题的自动化迭代实验室。给定一个 idea 或工程问题，自动调研方案、设计实现、验证效果、迭代优化，结果存入 Notion。触发词："idea-lab"、"实验一下"、"帮我验证"、"迭代优化"、"idea 验证"。当用户提出一个工程问题并希望自动化地调研→设计→验证→迭代时使用此 skill。
+description: 工程问题的自动化迭代实验室。给定一个 idea 或工程问题，自动调研方案、设计实现、验证效果、迭代优化，结果存入 Notion。触发词："idea-storm"、"实验一下"、"帮我验证"、"迭代优化"、"idea 验证"。当用户提出一个工程问题并希望自动化地调研→设计→验证→迭代时使用此 skill。
 ---
 
-# Idea Lab
+# Idea Storm
 
 工程问题的自动化 设计→验证→迭代 闭环。后台运行，不阻塞主会话。
 
@@ -16,7 +16,7 @@ description: 工程问题的自动化迭代实验室。给定一个 idea 或工�
 主会话                              子 agent (isolated)
   │                                    │
   ├─ 创建 experiment.yaml              │
-  ├─ spawn("idea-lab: 调研+设计") ───→ │
+  ├─ spawn("idea-storm: 调研+设计") ───→ │
   │   (继续聊天)                       ├─ Phase 2: 调研
   │                                    ├─ Phase 3: 方案设计
   │                                    ├─ 更新 experiment.yaml
@@ -24,7 +24,7 @@ description: 工程问题的自动化迭代实验室。给定一个 idea 或工�
   │                                    └─ (退出)
   │
   ├─ 用户确认方案
-  ├─ spawn("idea-lab: 实现+验证") ───→ │
+  ├─ spawn("idea-storm: 实现+验证") ───→ │
   │   (继续聊天)                       ├─ 读 experiment.yaml 恢复状态
   │                                    ├─ Phase 4: 实现
   │                                    ├─ Phase 5: 验证
@@ -34,9 +34,9 @@ description: 工程问题的自动化迭代实验室。给定一个 idea 或工�
   │                                    └─ (退出)
   │
   ├─ 用户确认（继续迭代/收敛）
-  ├─ spawn("idea-lab: 迭代N") ───→    ...（重复直到收敛）
+  ├─ spawn("idea-storm: 迭代N") ───→    ...（重复直到收敛）
   │
-  ├─ spawn("idea-lab: 收敛报告") ──→  │
+  ├─ spawn("idea-storm: 收敛报告") ──→  │
   │  ◄── announce 最终报告 ────────────┤  ✅ 检查点3
   └─ 完成
 ```
@@ -50,15 +50,15 @@ description: 工程问题的自动化迭代实验室。给定一个 idea 或工�
 
 示例：
 ```
-sessions_spawn(task="执行 idea-lab 实验。
+sessions_spawn(task="执行 idea-storm 实验。
 读取实验状态：experiments/facial-gan-20260213/experiment.yaml
 执行阶段：Phase 4-6（实现→验证→评估）
 用户反馈：方案OK，用 StyleGAN3 路线
-按 idea-lab skill 流程执行，完成后更新 experiment.yaml 并汇报结果。")
+按 idea-storm skill 流程执行，完成后更新 experiment.yaml 并汇报结果。")
 ```
 
 子 agent 启动后：
-1. 读 idea-lab SKILL.md 获取流程指引
+1. 读 idea-storm SKILL.md 获取流程指引
 2. 读 experiment.yaml 恢复实验状态
 3. 执行指定阶段
 4. 更新 experiment.yaml + Notion
@@ -79,7 +79,7 @@ idea_lab:
   active_experiment: "facial-gan-20260213"
   experiment_path: "experiments/facial-gan-20260213/"
   current_phase: "等待用户确认检查点2"
-  last_spawn_label: "idea-lab-facial-gan-iter2"
+  last_spawn_label: "idea-storm-facial-gan-iter2"
 ```
 
 ### 层级 2：实验工作区
@@ -313,10 +313,137 @@ notion_page_id: "xxx-xxx-xxx"
 | 阶段 | 工具 |
 |------|------|
 | 调研 | `web_search`, `web_fetch` |
-| 实现 | `exec`, `write`, `edit` |
+| 实现 | Claude Code（首选）, `exec`, `write`, `edit` |
 | 图片验证 | `image`, `scripts/compare_images.py` |
 | 指标验证 | `exec`（运行评测脚本） |
 | Notion | Notion API via `exec` |
 | 后台运行 | `sessions_spawn` |
 | 状态传递 | `experiment.yaml` 文件 |
 | 通知用户 | announce（子 agent 自动） |
+
+---
+
+## Claude Code 集成
+
+Phase 4（实现）阶段，优先使用 Claude Code 在 Docker 沙盒中完成编码任务。
+
+### Docker 沙盒架构
+
+每个实验在独立的 Docker 容器中运行 Claude Code，与宿主机隔离：
+
+```
+宿主机                              Docker 容器 (idea-storm-sandbox)
+├── openclaw.json ──(env注入)────→  ANTHROPIC_AUTH_TOKEN / BASE_URL
+├── experiments/<id>/ ──(volume)──→ /workspace
+│                                   ├── 非 root 用户 (coder)
+│                                   ├── Claude Code CLI + --dangerously-skip-permissions
+│                                   ├── Python3 / Node.js / Git
+│                                   └── 代码写在 /workspace，自动持久化
+```
+
+优势：
+- 完全隔离，不污染宿主机环境
+- 非 root 用户可用 `--dangerously-skip-permissions` 自动跳过权限
+- API 配置从 `openclaw.json` 动态注入，换中转改一处即可
+- 容器用完即删，干净无残留
+
+### 镜像构建
+
+使用预构建的 `idea-storm-sandbox` 镜像。Dockerfile 位于 `scripts/Dockerfile`：
+
+```dockerfile
+FROM node:22-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-pip python3-venv git curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+RUN npm install -g @anthropic-ai/claude-code
+RUN useradd -m -s /bin/bash coder
+RUN mkdir -p /home/coder/.openclaw /workspace && chown -R coder:coder /workspace /home/coder
+USER coder
+WORKDIR /workspace
+CMD ["bash"]
+```
+
+构建：`docker build -t idea-storm-sandbox -f scripts/Dockerfile .`
+
+### 调用方式
+
+从 `openclaw.json` 动态提取 API 配置，注入容器环境变量：
+
+```bash
+# 提取 API 配置
+API_KEY=$(python3 -c "import json; print(json.load(open('/root/.openclaw/openclaw.json'))['models']['providers']['cc']['apiKey'])")
+BASE_URL=$(python3 -c "import json; print(json.load(open('/root/.openclaw/openclaw.json'))['models']['providers']['cc']['baseUrl'])")
+
+# 运行 Claude Code（单次任务）
+docker run --rm -t \
+  -e ANTHROPIC_AUTH_TOKEN="$API_KEY" \
+  -e ANTHROPIC_BASE_URL="$BASE_URL" \
+  -v experiments/<id>:/workspace \
+  idea-storm-sandbox \
+  bash -c 'cd /workspace && git init -q 2>/dev/null; claude --print --dangerously-skip-permissions "<prompt>"'
+```
+
+### 在子 agent 中使用
+
+子 agent 执行 Phase 4 时，通过 `exec` + `pty:true` 调用：
+
+```
+exec(
+  command="API_KEY=$(python3 -c \"import json; print(json.load(open('/root/.openclaw/openclaw.json'))['models']['providers']['cc']['apiKey'])\") && BASE_URL=$(python3 -c \"import json; print(json.load(open('/root/.openclaw/openclaw.json'))['models']['providers']['cc']['baseUrl'])\") && docker run --rm -t -e ANTHROPIC_AUTH_TOKEN=$API_KEY -e ANTHROPIC_BASE_URL=$BASE_URL -v /root/.openclaw/workspace/experiments/<id>:/workspace idea-storm-sandbox bash -c 'cd /workspace && git init -q 2>/dev/null; claude --print --dangerously-skip-permissions \"<prompt>\"'",
+  pty=true,
+  timeout=300
+)
+```
+
+也可以使用辅助脚本 `scripts/run-sandbox.sh` 简化调用（见下方）。
+
+### Prompt 构造原则
+
+给 Claude Code 的 prompt 应包含：
+1. **目标**：要实现什么功能
+2. **上下文**：当前项目结构、技术栈、已有代码
+3. **约束**：文件路径、命名规范、依赖限制
+4. **验证**：实现后如何验证（测试命令等）
+
+示例：
+```
+基于 design/plan.md 中的方案，在当前目录实现面部微表情生成模块。
+技术栈：Python 3.11 + PyTorch + StyleGAN3
+要求：
+1. 实现 FacialExpressionGenerator 类
+2. 支持 6 种基本表情
+3. 推理延迟 < 50ms
+4. 写好单元测试
+完成后运行 pytest 确认测试通过。
+```
+
+### 迭代模式（Ralph Loop）
+
+多轮迭代优化时，循环调用容器中的 Claude Code：
+
+1. 将任务写入实验目录的 `PROMPT.md`
+2. 循环调用 Docker 容器，每轮读取 PROMPT.md
+3. 通过文件（experiment.yaml）传递迭代状态
+4. 检查完成标记决定是否继续
+
+```bash
+# 单轮实现（在容器中）
+scripts/run-sandbox.sh <experiment-id> "$(cat experiments/<id>/PROMPT.md)"
+
+# 宿主机验证结果
+cd experiments/<id> && python3 -m pytest
+
+# 如果失败，更新 PROMPT.md 加入错误信息，再跑一轮
+```
+
+### 何时用 Docker 沙盒 vs 宿主机直接执行
+
+| 场景 | 推荐 |
+|------|------|
+| 创建项目脚手架、多文件编辑 | Docker 沙盒 (Claude Code) |
+| 复杂代码重构 | Docker 沙盒 (Claude Code) |
+| 安装未知依赖、运行不信任代码 | Docker 沙盒 |
+| 简单文件写入、小修改 | 宿主机 OpenClaw `write`/`edit` |
+| 运行已验证的命令 | 宿主机 OpenClaw `exec` |
+| 需要读取实验状态做决策 | 宿主机 OpenClaw（子 agent 自身） |

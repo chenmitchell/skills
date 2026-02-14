@@ -1,0 +1,7 @@
+{
+  "name": "memory-mesh-core",
+  "version": "1.0.4",
+  "description": "Memory mesh with tagged memory layers, local consolidation, global sync, and configurable OpenClaw auto-update strategy.",
+  "license": "MIT",
+  "private": true
+}

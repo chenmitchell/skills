@@ -132,7 +132,11 @@ Here's an example of using the Overleaf skill to remove em dashes (a common AI w
 
 ## Troubleshooting
 
-- **Auth error**: User needs to log into Overleaf in browser first
+- **Auth error / websocket error**: Open Overleaf in Chrome browser first (`open -a "Google Chrome" "https://www.overleaf.com/project"` then wait 5s) to refresh cookies, then retry
+- **"scheme https is invalid" (websocket redirect bug)**: The default host `overleaf.com` causes a 301→`www.overleaf.com` redirect that breaks websocket. Fix: set `PYOVERLEAF_HOST=www.overleaf.com`:
+  ```bash
+  cat main.tex | PYOVERLEAF_HOST=www.overleaf.com pyoverleaf write "Project/main.tex"
+  ```
 - **Keychain Access Denied** (macOS): pyoverleaf needs keychain access to read browser cookies. User must run `pyoverleaf ls` in their terminal and click "Always Allow" on the keychain prompt
 - **Project not found**: Use exact project name (case-sensitive), check with `pyoverleaf ls`
 - **Permission denied**: User may not have edit access to the project

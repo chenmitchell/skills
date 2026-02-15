@@ -1,6 +1,6 @@
 # ♾️ Everclaw — AI Inference You Own, Forever Powering Your OpenClaw Agents
 
-**Own your inference.** Everclaw connects your [OpenClaw](https://github.com/openclaw/openclaw) agent to the [Morpheus](https://mor.org) decentralized inference network — giving you consistent, self-sovereign access to Kimi K2.5, Qwen3, GLM-4, Llama 3.3, and 10+ open-source models powered by staked MOR tokens that recycle back to you.
+**Own your inference.** Everclaw connects your [OpenClaw](https://github.com/openclaw/openclaw) agent to the [Morpheus](https://mor.org) decentralized inference network — giving you consistent, self-sovereign access to Kimi K2.5, GLM-4.7 Flash, Qwen3, and 10+ open-source models powered by staked MOR tokens that recycle back to you.
 
 When your primary API credits run out, Everclaw kicks in automatically. Your agent stays online. No interruptions, no downtime, no surprise bills. And because MOR is staked — not spent — you maintain access for as long as you hold your tokens.
 
@@ -8,19 +8,25 @@ When your primary API credits run out, Everclaw kicks in automatically. Your age
 
 ## Install
 
-One command:
+**From ClawHub:**
+
+```bash
+clawhub install everclaw-inference
+```
+
+**Or one-command installer:**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/profbernardoj/everclaw/main/scripts/install-everclaw.sh | bash
 ```
 
-Or manually clone inside your OpenClaw workspace:
+**Or manual clone:**
 
 ```bash
 git clone https://github.com/profbernardoj/everclaw.git ~/.openclaw/workspace/skills/everclaw
 ```
 
-> ⚠️ **DO NOT use `clawhub install everclaw` or `clawhub update everclaw`** — a different product ("Everclaw Vault") uses that slug on ClawHub. Our ClawHub slug is `everclaw-inference`. Always install/update via git or the installer above.
+> ⚠️ **Use `everclaw-inference`** — not `everclaw`. The bare `everclaw` slug on ClawHub belongs to a different, unrelated product ("Everclaw Vault"). See [CLAWHUB_WARNING.md](CLAWHUB_WARNING.md).
 
 Then set up your wallet, proxy, and guardian:
 
@@ -90,12 +96,12 @@ The proxy handles all the blockchain complexity: opening sessions, renewing befo
 | **Model Router** | 3-tier local prompt classifier — routes simple tasks to GLM Flash, standard tasks to Kimi K2.5, complex tasks to Claude (v0.6) |
 | **x402 Payment Client** | Automatic HTTP 402 payment handling — signs USDC on Base via EIP-712, with budget controls and dry-run mode (v0.7) |
 | **ERC-8004 Agent Registry** | Discover agents on-chain — reads Identity + Reputation registries on Base, resolves registration files, checks trust signals (v0.7) |
-| **API Gateway Bootstrap** | One-command setup for free Morpheus inference — no API key, no wallet, no node required. New users get instant AI access (v0.8) |
+| **API Gateway Bootstrap** | One-command setup for community-powered Morpheus inference — no API key, no wallet, no node required. New users get instant AI access (v0.8) |
 | **Multi-Key Auth Rotation** | Configure multiple Venice API keys — OpenClaw rotates through them automatically when credits drain, keeping you on premium models longer (v0.9.1) |
-| **Gateway Guardian v2** | Inference-level health probes + 4-stage self-healing restart with nuclear reinstall option. Detects brain-dead agents, not just crashed processes (v0.9) |
+| **Gateway Guardian v4** | Billing-aware escalation — classifies errors (billing vs transient), skips useless restarts for credit exhaustion, notifies owner with DIEM reset ETA. Through-OpenClaw inference probes, circuit breaker, 4-stage self-healing, proactive credit monitoring (v0.9.3) |
 | **MOR Swap Scripts** | Swap ETH or USDC for MOR tokens directly from the command line |
 
-**Benefit:** Your agent gets persistent access to 30+ open-source models (Kimi K2.5, GLM-4, Qwen3, Llama 3.3, and more) that you own through staked MOR tokens. No API bills, no credit limits — stake once, use continuously. The model router (v0.6) ensures you only use expensive models when you need to — cron jobs, heartbeats, and simple tasks run on free Morpheus models automatically. The x402 client and agent registry (v0.7) let your agent discover and pay other agents on-chain. And with the API Gateway bootstrap (v0.8), new users get free inference from their very first launch — no API key needed.
+**Benefit:** Your agent gets persistent access to 30+ open-source models (Kimi K2.5, GLM-4.7 Flash, Qwen3, and more) that you own through staked MOR tokens. No API bills, no credit limits — stake once, use forever. MOR tokens are staked, not consumed — they're returned when sessions close and can be restaked indefinitely. The model router (v0.6) ensures you only use expensive models when you need to — cron jobs, heartbeats, and simple tasks run on Morpheus inference you own. The x402 client and agent registry (v0.7) let your agent discover and pay other agents on-chain. And with the API Gateway bootstrap (v0.8), new users get instant inference from their very first launch — no API key needed.
 
 ### 💸 Agent Economy — x402 Payments + ERC-8004 Registry
 | Component | What It Does |
@@ -108,16 +114,20 @@ The proxy handles all the blockchain complexity: opening sessions, renewing befo
 
 **Benefit:** Your agent can discover other agents on-chain, verify their reputation, and pay them for services — all without custodial intermediaries. USDC payments are signed with EIP-712 and settled via the Coinbase facilitator. Budget controls prevent surprise spending.
 
-### 🛡️ Gateway Guardian v2 — Self-Healing Agent
+### 🛡️ Gateway Guardian v4 — Billing-Aware Self-Healing
 | Component | What It Does |
 |-----------|-------------|
-| **HTTP + Inference Probes** | Checks both gateway process AND model provider availability every 2 minutes |
-| **Provider Health Checks** | Directly probes Venice API, Morpheus proxy, and mor-gateway — if any responds, inference is alive |
-| **4-Stage Restart Escalation** | Graceful restart → hard kill → kickstart → **nuclear reinstall** (`curl install.sh`) |
-| **Signal Notification** | Notifies you via Signal before executing nuclear restart |
+| **Billing-Aware Escalation** | Classifies errors as `billing` vs `transient` vs `timeout`. Billing → backs off + notifies (restart is useless). Transient → restarts as before |
+| **DIEM Reset Awareness** | Calculates hours to midnight UTC (daily DIEM reset). Billing-dead → 30-min probe interval. Auto-clears on UTC day rollover |
+| **Through-OpenClaw Inference Probes** | Tests the full stack: gateway → auth → provider → response every 2 minutes |
+| **Proactive Credit Monitoring** | Reads Venice DIEM balance from response headers. Warns when balance drops below threshold |
+| **Circuit Breaker** | Detects sub-agents stuck >30 min with repeated timeouts and kills them |
+| **Fixed Restart Chain** | No more `set -e` silent exits or pkill self-kill. ERR trap logs unexpected failures |
+| **4-Stage Restart Escalation** | Graceful restart → hard kill (excludes own PID) → kickstart → **nuclear reinstall** |
+| **Signal Notifications** | Notifies owner on: billing exhaustion (with ETA), billing recovery, nuclear restart, total failure |
 | **launchd Integration** | Survives reboots, auto-starts on macOS |
 
-**Benefit:** Your agent recovers from crashes AND from provider cooldown cascades. v1 only detected crashes — v2 detects when the gateway is alive but brain-dead (all providers in cooldown) and forces a restart to clear the cooldown state. The nuclear option runs the same reinstall command you'd run manually as a last resort.
+**Benefit:** v3 had two fatal bugs: billing exhaustion caused infinite useless restarts (restart clears cooldown → first request re-triggers 402 → back to dead), and `set -euo pipefail` + pkill self-kill caused the restart chain to silently do nothing. v4 understands that billing exhaustion can't be fixed by restarting — it backs off, notifies you, and waits for DIEM to reset at midnight UTC. Paired with reduced billing backoff config (`venice: 1h` instead of 5h), maximum downtime from credit exhaustion drops from 12+ hours to ~1 hour.
 
 ### 🔍 SkillGuard — Skill Security Scanner
 | Component | What It Does |
@@ -164,10 +174,13 @@ The proxy handles all the blockchain complexity: opening sessions, renewing befo
 |-------|------|-------|
 | **Kimi K2.5** | General | Recommended primary fallback — most reliable |
 | **Kimi K2 Thinking** | Reasoning | Extended thinking for complex problems |
+| **GLM-5** | General | Zhipu's latest flagship model (NEW) |
+| **GLM-5:web** | General + Web | GLM-5 with web search (NEW) |
+| **MiniMax M2.5** | General | MiniMax's latest model (NEW) |
+| **MiniMax M2.5:web** | General + Web | M2.5 with web search (NEW) |
 | **GLM 4.7 Flash** | Fast | Quick responses, lower latency |
 | **GLM 4.7** | General | Full GLM model |
 | **Qwen3 235B** | General | Large parameter count |
-| **Llama 3.3 70B** | General | Meta's open model |
 | **GPT-OSS 120B** | General | OpenAI's open-source model |
 
 All models are accessed through the same proxy endpoint. Switch models by changing the model name in your request.
@@ -194,8 +207,10 @@ When a session ends, your MOR comes back. Open a new session with the same token
 
 | Action | Command |
 |--------|---------|
-| Install Everclaw | `curl -fsSL https://raw.githubusercontent.com/profbernardoj/everclaw/main/scripts/install-everclaw.sh \| bash` |
-| Update Everclaw | `cd skills/everclaw && git pull` |
+| Install (ClawHub) | `clawhub install everclaw-inference` |
+| Install (script) | `curl -fsSL https://raw.githubusercontent.com/profbernardoj/everclaw/main/scripts/install-everclaw.sh \| bash` |
+| Update (ClawHub) | `clawhub update everclaw-inference` |
+| Update (git) | `cd skills/everclaw && git pull` |
 | Check version | `bash skills/everclaw/scripts/install-everclaw.sh --check` |
 | Install router | `bash skills/everclaw/scripts/install.sh` |
 | Create wallet | `node scripts/everclaw-wallet.mjs setup` |

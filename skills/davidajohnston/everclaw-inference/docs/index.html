@@ -333,7 +333,7 @@
     <div class="container">
       <div class="logo">♾️</div>
       <h1><span>Everclaw</span></h1>
-      <p style="font-size: 13px; color: var(--accent); margin-bottom: 12px; letter-spacing: 1px;">v0.9.2</p>
+      <p style="font-size: 13px; color: var(--accent); margin-bottom: 12px; letter-spacing: 1px;">v0.9.7</p>
       <p class="subtitle">AI inference you own, forever powering your OpenClaw agents via the Morpheus decentralized network.</p>
     </div>
   </header>
@@ -573,18 +573,26 @@ curl http://127.0.0.1:8083/health</code>
   <!-- What's New -->
   <div class="container" style="margin-top: 32px;">
     <div style="background: var(--accent-glow); border: 1px solid rgba(108, 92, 231, 0.3); border-radius: var(--radius); padding: 24px;">
-      <h3 style="font-size: 18px; margin-bottom: 12px;">🆕 What's New in v0.9.2</h3>
+      <h3 style="font-size: 18px; margin-bottom: 12px;">🆕 What's New in v0.9.7</h3>
       <div class="whats-new-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 14px;">
         <div>
-          <strong style="color: var(--green);">📦 Now on ClawHub + Collision Protection</strong>
-          <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;"><code>clawhub install everclaw-inference</code> — officially live on <a href="https://clawhub.ai/DavidAJohnston/everclaw-inference" style="color: var(--accent);">ClawHub</a>. Includes collision detection against the unrelated "Everclaw Vault" imposter, safe installer, version checking, and recovery docs.</p>
+          <strong style="color: var(--green);">🔍 Diagnostic Tool (diagnose.sh)</strong>
+          <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">One command, 18 checks, every known failure mode. Config validation catches bad provider prefixes, missing Morpheus providers, and the <code>reasoning: true</code> bug. Infrastructure checks verify the proxy-router, proxy, blockchain sessions, MOR balance, API Gateway, launchd services, and live end-to-end inference. Run <code>bash scripts/diagnose.sh</code> to know exactly what's broken and how to fix it.</p>
         </div>
         <div>
-          <strong style="color: var(--green);">🛡️ Gateway Guardian v4 — Billing-Aware</strong>
-          <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Classifies errors as billing vs transient. Billing exhaustion → backs off + notifies owner with DIEM reset ETA (restart is useless). Fixed silent restart bug. Through-OpenClaw inference probes, circuit breaker, proactive credit monitoring. Max downtime from credit exhaustion drops from 12h to ~1h.</p>
+          <strong style="color: var(--green);">🛡️ Provider Misconfiguration Guard (v0.9.6)</strong>
+          <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Three layers of defense against the #1 onboarding issue: using <code>everclaw/</code> as a model prefix. The bootstrap script auto-fixes it, both install scripts validate post-install, and diagnose.sh catches it at any time. Always-on proxy-router (v0.9.5) with launchd KeepAlive ensures Morpheus fallback never silently dies.</p>
         </div>
       </div>
-      <div class="whats-new-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; gap: 16px; font-size: 14px; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(108, 92, 231, 0.15);">
+      <div class="whats-new-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr; gap: 16px; font-size: 14px; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(108, 92, 231, 0.15);">
+        <div>
+          <strong style="color: var(--text-muted);">v0.9.4 — Session Archiver</strong>
+          <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">Size-triggered archiving + Guardian v4</p>
+        </div>
+        <div>
+          <strong style="color: var(--text-muted);">v0.9.1 — Multi-Key Auth</strong>
+          <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">API key rotation + circuit breaker</p>
+        </div>
         <div>
           <strong style="color: var(--text-muted);">v0.8 — Gateway Bootstrap</strong>
           <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">Zero-config instant inference startup</p>
@@ -663,6 +671,11 @@ curl http://127.0.0.1:8083/health</code>
         <p>Private keys stored in macOS Keychain. No 1Password, no external accounts. Generate, swap, and stake in one script.</p>
       </div>
       <div class="feature">
+        <div class="icon">📦</div>
+        <h4>Smart Session Archiver</h4>
+        <p>Size-triggered archiving prevents dashboard overload. Monitors session size, archives old sessions above 10MB. Runs as cron — no-op when healthy.</p>
+      </div>
+      <div class="feature">
         <div class="icon">🔍</div>
         <h4>SkillGuard Scanner</h4>
         <p>Scan skills for malicious patterns before installing. Protects against supply chain attacks.</p>
@@ -710,7 +723,7 @@ curl http://127.0.0.1:8083/health</code>
         <a href="https://clawhub.ai/DavidAJohnston/everclaw-inference">ClawHub</a>
         <a href="https://github.com/profbernardoj/everclaw">GitHub</a>
         <a href="https://github.com/profbernardoj/everclaw/blob/main/SKILL.md">Full Docs</a>
-        <a href="https://github.com/profbernardoj/everclaw/releases/tag/v0.9.2">v0.9.2 Release</a>
+        <a href="https://github.com/profbernardoj/everclaw/releases/tag/v0.9.7">v0.9.7 Release</a>
         <a href="https://mor.org">Morpheus AI</a>
         <a href="https://openclaw.ai">OpenClaw</a>
         <a href="https://x402.org">x402 Protocol</a>

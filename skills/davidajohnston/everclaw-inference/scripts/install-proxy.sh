@@ -30,7 +30,13 @@ mkdir -p "$PROXY_DIR"
 cp "$SCRIPT_DIR/morpheus-proxy.mjs" "$PROXY_DIR/morpheus-proxy.mjs"
 echo "   ✓ Copied morpheus-proxy.mjs → $PROXY_DIR/"
 
-# --- 2. Install Gateway Guardian ---
+# --- 2. Install Router Launch Script ---
+echo "🔧 Installing proxy-router headless launcher..."
+cp "$SCRIPT_DIR/mor-launch-headless.sh" "$MORPHEUS_DIR/mor-launch-headless.sh"
+chmod +x "$MORPHEUS_DIR/mor-launch-headless.sh"
+echo "   ✓ Copied mor-launch-headless.sh → $MORPHEUS_DIR/"
+
+# --- 3. Install Gateway Guardian ---
 echo "🛡️  Installing Gateway Guardian..."
 mkdir -p "$OPENCLAW_DIR/workspace/scripts"
 mkdir -p "$OPENCLAW_DIR/logs"
@@ -45,8 +51,16 @@ if [[ "$(uname)" == "Darwin" ]]; then
   mkdir -p "$LAUNCH_AGENTS"
 
   # Unload existing if present
+  launchctl unload "$LAUNCH_AGENTS/com.morpheus.router.plist" 2>/dev/null || true
   launchctl unload "$LAUNCH_AGENTS/com.morpheus.proxy.plist" 2>/dev/null || true
   launchctl unload "$LAUNCH_AGENTS/ai.openclaw.guardian.plist" 2>/dev/null || true
+
+  # Morpheus router plist (the Go proxy-router binary)
+  sed \
+    -e "s|__MORPHEUS_DIR__|$MORPHEUS_DIR|g" \
+    -e "s|__HOME__|$HOME|g" \
+    "$SKILL_DIR/templates/com.morpheus.router.plist" > "$LAUNCH_AGENTS/com.morpheus.router.plist"
+  echo "   ✓ Installed com.morpheus.router.plist"
 
   # Morpheus proxy plist
   sed \
@@ -65,12 +79,22 @@ if [[ "$(uname)" == "Darwin" ]]; then
     "$SKILL_DIR/templates/ai.openclaw.guardian.plist" > "$LAUNCH_AGENTS/ai.openclaw.guardian.plist"
   echo "   ✓ Installed ai.openclaw.guardian.plist"
 
-  # Load services
+  # Load services (router first — proxy depends on it)
+  launchctl load "$LAUNCH_AGENTS/com.morpheus.router.plist" 2>/dev/null
+  sleep 3  # Give router time to start before proxy tries to connect
   launchctl load "$LAUNCH_AGENTS/com.morpheus.proxy.plist" 2>/dev/null
   launchctl load "$LAUNCH_AGENTS/ai.openclaw.guardian.plist" 2>/dev/null
-  echo "   ✓ Services loaded"
+  echo "   ✓ Services loaded (router → proxy → guardian)"
 
   sleep 2
+
+  # Verify router is running
+  if curl -s --max-time 5 -u "admin:$(cat "$MORPHEUS_DIR/.cookie" 2>/dev/null | cut -d: -f2)" http://localhost:8082/healthcheck 2>/dev/null | grep -q healthy; then
+    echo "   ✓ Proxy-router is healthy (port 8082)"
+  else
+    echo "   ⚠️  Proxy-router not responding — check ~/morpheus/data/logs/router-stdout.log"
+    echo "      (May need wallet key in 1Password or Keychain)"
+  fi
 
   # Verify proxy is running
   if curl -s --max-time 3 http://127.0.0.1:8083/health > /dev/null 2>&1; then
@@ -92,16 +116,105 @@ else
   echo "   Guardian: bash $OPENCLAW_DIR/workspace/scripts/gateway-guardian.sh"
 fi
 
+# --- Post-Install: Validate OpenClaw Config ---
+echo ""
+echo "🔍 Validating OpenClaw configuration..."
+
+OPENCLAW_CONFIG="$OPENCLAW_DIR/openclaw.json"
+CONFIG_ISSUES=0
+
+if [[ -f "$OPENCLAW_CONFIG" ]]; then
+  # Check for invalid provider prefixes in model config
+  # "everclaw/" is NOT a valid provider — Everclaw is a skill, not a provider.
+  # Valid Morpheus providers: "morpheus", "mor-gateway"
+  INVALID_PROVIDERS=$(python3 -c "
+import json, sys
+try:
+    config = json.load(open('$OPENCLAW_CONFIG'))
+    issues = []
+    # Check primary model
+    primary = config.get('agents',{}).get('defaults',{}).get('model',{}).get('primary','')
+    if primary.startswith('everclaw/'):
+        issues.append(f'primary model: {primary}')
+    # Check fallbacks
+    for fb in config.get('agents',{}).get('defaults',{}).get('model',{}).get('fallbacks',[]):
+        if fb.startswith('everclaw/'):
+            issues.append(f'fallback model: {fb}')
+    # Check provider names
+    for pname in config.get('models',{}).get('providers',{}).keys():
+        if pname == 'everclaw':
+            issues.append(f'provider named \"everclaw\"')
+    if issues:
+        print('|'.join(issues))
+except:
+    pass
+" 2>/dev/null)
+
+  if [[ -n "$INVALID_PROVIDERS" ]]; then
+    echo ""
+    echo "   ⚠️  MISCONFIGURATION DETECTED!"
+    echo ""
+    echo "   Your config uses 'everclaw/' as a provider prefix."
+    echo "   Everclaw is a SKILL, not an inference provider."
+    echo "   This will route requests to Venice (billing errors) instead of Morpheus."
+    echo ""
+    echo "   Issues found:"
+    IFS='|' read -ra ISSUES <<< "$INVALID_PROVIDERS"
+    for issue in "${ISSUES[@]}"; do
+      echo "     ❌ $issue"
+    done
+    echo ""
+    echo "   VALID provider names for Morpheus inference:"
+    echo "     • morpheus/kimi-k2.5     — local P2P (needs proxy-router running)"
+    echo "     • mor-gateway/kimi-k2.5  — hosted API Gateway (needs API key)"
+    echo ""
+    echo "   To fix, change your model in openclaw.json:"
+    echo "     \"primary\": \"mor-gateway/kimi-k2.5\"    ← Morpheus API Gateway"
+    echo "     \"primary\": \"morpheus/kimi-k2.5\"       ← Local Morpheus P2P"
+    echo ""
+    echo "   Then restart: openclaw gateway restart"
+    echo ""
+    CONFIG_ISSUES=1
+  fi
+
+  # Check if any Morpheus provider is configured
+  HAS_MORPHEUS=$(python3 -c "
+import json
+config = json.load(open('$OPENCLAW_CONFIG'))
+providers = config.get('models',{}).get('providers',{})
+has = 'morpheus' in providers or 'mor-gateway' in providers
+print('yes' if has else 'no')
+" 2>/dev/null || echo "no")
+
+  if [[ "$HAS_MORPHEUS" == "no" ]]; then
+    echo "   ⚠️  No Morpheus provider configured in openclaw.json"
+    echo "   Run: node $SKILL_DIR/scripts/bootstrap-gateway.mjs"
+    echo "   This adds mor-gateway as a fallback (no API key needed)."
+    CONFIG_ISSUES=1
+  fi
+
+  if [[ "$CONFIG_ISSUES" -eq 0 ]]; then
+    echo "   ✓ OpenClaw config looks good"
+  fi
+else
+  echo "   ⚠️  openclaw.json not found at $OPENCLAW_CONFIG"
+  echo "   Run 'openclaw onboard' first, then re-run this installer."
+fi
+
 echo ""
 echo "╔══════════════════════════════════════════╗"
 echo "║  Installation complete!                  ║"
 echo "╠══════════════════════════════════════════╣"
 echo "║                                          ║"
+echo "║  Router:   http://127.0.0.1:8082         ║"
 echo "║  Proxy:    http://127.0.0.1:8083         ║"
 echo "║  Health:   curl localhost:8083/health     ║"
 echo "║  Guardian: ~/.openclaw/logs/guardian.log  ║"
 echo "║                                          ║"
-echo "║  Next: Configure OpenClaw to use the     ║"
-echo "║  Morpheus provider as a fallback model.  ║"
-echo "║  See SKILL.md § OpenClaw Integration.    ║"
+if [[ "$CONFIG_ISSUES" -gt 0 ]]; then
+echo "║  ⚠️  Config issues found — see above      ║"
+else
+echo "║  ✅ Config validated — ready to go!        ║"
+fi
+echo "║                                          ║"
 echo "╚══════════════════════════════════════════╝"

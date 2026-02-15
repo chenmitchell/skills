@@ -1,13 +1,66 @@
 ---
 name: everclaw
-version: 0.9.2
-description: AI inference you own, forever powering your OpenClaw agents via the Morpheus decentralized network. Stake MOR tokens, access Kimi K2.5 and 30+ models, and maintain persistent inference by recycling staked MOR. Includes Morpheus API Gateway bootstrap for zero-config startup, OpenAI-compatible proxy with auto-session management, automatic retry with fresh sessions, OpenAI-compatible error classification to prevent cooldown cascades, multi-key auth profile rotation for Venice API keys, Gateway Guardian v2 with inference probes and nuclear self-healing restart, bundled security skills, zero-dependency wallet management via macOS Keychain, x402 payment client for agent-to-agent USDC payments, and ERC-8004 agent registry reader for discovering trustless agents on Base.
+version: 0.9.7
+description: AI inference you own, forever powering your OpenClaw agents via the Morpheus decentralized network. Stake MOR tokens, access Kimi K2.5 and 30+ models, and maintain persistent inference by recycling staked MOR. Includes Morpheus API Gateway bootstrap for zero-config startup, OpenAI-compatible proxy with auto-session management, automatic retry with fresh sessions, OpenAI-compatible error classification to prevent cooldown cascades, multi-key auth profile rotation for Venice API keys, Gateway Guardian v4 with billing-aware escalation, through-OpenClaw inference probes, proactive Venice DIEM credit monitoring, circuit breaker for stuck sub-agents, and nuclear self-healing restart, always-on proxy-router with launchd auto-restart, smart session archiver to prevent dashboard overload, bundled security skills, zero-dependency wallet management via macOS Keychain, x402 payment client for agent-to-agent USDC payments, and ERC-8004 agent registry reader for discovering trustless agents on Base.
 homepage: https://everclaw.com
 metadata:
   openclaw:
     emoji: "♾️"
     requires:
       bins: ["curl", "node"]
+      env:
+        - name: WALLET_PRIVATE_KEY
+          optional: true
+          description: "Morpheus wallet private key — injected at runtime from 1Password or macOS Keychain. NEVER stored on disk."
+        - name: ETH_NODE_ADDRESS
+          optional: true
+          default: "https://base-mainnet.public.blastapi.io"
+          description: "Base mainnet RPC endpoint for blockchain operations."
+        - name: OP_SERVICE_ACCOUNT_TOKEN
+          optional: true
+          description: "1Password service account token (retrieved from macOS Keychain at runtime)."
+    credentials:
+      - name: "Wallet Private Key"
+        storage: "macOS Keychain or 1Password (never on disk)"
+        required: false
+        description: "Required only for local P2P inference (MOR staking). Not needed for API Gateway mode."
+      - name: "Morpheus API Gateway Key"
+        storage: "openclaw.json providers config"
+        required: false
+        description: "Free API key from app.mor.org. Community bootstrap key included for initial setup."
+    network:
+      outbound:
+        - host: "api.mor.org"
+          purpose: "Morpheus API Gateway — model inference and session management"
+        - host: "base-mainnet.public.blastapi.io"
+          purpose: "Base L1 RPC — blockchain transactions (session open/close, MOR staking)"
+        - host: "provider.mor.org"
+          purpose: "Morpheus P2P network — direct inference via staked sessions"
+        - host: "api.venice.ai"
+          purpose: "Venice API — primary inference provider (when configured)"
+      local:
+        - port: 8082
+          purpose: "Morpheus proxy-router (Go binary) — blockchain session management"
+        - port: 8083
+          purpose: "Morpheus-to-OpenAI proxy (Node.js) — translates OpenAI API to proxy-router"
+    persistence:
+      services:
+        - name: "com.morpheus.router"
+          purpose: "Proxy-router for Morpheus P2P inference"
+          mechanism: "launchd KeepAlive (macOS)"
+        - name: "com.morpheus.proxy"
+          purpose: "OpenAI-compatible proxy translating to Morpheus"
+          mechanism: "launchd KeepAlive (macOS)"
+        - name: "ai.openclaw.guardian"
+          purpose: "Gateway health watchdog with billing-aware escalation"
+          mechanism: "launchd StartInterval (macOS)"
+      directories:
+        - "~/morpheus/ — proxy-router binary, config, session data"
+        - "~/.openclaw/workspace/skills/everclaw/ — skill files"
+        - "~/.openclaw/logs/ — guardian logs"
+    install:
+      method: "git clone (recommended) or clawhub install everclaw-inference"
+      note: "curl | bash installer available but users should review scripts before executing. All scripts are open source at github.com/profbernardoj/everclaw."
     tags: ["inference", "everclaw", "morpheus", "mor", "decentralized", "ai", "blockchain", "base", "persistent", "fallback", "guardian", "security"]
 ---
 
@@ -17,7 +70,9 @@ metadata:
 
 Access Kimi K2.5, Qwen3, GLM-4, Llama 3.3, and 10+ models with inference you own. Everclaw connects your OpenClaw agent to the Morpheus P2P network — stake MOR tokens, open sessions, and recycle your stake for persistent, self-sovereign access to AI.
 
-> ⚠️ **ClawHub Name Collision:** A different product ("Everclaw Vault" — encrypted cloud memory) uses the `everclaw` slug on ClawHub. **DO NOT run `clawhub update everclaw`** — it will overwrite this skill with an unrelated product. Updates for this skill come from GitHub: `cd skills/everclaw && git pull`. See `CLAWHUB_WARNING.md` for details and recovery steps.
+> 📦 **ClawHub:** `clawhub install everclaw-inference` — [clawhub.ai/DavidAJohnston/everclaw-inference](https://clawhub.ai/DavidAJohnston/everclaw-inference)
+>
+> ⚠️ **Name Collision Warning:** A different product ("Everclaw Vault") uses the bare `everclaw` slug on ClawHub. **Always use `everclaw-inference`** — never `clawhub install everclaw` or `clawhub update everclaw`. See `CLAWHUB_WARNING.md` for details.
 
 ## How It Works
 
@@ -61,7 +116,17 @@ Agent → proxy-router (localhost:8082) → Morpheus P2P Network → Provider �
 
 ## 1. Installation
 
-### Recommended: One-Command Installer (v0.9.2)
+### Option A: ClawHub (Easiest)
+
+```bash
+clawhub install everclaw-inference
+```
+
+To update: `clawhub update everclaw-inference`
+
+⚠️ **Use `everclaw-inference`** — not `everclaw`. The bare `everclaw` slug belongs to a different, unrelated product on ClawHub.
+
+### Option B: One-Command Installer
 
 The safe installer handles fresh installs, updates, and ClawHub collision detection:
 
@@ -76,24 +141,13 @@ bash skills/everclaw/scripts/install-everclaw.sh
 bash skills/everclaw/scripts/install-everclaw.sh --check
 ```
 
-The installer will:
-- Detect and warn about the ClawHub "Everclaw Vault" name collision
-- Clone from GitHub (fresh install) or `git pull` (update)
-- Show next steps for router, proxy, and wallet setup
-
-### Alternative: Manual Git Clone
+### Option C: Manual Git Clone
 
 ```bash
 git clone https://github.com/profbernardoj/everclaw.git ~/.openclaw/workspace/skills/everclaw
 ```
 
-### Updating
-
-⚠️ **DO NOT use `clawhub update everclaw`** — a different product uses that slug on ClawHub. Always update via git:
-
-```bash
-cd ~/.openclaw/workspace/skills/everclaw && git pull
-```
+To update: `cd ~/.openclaw/workspace/skills/everclaw && git pull`
 
 ### Install the Morpheus Router
 
@@ -451,6 +505,9 @@ See `references/troubleshooting.md` for a complete guide. Quick hits:
 | List sessions | `bash skills/everclaw/scripts/session.sh list` |
 | Send prompt | `bash skills/everclaw/scripts/chat.sh <model> "prompt"` |
 | Check balance | `bash skills/everclaw/scripts/balance.sh` |
+| **Diagnose** | `bash skills/everclaw/scripts/diagnose.sh` |
+| Diagnose (config only) | `bash skills/everclaw/scripts/diagnose.sh --config` |
+| Diagnose (quick) | `bash skills/everclaw/scripts/diagnose.sh --quick` |
 
 ---
 
@@ -870,7 +927,7 @@ The complete failover chain with multi-key rotation:
 1. **Key rotation within Venice** — Key 1 credits exhausted → billing disable on *that profile only* → immediately rotates to Key 2 → Key 3 → etc. Same model, fresh credits.
 2. **Model fallback** — Only after ALL Venice keys are disabled → tries `venice/claude-opus-45` (all keys again) → `venice/kimi-k2-5` (all keys) → `morpheus/kimi-k2.5`
 3. **Morpheus fallback** — The proxy auto-opens a 7-day Morpheus session (if none exists). Inference routes through the Morpheus P2P network.
-4. **Gateway Guardian v2** — If all providers enter cooldown despite multi-key rotation → detects brain-dead state → restarts gateway (clears cooldowns) → nuclear reinstall if needed.
+4. **Gateway Guardian v4** — If all providers enter cooldown despite multi-key rotation → classifies error (billing vs transient) → billing: backs off + notifies owner (restart is useless for empty credits) → transient: restarts gateway (clears cooldowns) → nuclear reinstall if needed. Proactively monitors Venice DIEM balance.
 5. **Auto-recovery** — When credits refill (daily reset) or backoff expires, OpenClaw switches back to Venice automatically.
 
 **Example with 6 keys (246 DIEM total):**
@@ -878,41 +935,68 @@ The complete failover chain with multi-key rotation:
 ```
 venice:key1 (98 DIEM) → venice:key2 (50 DIEM) → venice:key3 (40 DIEM) →
 venice:key4 (26 DIEM) → venice:key5 (20 DIEM) → venice:key6 (12 DIEM) →
-morpheus/kimi-k2.5 (free, staked MOR) → mor-gateway/kimi-k2.5 (free beta)
+morpheus/kimi-k2.5 (owned, staked MOR) → mor-gateway/kimi-k2.5 (community gateway)
 ```
 
 **v0.5 improvement:** The Morpheus proxy returns `"server_error"` type errors (not billing errors), so OpenClaw won't put the Morpheus provider into extended cooldown due to transient infrastructure issues. If a Morpheus session expires mid-request, the proxy automatically opens a fresh session and retries once.
 
 ---
 
-## 14. Gateway Guardian v2 (v0.9)
+## 14. Gateway Guardian v4 (v0.9.3)
 
-A self-healing watchdog that monitors the OpenClaw gateway **and its ability to actually run inference**. Runs every 2 minutes via launchd.
+A self-healing, billing-aware watchdog that monitors the OpenClaw gateway and its ability to run inference. Runs every 2 minutes via launchd.
 
-### The Problem v2 Solves
+### Evolution
 
-v1 only checked if the gateway process was alive (HTTP 200 on dashboard). But the real failure mode is when the gateway is alive but **all model providers are in cooldown** — credits exhausted, billing errors cascading across providers. The gateway returns 200 while the agent is effectively brain-dead. v2 adds inference-level health checks and a nuclear self-healing option.
+| Version | What it checked | Fatal flaw |
+|---------|----------------|------------|
+| v1 | HTTP dashboard alive | Providers in cooldown = brain-dead but HTTP 200 |
+| v2 | Raw provider URLs | Provider APIs always return 200 regardless of internal state |
+| v3 | Through-OpenClaw inference probe | Billing exhaustion → restart → instant re-disable = dead loop. Also: `set -e` + pkill self-kill = silent no-op restarts |
+| **v4** | Through-OpenClaw + **billing classification** + **credit monitoring** | Current version |
+
+### What v4 Fixes Over v3
+
+1. **Billing-aware escalation** — Classifies inference errors as `billing` vs `transient` vs `timeout`. Billing errors trigger backoff + notification instead of useless restarts.
+2. **Silent restart bug** — Replaced `set -euo pipefail` with `set -uo pipefail` + explicit ERR trap. Restart failures are now logged instead of silently exiting.
+3. **pkill self-kill** — Hard restart now iterates PIDs and excludes the Guardian's own PID. No more accidentally killing the watchdog.
+4. **Proactive credit monitoring** — Checks Venice DIEM balance via `x-venice-balance-diem` response header every 10 min. Warns when balance drops below threshold.
+5. **DIEM reset awareness** — Calculates hours to midnight UTC (when Venice DIEM resets daily). When billing-dead, enters 30-min backoff instead of hammering every 2 min. Auto-clears when UTC day rolls over.
+6. **Signal notifications** — Notifies owner on: billing exhaustion (with ETA to reset), billing recovery, nuclear restart, and total failure.
 
 ### How It Works
 
-1. **HTTP probe** — Is the gateway process running? (`http://127.0.0.1:18789/`)
-2. **Inference probe** — Can any model provider actually respond?
-   - Checks Venice API (`/api/v1/models`)
-   - Checks Morpheus local proxy (`/health`)
-   - Checks Morpheus API Gateway (`/api/v1/models`)
-   - If **any one** responds, inference is available
-3. **Separate failure counters** — HTTP failures (2 threshold) and inference failures (3 threshold, ~6 min) tracked independently
-4. **Four-stage restart escalation:**
-   - `openclaw gateway restart` (graceful — resets in-memory cooldown state)
-   - Hard kill (`kill -9`) → launchd KeepAlive restarts
-   - `launchctl kickstart -k` (force restart)
-   - **🔴 NUCLEAR:** `curl -fsSL https://clawd.bot/install.sh | bash` (full reinstall — guaranteed clean start)
-5. **Signal notification** before nuclear restart (via signal-cli if available)
-6. Logs everything to `~/.openclaw/logs/guardian.log`
+1. **Billing backoff gate** — If in billing-dead state, check if midnight UTC has passed. If yes, re-probe. If no, skip this run (30-min intervals).
+2. **Credit monitoring** — Every 10 min, makes a cheap Kimi K2.5 call to Venice and reads the `x-venice-balance-diem` response header. Warns below 15 DIEM.
+3. **Circuit breaker** — Kills sub-agents stuck >30 min with repeated timeouts.
+4. **HTTP probe** — Is the gateway process running?
+5. **Inference probe** — Can the agent run inference through the full stack?
+6. **Error classification** — Parses probe output:
+   - `billing` → 402, Insufficient DIEM/USD/balance → **don't restart**, enter billing backoff, notify owner
+   - `transient` → auth cooldown without billing keywords → restart (clears cooldown)
+   - `timeout` → probe timed out → restart
+   - `unknown` → restart (safe default)
+7. **Four-stage restart escalation** (for non-billing errors only):
+   - `openclaw gateway restart` (graceful — resets cooldown state)
+   - Hard kill (excludes own PID) → launchd KeepAlive
+   - `launchctl kickstart -k`
+   - **🔴 NUCLEAR:** `curl -fsSL https://clawd.bot/install.sh | bash`
 
-### Why Restart Fixes Cooldown
+### Recommended Config
 
-OpenClaw's provider cooldown state is **in-memory**. When all providers enter cooldown (e.g., Venice credits exhausted + Morpheus errors misclassified), the agent stays offline until cooldowns expire naturally — which can take hours. **Restarting the gateway process clears all cooldown state immediately**, allowing the fallback chain to work again.
+Pair with reduced billing backoff in `openclaw.json` to minimize downtime:
+
+```json
+{
+  "auth": {
+    "cooldowns": {
+      "billingBackoffHoursByProvider": { "venice": 1 },
+      "billingMaxHours": 6,
+      "failureWindowHours": 12
+    }
+  }
+}
+```
 
 ### Installation
 
@@ -926,12 +1010,7 @@ chmod +x ~/.openclaw/workspace/scripts/gateway-guardian.sh
 # See templates/ai.openclaw.guardian.plist
 ```
 
-⚠️ **Important:** The launchd plist should include `OPENCLAW_GATEWAY_TOKEN` in its environment variables so the guardian can authenticate with the gateway for inference probes. Extract this from your gateway plist:
-
-```bash
-/usr/libexec/PlistBuddy -c "Print :EnvironmentVariables:OPENCLAW_GATEWAY_TOKEN" \
-  ~/Library/LaunchAgents/ai.openclaw.gateway.plist
-```
+⚠️ **Important:** The launchd plist should include `OPENCLAW_GATEWAY_TOKEN` in its environment variables.
 
 ### Manual Test
 
@@ -947,18 +1026,20 @@ tail -f ~/.openclaw/logs/guardian.log
 
 ### Configuration
 
-Edit variables at the top of `gateway-guardian.sh`:
-
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GATEWAY_PORT` | `18789` | Gateway port to probe |
 | `PROBE_TIMEOUT` | `8` | HTTP timeout in seconds |
-| `INFERENCE_TIMEOUT` | `15` | Provider probe timeout in seconds |
-| `FAIL_THRESHOLD` | `2` | Consecutive HTTP failures before restart |
-| `INFERENCE_FAIL_THRESHOLD` | `3` | Consecutive inference failures before escalation (~6 min) |
-| `MAX_LOG_LINES` | `1000` | Log file rotation threshold |
-| `OWNER_SIGNAL` | `""` | Signal number for nuclear restart notifications |
-| `INSTALL_URL` | `https://clawd.bot/install.sh` | URL for nuclear reinstall script |
+| `INFERENCE_TIMEOUT` | `45` | Agent probe timeout |
+| `FAIL_THRESHOLD` | `2` | HTTP failures before restart |
+| `INFERENCE_FAIL_THRESHOLD` | `3` | Inference failures before escalation (~6 min) |
+| `BILLING_BACKOFF_INTERVAL` | `1800` | Seconds between probes when billing-dead (30 min) |
+| `CREDIT_CHECK_INTERVAL` | `600` | Seconds between Venice DIEM balance checks (10 min) |
+| `CREDIT_WARN_THRESHOLD` | `15` | DIEM balance warning threshold |
+| `MAX_STUCK_DURATION_SEC` | `1800` | Circuit breaker: kill sub-agents stuck >30 min |
+| `STUCK_CHECK_INTERVAL` | `300` | Circuit breaker check interval (5 min) |
+| `OWNER_SIGNAL` | `+14432859111` | Signal number for notifications |
+| `SIGNAL_ACCOUNT` | `+15129488566` | Signal sender account |
 
 ### State Files
 
@@ -966,7 +1047,100 @@ Edit variables at the top of `gateway-guardian.sh`:
 |------|---------|
 | `~/.openclaw/logs/guardian.state` | HTTP failure counter |
 | `~/.openclaw/logs/guardian-inference.state` | Inference failure counter |
+| `~/.openclaw/logs/guardian-circuit-breaker.state` | Circuit breaker timestamp |
+| `~/.openclaw/logs/guardian-billing.state` | Billing exhaustion start timestamp (0 = healthy) |
+| `~/.openclaw/logs/guardian-billing-notified.state` | Whether owner was notified (0/1) |
+| `~/.openclaw/logs/guardian-credit-check.state` | Last credit check timestamp |
 | `~/.openclaw/logs/guardian.log` | Guardian activity log |
+
+---
+
+## 15. Smart Session Archiver (v0.9.4)
+
+OpenClaw stores every conversation as a `.jsonl` file in `~/.openclaw/agents/main/sessions/`. Over time, these accumulate — and when the dashboard loads, it parses **all** session history into the DOM. At ~17MB (134+ sessions), browsers hit "Page Unresponsive" because the renderer chokes on thousands of chat message elements.
+
+### The Problem
+
+The bottleneck isn't raw memory — Chrome gives each tab 1.4-4GB of V8 heap. The real limit is **DOM rendering performance**. Chrome Lighthouse warns at 800 DOM nodes and errors at 1,400. A hundred sessions with tool calls, code blocks, and long conversations easily generate 5,000+ DOM elements. The browser's layout engine can't keep up.
+
+| Sessions Dir Size | Dashboard Behavior |
+|------------------|--------------------|
+| < 5 MB | ✅ Loads instantly |
+| 5-10 MB | ⚡ Slight delay, usable |
+| 10-15 MB | ⚠️ Sluggish, noticeable lag |
+| 15-20 MB | 🔴 "Page Unresponsive" likely |
+| 20+ MB | 💀 Dashboard won't load |
+
+### Solution: Size-Triggered Archiving
+
+Instead of archiving on a fixed schedule (which may fire too early or too late depending on usage), the session archiver monitors the **actual size** of the sessions directory and only moves files when they exceed a threshold.
+
+**Default threshold: 10MB** — provides good headroom before hitting the ~15MB danger zone, without firing unnecessarily on light usage days.
+
+### Usage
+
+```bash
+# Archive if over threshold (default 10MB)
+bash skills/everclaw/scripts/session-archive.sh
+
+# Check size without archiving
+bash skills/everclaw/scripts/session-archive.sh --check
+
+# Force archive regardless of size
+bash skills/everclaw/scripts/session-archive.sh --force
+
+# Detailed output
+bash skills/everclaw/scripts/session-archive.sh --verbose
+```
+
+### What It Protects
+
+The archiver never moves:
+- **Active sessions** — referenced in `sessions.json` (the index file)
+- **Guardian health probe** — `guardian-health-probe.jsonl`
+- **Recent sessions** — keeps the 5 most recent by modification time (configurable via `KEEP_RECENT`)
+
+Everything else gets moved to `sessions/archive/` — not deleted. You can always move files back if needed.
+
+### Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ARCHIVE_THRESHOLD_MB` | `10` | Trigger threshold in MB |
+| `SESSIONS_DIR` | `~/.openclaw/agents/main/sessions` | Sessions directory path |
+| `KEEP_RECENT` | `5` | Number of recent sessions to always keep |
+
+### Cron Integration
+
+Set up a cron job that runs the archiver periodically. The script is a no-op when under threshold, so it's safe to run frequently:
+
+```json5
+{
+  "name": "Smart session archiver",
+  "schedule": { "kind": "cron", "expr": "0 */6 * * *", "tz": "America/Chicago" },
+  "sessionTarget": "isolated",
+  "payload": {
+    "kind": "agentTurn",
+    "model": "morpheus/kimi-k2.5",
+    "message": "Run the smart session archiver: bash skills/everclaw/scripts/session-archive.sh --verbose. Report the results. If sessions were archived, mention the before/after size.",
+    "timeoutSeconds": 60
+  }
+}
+```
+
+**Recommended: every 6 hours.** Frequent enough to catch growth spurts, cheap enough to run on the LIGHT tier since it's a no-op most of the time.
+
+### Output
+
+The script outputs a JSON summary for programmatic consumption:
+
+```json
+{"archived":42,"freedMB":8.2,"beforeMB":12.4,"afterMB":4.2,"threshold":10}
+```
+
+### Why 10MB?
+
+Based on real-world testing: 134 sessions totaling 17MB caused "Page Unresponsive" in Chrome, Safari, and Brave on macOS. The dashboard uses a standard web renderer that parses all session JSONL into DOM elements — there's no virtualization or lazy loading. 10MB gives ~50% headroom before the ~15-20MB danger zone where most browsers start struggling.
 
 ---
 
@@ -1183,7 +1357,7 @@ if (agent.x402Support && apiEndpoint) {
 
 ---
 
-## Quick Reference (v0.9.2)
+## Quick Reference (v0.9.4)
 
 | Action | Command |
 |--------|---------|
@@ -1204,6 +1378,9 @@ if (agent.x402Support && apiEndpoint) {
 | Proxy health | `curl http://127.0.0.1:8083/health` |
 | Guardian test | `bash scripts/gateway-guardian.sh --verbose` |
 | Guardian logs | `tail -f ~/.openclaw/logs/guardian.log` |
+| Archive sessions | `bash skills/everclaw/scripts/session-archive.sh` |
+| Check session size | `bash skills/everclaw/scripts/session-archive.sh --check` |
+| Force archive | `bash skills/everclaw/scripts/session-archive.sh --force` |
 | x402 request | `node scripts/x402-client.mjs GET <url>` |
 | x402 dry-run | `node scripts/x402-client.mjs --dry-run GET <url>` |
 | x402 budget | `node scripts/x402-client.mjs --budget` |
@@ -1340,7 +1517,7 @@ A lightweight, local prompt classifier that routes requests to the cheapest capa
 | **STANDARD** | `morpheus/kimi-k2.5` | `venice/kimi-k2-5` | Research, drafting, summaries, most sub-agent tasks |
 | **HEAVY** | `venice/claude-opus-4-6` | `venice/claude-opus-45` | Complex reasoning, architecture, formal proofs, strategy |
 
-All LIGHT and STANDARD tier models run through Morpheus (free via staked MOR). Only HEAVY tier uses Venice (premium).
+All LIGHT and STANDARD tier models run through Morpheus (inference you own via staked MOR). Only HEAVY tier uses Venice (premium).
 
 ### How Scoring Works
 
@@ -1411,7 +1588,7 @@ Set the `model` field on cron job payloads to route to cheaper models:
 {
   "payload": {
     "kind": "agentTurn",
-    "model": "morpheus/kimi-k2.5",   // STANDARD tier — free via Morpheus
+    "model": "morpheus/kimi-k2.5",   // STANDARD tier — owned via Morpheus
     "message": "Compile a morning briefing...",
     "timeoutSeconds": 300
   }
@@ -1424,7 +1601,7 @@ For truly simple cron jobs (health checks, pings, status queries):
 {
   "payload": {
     "kind": "agentTurn",
-    "model": "morpheus/glm-4.7-flash",  // LIGHT tier — fastest, free
+    "model": "morpheus/glm-4.7-flash",  // LIGHT tier — fastest, owned
     "message": "Check proxy health and report any issues",
     "timeoutSeconds": 60
   }
@@ -1446,28 +1623,28 @@ sessions_spawn({ task: "Design the x402 payment integration..." });
 
 ### Cost Impact
 
-With the router in place, only complex reasoning tasks in the main session use premium models. All background work (cron jobs, sub-agents, heartbeats) runs on free Morpheus inference:
+With the router in place, only complex reasoning tasks in the main session use premium models. All background work (cron jobs, sub-agents, heartbeats) runs on Morpheus inference you own:
 
 | Before | After |
 |--------|-------|
-| All cron jobs → Claude 4.6 (premium) | Cron jobs → Kimi K2.5 / GLM Flash (free) |
-| All sub-agents → Claude 4.6 (premium) | Sub-agents → Kimi K2.5 (free) unless complex |
+| All cron jobs → Claude 4.6 (premium) | Cron jobs → Kimi K2.5 / GLM Flash (owned) |
+| All sub-agents → Claude 4.6 (premium) | Sub-agents → Kimi K2.5 (owned) unless complex |
 | Main session → Claude 4.6 | Main session → Claude 4.6 (unchanged) |
 
 ---
 
 ## 19. Morpheus API Gateway Bootstrap (v0.8)
 
-The Morpheus API Gateway (`api.mor.org`) provides free, OpenAI-compatible inference — no node, no staking, no wallet required. Everclaw v0.8 includes a bootstrap script that configures this as an OpenClaw provider, giving new users **instant access to AI from the first launch**.
+The Morpheus API Gateway (`api.mor.org`) provides community-powered, OpenAI-compatible inference — no node, no staking, no wallet required. Everclaw v0.8 includes a bootstrap script that configures this as an OpenClaw provider, giving new users **instant access to AI from the first launch**.
 
 ### Why This Matters
 
-New OpenClaw users face a cold-start problem: they need an API key (Claude, OpenAI, etc.) before their agent can do anything. Everclaw v0.8 solves this by bundling a community API key for the Morpheus inference marketplace, which is currently in free beta.
+New OpenClaw users face a cold-start problem: they need an API key (Claude, OpenAI, etc.) before their agent can do anything. Everclaw v0.8 solves this by bundling a community API key for the Morpheus inference marketplace, which is currently in open beta.
 
 **The bootstrap flow:**
 1. New user installs OpenClaw + Everclaw
-2. Run `node scripts/bootstrap-gateway.mjs` — agent gets free inference immediately
-3. Agent's first task: guide user to get their own free key at `app.mor.org`
+2. Run `node scripts/bootstrap-gateway.mjs` — agent gets inference immediately
+3. Agent's first task: guide user to get their own key at `app.mor.org`
 4. User upgrades to their own key → can then progress to full Morpheus node + MOR staking
 
 ### Quick Start
@@ -1502,7 +1679,7 @@ The bootstrap script:
 | Base URL | `https://api.mor.org/api/v1` |
 | API format | OpenAI-compatible |
 | Auth | Bearer token (`sk-...`) |
-| Free beta | Until March 1, 2026 |
+| Open beta | Until March 1, 2026 |
 | Models | 34 (LLMs, TTS, STT, embeddings) |
 | Provider name | `mor-gateway` |
 
@@ -1549,7 +1726,7 @@ All models also have `:web` variants with web search capability.
 
 ### Community Bootstrap Key
 
-The bootstrap script includes a community API key (base64-obfuscated) for the SmartAgentProtocol account. This provides free access during the beta period.
+The bootstrap script includes a community API key (base64-obfuscated) for the SmartAgentProtocol account. This provides open access during the beta period.
 
 **Getting your own key (recommended):**
 1. Go to [app.mor.org](https://app.mor.org)
@@ -1563,7 +1740,7 @@ The bootstrap script includes a community API key (base64-obfuscated) for the Sm
 | Feature | API Gateway (v0.8) | Local Proxy (v0.2) | P2P Node (v0.1) |
 |---------|-------------------|-------------------|-----------------|
 | Setup | One command | Install proxy + config | Full node install |
-| Cost | Free (beta) | Free (MOR staking) | Free (MOR staking) |
+| Cost | Open (beta) | Own (MOR staking) | Own (MOR staking) |
 | Requires MOR | No | Yes | Yes |
 | Requires wallet | No | Yes | Yes |
 | Decentralized | Gateway → providers | Direct P2P | Direct P2P |
@@ -1578,9 +1755,9 @@ With the gateway added, the recommended fallback chain becomes:
 ```
 venice/claude-opus-4-6      # Primary (premium)
   → venice/claude-opus-45   # Venice fallback
-  → venice/kimi-k2-5        # Venice free tier
+  → venice/kimi-k2-5        # Venice open tier
   → morpheus/kimi-k2.5      # Local proxy (MOR staking)
-  → mor-gateway/kimi-k2.5   # API Gateway (free beta)
+  → mor-gateway/kimi-k2.5   # API Gateway (open beta)
 ```
 
 For new users without Venice or a local proxy, the gateway is the **first and only** provider — making it the critical bootstrap path.

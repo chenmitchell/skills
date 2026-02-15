@@ -1,0 +1,11 @@
+{
+  "owner": "dorogoy",
+  "slug": "miniflux-skill",
+  "displayName": "Miniflux Feed Reader",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1771141265298,
+    "commit": null
+  },
+  "history": []
+}

@@ -3,11 +3,16 @@
   "slug": "submit-to-agentbeat",
   "displayName": "Submit to AgentBeat",
   "latest": {
-    "version": "1.5.1",
-    "publishedAt": 1771002859001,
-    "commit": "https://github.com/openclaw/skills/commit/9cc2ab0d23a210e0385e98a920717b2e6d3aad52"
+    "version": "1.6.3",
+    "publishedAt": 1771079280705,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.5.1",
+      "publishedAt": 1771002859001,
+      "commit": "https://github.com/openclaw/skills/commit/9cc2ab0d23a210e0385e98a920717b2e6d3aad52"
+    },
     {
       "version": "1.5.0",
       "publishedAt": 1770866170728,

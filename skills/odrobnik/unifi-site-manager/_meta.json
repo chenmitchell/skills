@@ -3,11 +3,16 @@
   "slug": "unifi-site-manager",
   "displayName": "UniFi Site Manager",
   "latest": {
-    "version": "1.1.1",
-    "publishedAt": 1770964194133,
-    "commit": "https://github.com/openclaw/skills/commit/c72477bcd25f90d6e5a9d000c11e7013517320bb"
+    "version": "3.0.2",
+    "publishedAt": 1771147092258,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.1",
+      "publishedAt": 1770964194133,
+      "commit": "https://github.com/openclaw/skills/commit/c72477bcd25f90d6e5a9d000c11e7013517320bb"
+    },
     {
       "version": "1.0.3",
       "publishedAt": 1770824805500,

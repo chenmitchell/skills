@@ -39,8 +39,19 @@ Remove any snap-based Docker installation first to avoid read-only filesystem bu
 
 ## Automated Setup
 
+A local copy of the upstream prerequisites script is bundled at `scripts/prerequisites.sh` (relative to this skill's root).
+
 ```bash
-curl -sSL https://raw.githubusercontent.com/sonic-net/sonic-buildimage/master/scripts/prerequisites.sh | bash
+# Run the bundled script (no network fetch needed):
+bash <skill_dir>/scripts/prerequisites.sh
+
+# Override defaults via env vars:
+SONIC_REPO=git@github.com:sonic-net/sonic-buildimage.git \
+SONIC_DIR=~/sonic-buildimage \
+BRANCH=master \
+  bash <skill_dir>/scripts/prerequisites.sh
 ```
 
 Installs pip, jinjanator, Docker, configures groups, and clones the repo with submodules.
+
+> The script is sourced from `sonic-buildimage/scripts/prerequisites.sh`. To update, copy the latest version from the repo.

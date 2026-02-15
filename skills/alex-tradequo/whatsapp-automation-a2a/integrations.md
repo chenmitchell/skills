@@ -67,3 +67,15 @@ and paste your scoped MoltFlow API key.
 - **Chat history gate** — chat reading endpoints require
   explicit tenant opt-in at Settings > Account > Data
   Access. Disabled by default for GDPR compliance.
+
+---
+
+## A2A Discovery (ERC-8004)
+
+MoltFlow is registered as [Agent #25248](https://8004agents.ai/agent/25248) on Ethereum mainnet.
+
+Other AI agents can discover MoltFlow through:
+
+- **On-chain**: Query ERC-8004 Identity Registry at `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432`
+- **HTTP**: Fetch `https://apiv2.waiflow.app/.well-known/agent.json`
+- **Agent card**: `https://molt.waiflow.app/.well-known/erc8004-agent.json`

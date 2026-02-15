@@ -1,6 +1,6 @@
 ---
-name: "WhatsApp All-in-One CRM — Campaign Analytics, Engagement Tracking, Bulk Send, AI Outreach, Lead Mining, Reviews & MCP Server"
-version: "2.10.2"
+name: "WhatsApp All-in-One CRM — ERC-8004 Agent | Campaign Analytics, Bulk Send, AI Outreach, Lead Mining, Support & MCP Server"
+version: "2.11.3"
 description: "The only WhatsApp skill you need. Documentation and API reference — nothing is auto-installed or auto-executed. All actions require explicit user invocation. Provides endpoints for sending messages, capturing leads, running campaigns, scheduling reports, tracking campaign analytics, and managing clients. BizDev agent analyzes account metadata to surface growth opportunities. MCP Server + Custom GPT Actions available via separate setup (see integrations.md). 90+ API endpoints. Bulk messaging, scheduled sends, scheduled reports with WhatsApp delivery, AI replies with style cloning, RAG knowledge base, group monitoring, lead scoring, review collection, campaign analytics & engagement tracking, GDPR compliance, and agent-to-agent protocol."
 source: "MoltFlow Team"
 risk: safe
@@ -253,6 +253,24 @@ Full API reference: see each module's SKILL.md.
 
 ---
 
+## ERC-8004 Agent Registration
+
+MoltFlow is a verified on-chain AI agent registered on **Ethereum mainnet**.
+
+| Field | Value |
+|-------|-------|
+| Agent ID | [#25248](https://8004agents.ai/agent/25248) |
+| Chain | Ethereum mainnet (eip155:1) |
+| Registry | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` |
+| Trust Model | Reputation-based |
+| Endpoints | A2A + MCP + Web |
+
+**Discovery:**
+- Agent card: `https://molt.waiflow.app/.well-known/erc8004-agent.json`
+- A2A discovery: `https://apiv2.waiflow.app/.well-known/agent.json`
+
+---
+
 ## Use Cases
 
 **Solo Founder / Small Biz**
@@ -498,7 +516,7 @@ and curl examples.
 
 ## Changelog
 
-**v2.10.2** (2026-02-14) -- See [CHANGELOG.md](CHANGELOG.md) for full history.
+**v2.11.3** (2026-02-15) -- See [CHANGELOG.md](CHANGELOG.md) for full history.
 
 <!-- FILEMAP:BEGIN -->
 ```text

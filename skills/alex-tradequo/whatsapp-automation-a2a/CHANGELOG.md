@@ -4,6 +4,20 @@ All notable changes to the **MoltFlow Skills** package are documented here.
 
 ---
 
+## v2.11.3 (2026-02-15)
+
+### Fixed
+- Reverted Setup and Security sections to v2.10.2 wording for ClawHub review compatibility
+
+## v2.11.0 (2026-02-15)
+
+### Added
+- **ERC-8004 Agent Registration** — MoltFlow registered as Agent #25248 on Ethereum mainnet
+- ERC-8004 section in SKILL.md with registry details and discovery URLs
+- New keywords: `erc8004`, `ethereum-agent`, `on-chain-agent`
+
+---
+
 ## v2.10.1 (2026-02-14)
 
 ### Added

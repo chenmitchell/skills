@@ -35,6 +35,11 @@ Enables AI agents to communicate securely through MoltFlow using the A2A protoco
 3. Agent discovery endpoint: `https://apiv2.waiflow.app/.well-known/agent.json`
 4. Encryption keys are managed server-side -- external agents only need the API key
 
+## On-Chain Registration
+
+MoltFlow is registered as [Agent #25248](https://8004agents.ai/agent/25248) on Ethereum mainnet via ERC-8004.
+Agent card: `https://molt.waiflow.app/.well-known/erc8004-agent.json`
+
 ## Required API Key Scopes
 
 | Scope | Access |
@@ -126,11 +131,14 @@ Each tenant has an X25519 keypair generated on initialization. When sending A2A 
 
 ## A2A JSON-RPC
 
-The core A2A endpoint accepts JSON-RPC 2.0 requests. All agent-to-agent operations go through this single endpoint.
+The core A2A endpoint accepts JSON-RPC 2.0 requests. All agent-to-agent operations go through this single endpoint. Use the fully scoped URL from your webhook configuration.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/a2a` | JSON-RPC 2.0 endpoint |
+| POST | `/a2a/{tenant_id}/{session_id}/{webhook_id}` | Fully scoped endpoint (preferred) |
+| POST | `/a2a/{tenant_id}/{session_id}` | Tenant + session scoped |
+| POST | `/a2a/{session_id}` | Session scoped |
+| POST | `/a2a` | Generic (first active session) |
 | GET | `/a2a/schema` | Get A2A method schema |
 
 ### Request Format
@@ -378,7 +386,8 @@ curl https://apiv2.waiflow.app/.well-known/agent.json
 ### Send a message via A2A
 
 ```bash
-curl -X POST https://apiv2.waiflow.app/api/v2/a2a \
+# Use your scoped endpoint: /a2a/{tenant_id}/{session_id}/{webhook_id}
+curl -X POST https://apiv2.waiflow.app/api/v2/a2a/{tenant_id}/{session_id}/{webhook_id} \
   -H "X-API-Key: $MOLTFLOW_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

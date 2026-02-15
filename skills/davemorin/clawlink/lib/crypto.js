@@ -5,8 +5,37 @@
 
 import nacl from 'tweetnacl';
 import util from 'tweetnacl-util';
+import { convertPublicKeyToX25519, convertSecretKeyToX25519 } from '@stablelib/ed25519';
 
 const { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } = util;
+
+// Export base64 helpers for use in other modules
+export { encodeBase64, decodeBase64 };
+
+/**
+ * Convert Ed25519 public key to X25519 public key
+ * Uses proper birational map from Edwards to Montgomery curve
+ */
+export function ed25519PublicToX25519(ed25519PublicKey) {
+  // ed25519PublicKey should be Uint8Array (32 bytes)
+  const keyBytes = ed25519PublicKey instanceof Uint8Array 
+    ? ed25519PublicKey 
+    : new Uint8Array(ed25519PublicKey);
+  return convertPublicKeyToX25519(keyBytes);
+}
+
+/**
+ * Convert Ed25519 secret key to X25519 secret key  
+ * Uses proper conversion for key exchange
+ */
+export function ed25519SecretToX25519(ed25519SecretKey) {
+  // ed25519SecretKey should be Uint8Array (64 bytes for nacl format)
+  const keyBytes = ed25519SecretKey instanceof Uint8Array
+    ? ed25519SecretKey
+    : new Uint8Array(ed25519SecretKey);
+  // convertSecretKeyToX25519 expects 64-byte ed25519 secret key
+  return convertSecretKeyToX25519(keyBytes);
+}
 
 /**
  * Generate a new Ed25519 keypair for identity

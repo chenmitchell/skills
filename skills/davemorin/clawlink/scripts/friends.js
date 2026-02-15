@@ -95,11 +95,20 @@ function addFriend(link) {
     return;
   }
   
-  // Derive shared secret for encryption
-  const theirX25519Public = crypto.ed25519ToX25519({ secretKey: identity.secretKey, publicKey }).publicKey;
-  // For now, use the friend's public key directly (they'll derive same secret)
-  // In a full implementation, we'd do proper X25519 key exchange
-  const sharedSecret = crypto.deriveSharedSecret(identity.x25519SecretKey, publicKey);
+  // Derive shared secret for encryption using proper Ed25519 -> X25519 conversion
+  // Convert our Ed25519 secret key to X25519 (need raw bytes)
+  const ourSecretKeyBytes = crypto.decodeBase64(identity.secretKey);
+  const ourX25519Secret = crypto.ed25519SecretToX25519(ourSecretKeyBytes);
+  
+  // Convert their Ed25519 public key to X25519
+  const theirPubKeyBytes = crypto.decodeBase64(publicKey);
+  const theirX25519Public = crypto.ed25519PublicToX25519(theirPubKeyBytes);
+  
+  // Derive shared secret using X25519 key exchange
+  const sharedSecret = crypto.deriveSharedSecret(
+    crypto.encodeBase64(ourX25519Secret), 
+    crypto.encodeBase64(theirX25519Public)
+  );
   
   // Add friend
   const friend = {

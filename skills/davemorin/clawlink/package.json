@@ -1,6 +1,6 @@
 {
   "name": "clawlink",
-  "version": "0.1.0",
+  "version": "2.3.0",
   "description": "Encrypted Clawbot-to-Clawbot messaging",
   "type": "module",
   "bin": {
@@ -13,6 +13,8 @@
     "test": "node scripts/test.js"
   },
   "dependencies": {
+    "@stablelib/ed25519": "^2.0.2",
+    "@stablelib/x25519": "^2.0.1",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1"
   }

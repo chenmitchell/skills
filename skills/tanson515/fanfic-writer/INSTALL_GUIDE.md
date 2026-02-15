@@ -1,249 +1,389 @@
-# Fanfic-Writer Skill - FanFiction Writer Skill
-通过 AI agent管道流水线实现从题材到完整小说的自动化小说创作
+# Fanfic Writer v2.0 - 安装指南 / Installation Guide
+
+自动化小说写作助手 v2.0 - 基于证据的状态管理、多视角QC、原子I/O
 
 ---
 
-## 📦 安装方法
+## 📦 安装要求 / Installation Requirements
 
-### 1. 复制 Skill 文件
-将 `fanfic-writer.skill` 复制到 OpenClaw 的 skills 目录：
+### 环境要求 / Environment Requirements
+
+- **Python**: 3.9+
+- **OpenClaw**: 最新版本
+- **依赖**: 详见 `requirements.txt` (如需要)
+
+### 推荐的模型 / Recommended Models
+
+| 模型 Model | 场景 Scenario | 性价比 Cost-effectiveness |
+|-----------|--------------|-------------------------|
+| moonshot/kimi-k2.5 | 日常写作 | ⭐⭐⭐⭐⭐ |
+| nvidia/moonshotai/kimi-k2.5 | 高并发 | ⭐⭐⭐⭐⭐ |
+| anthropic/claude-3.5-sonnet | 质量优先 | ⭐⭐⭐⭐ |
+
+---
+
+## 📥 安装步骤 / Installation Steps
+
+### 方式一：通过 ClawHub 安装 / Install via ClawHub (Recommended)
+
+```bash
+# 搜索 fanfic-writer 技能
+clawhub search fanfic-writer
+
+# 安装
+clawhub install fanfic-writer
+```
+
+### 方式二：手动安装 / Manual Installation
+
+**步骤1: 复制技能文件到 OpenClaw 目录**
 
 **Windows:**
-```
+```powershell
+# 复制整个 fanfic-writer 目录到
+C:\Users\<用户名>\.openclaw\skills\
+# 或
 C:\Users\<用户名>\clawd\skills\
 ```
 
 **Linux/macOS:**
-```
-~/.openclaw/skills/
-```
-
-### 2. 解压安装
 ```bash
-# 进入 skills 目录
-cd <skills 目录>
-
-# 解压 skill 文件（其实就是一个 zip）
-unzip fanfic-writer.skill
-# 或 Windows: 右键解压 fanfic-writer.skill
-
-# 确保目录结构如下：
-skills/
-└── fanfic-writer/
-    ├── SKILL.md
-    ├── references/
-    │   └── prompts.md
-    └── scripts/
-        ├── state_manager.py
-        ├── session_context.py
-        ├── token_tracker.py
-        ├── tomato_fetch.py
-        ├── outline_generator.py
-        ├── chapter_writer.py
-        └── merge_book.py
+# 复制整个 fanfic-writer 目录到
+~/.openclaw/skills/
+# 或
+~/.clawd/skills/
 ```
 
-### 3. 重启 OpenClaw
-安装完成后重启 OpenClaw，skill 会自动加载。
+**步骤2: 确保目录结构完整**
+
+```
+fanfic-writer/
+├── SKILL.md                    # 技能说明 (本文件)
+├── INSTALL_GUIDE.md            # 安装指南
+├── prompts/
+│   ├── v1/                     # 核心模板 (Auto模式必需)
+│   │   ├── chapter_outline.md
+│   │   ├── chapter_draft_first.md
+│   │   ├── chapter_draft_continue.md
+│   │   ├── chapter_plan.md
+│   │   ├── main_outline.md
+│   │   └── world_building.md
+│   └── v2_addons/              # 扩展模板
+│       ├── critic_editor.md
+│       ├── critic_logic.md
+│       ├── critic_continuity.md
+│       ├── reader_feedback.md
+│       ├── qc_evaluate.md
+│       ├── backpatch_plan.md
+│       └── sanitizer.md
+├── scripts/
+│   ├── v2/                     # v2.0 核心代码
+│   │   ├── __init__.py
+│   │   ├── utils.py
+│   │   ├── atomic_io.py
+│   │   ├── workspace.py
+│   │   ├── config_manager.py
+│   │   ├── state_manager.py
+│   │   ├── prompt_registry.py
+│   │   ├── prompt_assembly.py
+│   │   ├── price_table.py
+│   │   ├── resume_manager.py
+│   │   ├── phase_runner.py
+│   │   ├── writing_loop.py
+│   │   ├── safety_mechanisms.py
+│   │   ├── cli.py
+│   │   └── test_v2.py
+│   ├── v1/                     # v1.0 兼容代码 (可选)
+│   └── test_v2.py
+└── requirements.txt            # Python依赖 (如需要)
+```
+
+**步骤3: 安装 Python 依赖 (如需要)**
+
+```bash
+# 进入技能目录
+cd fanfic-writer
+
+# 安装依赖 (v2.0 主要使用标准库，通常无需额外安装)
+pip install -r requirements.txt
+```
+
+**步骤4: 重启 OpenClaw**
+
+安装完成后重启 OpenClaw，技能会自动加载。
+
+```bash
+# 重启 OpenClaw
+openclaw restart
+# 或
+openclaw gateway restart
+```
 
 ---
 
-## 🚀 快速开始
+## 🚀 快速开始 / Quick Start
 
-### 方式一：直接指定题材
-```
-我想写一本[玄幻]小说
-```
-```
-开始创作一部[末世求生]题材的小说，大约30万字
+### 1. 初始化新书 / Initialize a New Book
+
+```bash
+# 使用 CLI
+python -m scripts.v2.cli init --title "我的小说" --genre "都市灵异" --words 100000
+
+# 或通过 OpenClaw 对话
+写一本都市灵异小说
 ```
 
-### 方式二：让 AI 推荐题材
-```
-开始写小说
-```
-AI 会引导你选择题材、生成大纲。
+### 2. 运行写作 / Run Writing
 
-### 方式三：断点续写
+```bash
+# 自动模式写作 (推荐)
+python -m scripts.v2.cli write --run-dir <path> --mode auto --chapters 1-10
+
+# 手动模式 (每步需确认)
+python -m scripts.v2.cli write --run-dir <path> --mode manual
 ```
-继续写[书名]
+
+### 3. 断点续写 / Resume Writing
+
+```bash
+# 自动检测并续写
+python -m scripts.v2.cli write --run-dir <path> --resume auto
+
+# 强制恢复
+python -m scripts.v2.cli write --run-dir <path> --resume force
 ```
-从上次中断的地方继续写作。
+
+### 4. 完成写作 / Finalize
+
+```bash
+# 合并章节并生成最终报告
+python -m scripts.v2.cli finalize --run-dir <path>
+```
 
 ---
 
-## 📖 使用流程
+## 📋 CLI 命令参考 / CLI Command Reference
 
-###  Phase 1: 题材选择
-- 指定题材或使用示例
-- AI 分析热门题材特点
+| 命令 Command | 说明 Description | 示例 Example |
+|------------|-----------------|--------------|
+| `init` | 初始化新书 | `init --title "书名" --genre "类型"` |
+| `setup` | 运行阶段1-5 | `setup --run-dir <path>` |
+| `write` | 写作 (阶段6) | `write --run-dir <path> --mode auto` |
+| `backpatch` | 回补修复 | `backpatch --run-dir <path>` |
+| `finalize` | 最终化 (阶段8-9) | `finalize --run-dir <path>` |
+| `status` | 查看状态 | `status --run-dir <path>` |
+| `test` | 自测 | `test` |
 
-###  Phase 2: 生成主大纲
-- 生成主线梗概
-- 确认后保存到 `1-main-outline.md`
+### 常用参数 / Common Options
 
-###  Phase 3: 章节规划
-- 将大纲扩展为详细章节规划
-- 确认后保存到 `2-chapter-plan.json`
-
-###  Phase 4: 世界观设定
-- 生成世界观、角色、力量体系等
-- 确认后保存到 `3-world-building.md`
-
-###  Phase 5: 逐章写作（核心）
-每章的工作流程：
-1. **生成本章详细大纲** → 确认
-2. **起草正文**（≤2000字分段）
-3. **质量检查**（设定一致性、文笔）
-4. **保存章节** → `chapters/第XXX章_章节名.txt`
-5. **记录 Token 消耗**
-
-重复直到所有章节完成。
-
-###  Phase 6: 合并与整书检查
-```
-合并成书 [书名]
-```
-1. 合并所有章节为完整小说
-2. **整书质量检查**：
-   - 设定一致性
-   - 大纲符合度
-   - 剧情逻辑
-   - 人物性格
-   - 伏笔回收
-3. 生成检查报告
+| 参数 Option | 说明 Description | 默认值 Default |
+|------------|-----------------|----------------|
+| `--run-dir, -r` | 运行目录 | 必需 |
+| `--mode` | 模式: auto/manual | manual |
+| `--chapters` | 章节范围 | 全部 |
+| `--resume` | 恢复: off/auto/force | off |
+| `--budget` | 成本预算 (元) | 无限制 |
+| `--max-words` | 最大字数 | 500000 |
 
 ---
 
-## 🗂️ 文件结构说明
+## ⚙️ 配置说明 / Configuration
 
-创作的小说会保存在：
+### 0-book-config.json
+
+在初始化时会自动生成，核心字段：
+
+```json
+{
+  "version": "2.0.0",
+  "book": {
+    "title": "书名",
+    "title_slug": "shu_ming",
+    "book_uid": "a1b2c3d4",
+    "genre": "都市灵异",
+    "target_word_count": 100000,
+    "chapter_target_words": 2500
+  },
+  "generation": {
+    "model": "nvidia/moonshotai/kimi-k2.5",
+    "mode": "auto",
+    "max_attempts": 3,
+    "auto_threshold": 85,
+    "auto_rescue_enabled": true,
+    "auto_rescue_max_rounds": 3
+  },
+  "qc": {
+    "pass_threshold": 85,
+    "warning_threshold": 75,
+    "weights": {...}
+  }
+}
+```
+
+---
+
+## 💰 成本管理 / Cost Management
+
+### 费率表 / Price Table
+
+v2.0 内置费率表，支持多平台：
+
+```bash
+# 查看当前费率
+cat 0-config/price-table.json
+
+# 更新费率 (运行时)
+# 编辑 price-table.json 后自动热更新
+```
+
+### 成本报告 / Cost Report
+
+```bash
+# 查看成本日志
+cat logs/cost-report.jsonl
+
+# 成本统计
+# 在 final/quality-report.md 中查看
+```
+
+---
+
+## 🔧 高级功能 / Advanced Features
+
+### 1. 状态面板 / State Panels
+
+v2.0 使用7个状态面板追踪写作进度：
+
+- `4-writing-state.json` - 核心状态
+- `characters.json` - 角色状态
+- `plot_threads.json` - 剧情线索
+- `timeline.json` - 时间线
+- `inventory.json` - 道具
+- `locations_factions.json` - 地点/势力
+- `session_memory.json` - 滚动记忆
+
+### 2. 证据链 / Evidence Chain
+
+所有状态变更需要证据：
+
+```json
+{
+  "value": "...",
+  "evidence_chapter": "第015章",
+  "evidence_snippet": "张大胆说：...",
+  "confidence": 0.85
+}
+```
+
+### 3. 安全机制 / Safety Mechanisms
+
+- **Auto-Rescue**: 自动尝试恢复可恢复错误
+- **Auto-Abort**: 检测卡死循环并暂停
+- **Backpatch**: FORCED章节的回补修复
+- **Forced Streak**: 连续FORCED触发熔断
+
+---
+
+## 🐛 故障排查 / Troubleshooting
+
+### 技能未加载 / Skill Not Loading
+
+```bash
+# 检查目录结构
+ls -la ~/.openclaw/skills/fanfic-writer/
+
+# 重启 OpenClaw
+openclaw restart
+```
+
+### 模型调用失败 / Model Call Failed
+
+```bash
+# 检查 API 配置
+openclaw config get
+
+# 确认模型可用
+# 查看错误日志
+cat <run-dir>/logs/errors.jsonl
+```
+
+### 断点续写失败 / Resume Failed
+
+```bash
+# 检查状态文件
+cat <run-dir>/4-state/4-writing-state.json
+
+# 强制恢复
+python -m scripts.v2.cli write --run-dir <path> --resume force
+```
+
+---
+
+## 📊 性能优化 / Performance Optimization
+
+### 减少Token消耗
+
+1. **使用高效模型**: 推荐 `moonshot/kimi-k2.5`
+2. **调整上下文窗口**: 在配置中设置 `context_bucket`
+3. **批量处理**: 使用 `--chapters 1-10` 批量写作
+
+### 成本控制
+
+1. **设置预算**: `--budget 100` (100元)
+2. **监控成本**: 查看 `logs/cost-report.jsonl`
+3. **使用缓存**: 启用 `cache_mode`
+
+---
+
+## 📄 文件结构 / File Structure
+
 ```
 novels/
-└── {时间戳}_{书名}/
-    ├── 0-book-config.json      # 总配置
-    ├── 1-main-outline.md       # 主大纲
-    ├── 2-chapter-plan.json     # 章节规划
-    ├── 3-world-building.md     # 世界观设定
-    ├── 4-writing-state.json    # 写作进度（断点续写）
-    ├── 5-chapter-outlines.json # 各章详细大纲索引
-    ├── 6-session-context.json  # 短期记忆（防中断）
-    ├── token-report.json       # Token消耗统计
-    ├── chapters/               # 章节正文
-    │   ├── 第001章_开篇.txt
-    │   └── 第002章_发展.txt
-    └── final/
-        ├── {书名}_完整版.txt   # 合并后的完整小说
-        ├── full_book_check.json      # 整书检查结果
-        └── full_book_check_prompt.txt # 整书检查提示词
+└── {book_title_slug}__{book_uid}/
+    └── runs/
+        └── {run_id}/
+            ├── 0-config/              # 配置
+            ├── 1-outline/             # 大纲
+            ├── 2-planning/           # 规划
+            ├── 3-world/              # 世界观
+            ├── 4-state/              # 运行时状态 (7面板)
+            ├── drafts/                # 草稿
+            ├── chapters/              # 正式章节
+            ├── anchors/               # 锚点
+            ├── logs/                  # 日志 (token/cost/事件)
+            ├── archive/               # 归档 (快照/回滚)
+            └── final/                 # 最终输出
 ```
 
 ---
 
-## 🎨 写作风格特而且这个性
+## 🔄 从 v1.0 迁移 / Migration from v1.0
 
-本 skill 专门针对**去 AI 味**进行了优化：
+v2.0 保持向后兼容：
 
-- ✅ **不过度解释** — 适当留白
-- ✅ **避免堆砌修辞** — 不要每个动作都加比喻
-- ✅ **保持镜头感** — 第三方可见视角描述
-- ✅ **长短句结合** — 避免一成不变的节奏
-- ✅ **允许不完美** — 文字有"破绽"更真实
-
-这些风格要求已内置在提示词中，无需额外设置。
-
----
-
-## 📊 Token & 成本统计
-
-写作过程中会自动记录：
-- 每步操作的 token 消耗
-- 总消耗统计
-- 预估成本（USD）
-
-查看报告：
-```
-查看 {书名} 的 token 消耗
-```
-
-报告保存于：`novels/{书名}/token-report.json`
-
----
-
-## 🔧 断点续写
-
-如果写作中断，可以使用：
-```
-继续写[书名]
-```
-
-AI 会：
-1. 读取 `6-session-context.json` 恢复会话状态
-2. 读取 `4-writing-state.json` 定位进度
-3. 确认上次待确认的内容
-4. 从断点继续
-
----
-
-## ⚙️ 高级功能
-
-### 手动运行脚本
 ```bash
-# 创建新书
-cd scripts
-python state_manager.py create "我的小说"
-
-# Token 统计
-python token_tracker.py <小说目录> summary
-
-# 整书检查
-python merge_book.py <小说目录> check
+# v1.0 书籍可用 v2.0 继续写作
+python -m scripts.v2.cli write --run-dir <v1_book_path> --resume auto
 ```
 
-### 自定义提示词
-修改 `references/prompts.md` 可以自定义：
-- 大纲生成提示词
-- 写作风格要求
-- 质量检查标准
+注意: v1.0 目录结构不同，需要复制到新的 `runs/{run_id}/` 结构中。
 
 ---
 
-## 💡 创作建议
+## 📞 支持 / Support
 
-| 建议 | 说明 |
-|------|------|
-| 分阶段确认 | 大纲、设定都先确认再写作，避免返工 |
-| 控制章节 | 每章≤2000字，超过会分片处理 |
-| 及时检查 | 每章写完做质量检查，防止问题累积 |
-| 整书检查 | 最终必须做整书检查，确保前后一致 |
+- **文档**: 参见 `SKILL.md`
+- **问题反馈**: GitHub Issues
+- **社区**: OpenClaw Discord
 
 ---
 
-## 🐛 故障排查
-
-### Skill 没加载？
-- 检查目录结构是否正确
-- 重启 OpenClaw
-
-### 中文显示乱码？
-- 确保编辑器使用 UTF-8 编码
-- Windows 用户建议用 VS Code
-
-### Token 消耗过高？
-- 减少单次请求字数
-- 增加质量检查频率
-- 使用更高效模型
-
----
-
-## 📄 许可证
+## 📄 许可证 / License
 
 MIT License - 可自由使用、修改、分发。
 
 ---
 
-## 🙏 致谢
+**Happy Writing! 🎉**
 
-基于 OpenClaw platform 开发，感谢社区支持。
-
-**Happy Writing!** 🎉
+**创作愉快! 🎉**

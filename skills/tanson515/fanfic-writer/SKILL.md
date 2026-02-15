@@ -1,396 +1,369 @@
 ---
 name: fanfic-writer
-version: 1.0.0
-description: Automated novel writing assistant for creating long-form fiction with systematic workflow - genre research, outline generation, worldbuilding, chapter-by-chapter writing with quality control.
+version: 2.0.0
+description: 自动化小说写作助手 v2.0 - 基于证据的状态管理、多视角QC、原子I/O、自动救援/中止安全机制
 homepage: https://github.com/openclaw/clawd
 metadata:
   openclaw:
     emoji: "📖"
     category: "creative"
 ---
-# Fanfic Writer - Automated Novel Writing Assistant
+# Fanfic Writer v2.0 - 自动化小说写作系统 / Automated Novel Writing System
 
-This is a complete novel writing pipeline with 6 phases and rigorous quality control.
-
----
-
-## 格式规范（强制性要求）
-
-**⚠️ 每次回复必须遵守：**
-
-1. **Markdown 格式必须正确**
-   - 表格必须有表头和分隔行
-   - 列表项之间要有空行
-   - 段落之间要有空行
-   - 代码块必须用 ``` 包裹
-
-2. **禁止文字挤成一团**
-   - 不同章节之间用 `---` 分隔
-   - 使用清晰的标题层级
-   - 重要内容用列表或表格展示
+**版本 Version**: 2.0.0  
+**架构 Architecture**: 基于证据的状态管理 with atomic I/O  
+**安全机制 Safety**: Auto-Rescue, Auto-Abort Guardrail, FORCED 连击熔断
 
 ---
 
-## Phase 1: Genre Selection
+## 系统概览 / System Overview
 
-- 用户直接指定题材（如："都市异能"、"玄幻修仙"、"历史架空"等）
-- 也可以提供详细设定："帮我写一本关于XXX的小说"
-- 记录用户选择，进入下一阶段
+Fanfic Writer v2.0 是一套生产级的小说写作流水线：
 
----
+/ Fanfic Writer v2.0 is a production-grade novel writing pipeline:
 
-## Phase 2: Scope Definition
-
-- 用户选定题材后，确认总字数（≤300,000 words）
-- 保存到工作目录中的 `0-book-config.json`
-- Remember user's choices persistently
-
----
-
-## Phase 3: Main Outline Generation
-
-- 基于选定题材和字数，生成完整剧情大纲
-- Structure: 主线剧情 + 分卷规划（如有）+ 关键转折点
-- Present to user for confirmation/modification
-- 确认后保存到 `1-main-outline.md`
+- **9 阶段流水线 / 9 Phase Pipeline**: 从初始化到最终QC
+- **7 状态面板 / 7 State Panels**: 角色、剧情线、时间线、道具、地点、POV规则、会话记忆
+- **证据链 / Evidence Chain**: 所有状态变更带有 (章节, 片段, 置信度) 追踪
+- **原子I/O / Atomic I/O**: temp → fsync → rename 模式 + 快照回滚
+- **多视角QC / Multi-Perspective QC**: 3-评审协议 + 100分制评分
+- **安全机制 / Safety Mechanisms**: Auto-Rescue 可恢复错误处理, Auto-Abort 卡死检测
 
 ---
 
-## Phase 4: Chapter Planning
+## 快速开始 / Quick Start
 
-**提示词：**
+```bash
+# 初始化新书 / Initialize a new book
+python -m scripts.v2.cli init --title "我的小说" --genre "都市异能" --words 100000
 
-> "请根据字数要求和前期设定编写每章的规划，要注意网文的阅读节奏，规划好每章的作用和剧情。每章必须包含具体的场景、人物、冲突点和剧情走向，确保整体节奏张弛有度。"
+# 运行阶段1-5 (设置到世界观) / Run phases 1-5 (setup through worldbuilding)
+python -m scripts.v2.cli setup --run-dir <path>
 
-**生成要求：**
+# 写章节 (阶段6) / Write chapters (Phase 6)
+python -m scripts.v2.cli write --run-dir <path> --mode auto --chapters 1-10
 
-- 基于主线大纲，生成完整章节列表
-- 总章节数需符合字数规划
-- 每章必须包含以下要素：
+# 合并最终书籍 (阶段8-9) / Merge final book (Phases 8-9)
+python -m scripts.v2.cli finalize --run-dir <path>
 
-**格式案例：**
-
-```
-第一卷 卷名（第001-020章）
-第001章 章节名
-- 场景与视角：第几人称/谁的视角
-- 地点：具体地点
-- 人物：出现的主要人物
-- 环境描写：氛围/天气/特殊环境
-- 冲突点：本章核心冲突
-- 转折：剧情转折点
-- 剧情：详细剧情走向
-- 结尾：章末悬念/钩子
+# 断点续写 / Resume writing
+python -m scripts.v2.cli write --run-dir <path> --resume auto
 ```
 
-**流程：**
-
-1. 读取 `1-main-outline.md` 主线大纲
-2. 按格式生成完整章节规划
-3. Present to user for confirmation
-4. 确认后保存到 `2-chapter-plan.json`
-
 ---
 
-## Phase 5: Worldbuilding
+## 架构 / Architecture
 
-**提示词：**
-
-> "需要全文阅读前面的设计来编写设定，尤其是章节规划。需要阅读 `1-main-outline.md` 主线大纲和 `2-chapter-plan.json` 章节规划，考虑剧情需要设定人物卡、势力范围、技能、道具等详细设定。确保世界观设定能够支撑全部100章的剧情需求。"
-
-**生成要求：**
-
-- 生成并细化小说设定：
-  1. 世界观（时间/空间/规则/时代背景）
-  2. 主角色（姓名/性格/背景/目标/成长线/所属势力）
-  3. 配角群像（每卷配角及其势力归属）
-  4. 力量/技能体系（含道具、积分、能力）
-  5. 关键道具/地点
-  6. 势力分布图（各势力立场、关系）
-
-**流程：**
-
-1. 读取 `1-main-outline.md` 主线大纲
-2. 读取 `2-chapter-plan.json` 章节规划
-3. 根据剧情需要生成完整设定
-4. Present to user for confirmation
-5. 确认后保存到 `3-world-building.md`
-
----
-
-## Phase 6: Chapter-by-Chapter Writing
-
-Once chapters and worldbuilding are confirmed, begin writing.
-
-**⚠️ 严格子流程（必须按顺序执行，每步需用户确认）：**
+### 目录结构 / Directory Structure
 
 ```
-6.1 生成详细大纲 → 6.2 用户确认 → 6.3 起草正文 → 6.4 质量检查 → 6.5 用户确认 → 6.6 保存章节
-     ↑                    ↑                               ↑
-     └────────────────────┴───────────────────────────────┘
-                              (用户不确认则返回修改)
+novels/
+└── {book_title_slug}__{book_uid}/
+    └── runs/
+        └── {run_id}/
+            ├── 0-config/          # 配置层 / Configuration layer
+            │   ├── 0-book-config.json
+            │   ├── intent_checklist.json
+            │   ├── style_guide.md
+            │   └── price-table.json
+            ├── 1-outline/         # 大纲层 / Outline layer
+            │   ├── 1-main-outline.md
+            │   └── 5-chapter-outlines.json
+            ├── 2-planning/        # 规划层 / Planning layer
+            │   └── 2-chapter-plan.json
+            ├── 3-world/           # 世界观层 / Worldbuilding layer
+            │   └── 3-world-building.md
+            ├── 4-state/           # 运行时状态 (7面板) / Runtime state (7 panels)
+            │   ├── 4-writing-state.json      # 真相源 / Source of truth
+            │   ├── characters.json           # 角色状态 / Character states
+            │   ├── plot_threads.json         # 剧情线索 / Plot threads
+            │   ├── timeline.json             # 时间线 / Timeline
+            │   ├── inventory.json            # 道具 / Items
+            │   ├── locations_factions.json   # 地点 / Locations
+            │   ├── pov_rules.json            # POV规则 / POV rules
+            │   ├── session_memory.json       # 滚动窗口 / Rolling window
+            │   ├── user_interactions.jsonl   # 用户指令 / User commands
+            │   ├── backpatch.jsonl           # 待修复 / Pending fixes
+            │   └── sanitizer_output.jsonl    # 清洗日志 / Sanitizer logs
+            ├── drafts/            # 草稿层 / Draft layer
+            │   ├── alignment/
+            │   ├── outlines/
+            │   ├── chapters/
+            │   └── qc/
+            ├── chapters/          # 最终章节 / Final chapters
+            ├── anchors/           # 锚点文档 / Anchor documents
+            ├── logs/              # 审计日志 / Audit logs
+            │   ├── token-report.jsonl
+            │   ├── cost-report.jsonl
+            │   ├── events.jsonl
+            │   ├── errors.jsonl
+            │   ├── rescue.jsonl
+            │   └── prompts/       # 提示词审计追踪 / Prompt audit trail
+            ├── archive/           # 快照与回滚 / Snapshots & reverts
+            │   ├── snapshots/
+            │   ├── reverted/
+            │   └── backpatch_resolved.jsonl
+            └── final/             # 最终输出 / Final outputs
+                ├── {book_title}_完整版.txt
+                ├── quality-report.md
+                ├── auto_abort_report.md
+                ├── auto_rescue_report.md
+                └── 7-whole-book-check.md
 ```
 
-**禁止：**
+---
 
-❌ 跳过任何步骤或未经用户确认直接保存
+## 阶段参考 / Phase Reference
+
+| 阶段 Phase | 名称 Name | 描述 Description |
+|-----------|-----------|------------------|
+| 1 | Initialization | 创建工作空间、配置、意图清单 / Create workspace, config, intent checklist |
+| 2 | Style Guide | 定义叙事风格、风格约束 / Define narrative voice, style constraints |
+| 3 | Main Outline | 生成书籍级情节结构 / Generate book-level plot structure |
+| 4 | Chapter Planning | 详细章节列表与钩子 / Detailed chapter list with hooks |
+| 5 | World Building | 角色、阵营、规则、道具 / Characters, factions, rules, items |
+| 5.5 | Alignment Check | 验证世界观匹配意图清单 / Verify world matches intent checklist |
+| 6 | Writing Loop | 清洗→草稿→QC→提交 (循环) / Sanitize→Draft→QC→Commit (repeats) |
+| 7 | Backpatch Pass | FORCED章节的回补修复 / Retcon fixes for FORCED chapters |
+| 8 | Merge Book | 合并章节为最终版本 / Concatenate chapters to final |
+| 9 | Whole-Book QC | 最终7点质量检查 / Final 7-point quality check |
 
 ---
 
-### 6.1 Generate Chapter-Specific Outline
+## 阶段6: 写作循环 (核心) / Phase 6: Writing Loop (Core)
 
-**步骤：**
+写作循环是v2.0的核心：
 
-1. 读取 `1-main-outline.md` 主线大纲
-2. 读取 `3-world-building.md` 世界观设定
-3. 读取上一章正文（保持连贯性）
-4. 生成本章详细大纲
+/ The writing loop is the heart of v2.0:
 
-**详细大纲必须包含：**
+```
+6.1 Sanitizer ──→ 6.2 Outline ──→ 6.3 Draft ──→ 6.4 QC ──→ 6.5 Save ──→ 6.6 Commit
+                      ↑                                              │
+                      └────────────-- (若需重写 / if REVISE) ←────────┘
+```
 
-- 本章主题
-- 故事作用（推进/转折/铺垫/高潮等）
-- 字数要求
-- 场景分解（逐幕，含字数分配）
-- 涉及角色
-- 关键对话
-- 章节钩子
+### 6.1 Sanitizer (清洗器)
 
-**格式要求：**
+读取状态面板，提取 **不变项 Invariants** (必须延续) vs **软回退 Soft Retcons** (可调整)。
 
-- 使用 Markdown 格式
-- 表格、列表必须正确换行
-- 清晰易读
+/ Reads state panels and extracts **Invariants** (must continue) vs **Soft Retcons** (can adjust).
 
-**Token记录：**
+输出到 / Outputs to: `4-state/sanitizer_output.jsonl`
 
-记录本步骤消耗到 `token-report.json`
+### 6.2 大纲生成 / Outline Generation
 
----
+生成带上下文块的详细章节大纲。
 
-### 6.2 Chapter Outline Validation (用户确认环节)
+/ Generates detailed chapter outline with context blocks.
 
-**必须执行：**
+- Manual模式: 等待用户确认
+- Auto模式: 保存到 `drafts/outlines/` 并继续
 
-- 向用户展示详细大纲
-- 等待用户确认或修改意见
-- **用户确认后，立即保存到 `5-chapter-outlines.json`**
+### 6.3 草稿生成 / Draft Generation
 
-**禁止：**
+分段生成章节正文。
 
-❌ 未经用户确认直接写正文
+/ Generates chapter text segment by segment.
 
-**Token记录：**
+使用 `prompts/v1/` 中的模板 (chapter_draft_first, chapter_draft_continue)。
 
-记录本步骤消耗到 `token-report.json`
+### 6.4 质量检查 / Quality Check
 
----
+**多视角协议 (Auto模式必须):**
 
-### 6.3 Draft Writing
+/ **Multi-Perspective Protocol (blocking requirement in Auto mode):**
 
-**步骤：**
+1. **苛刻主编视角**: 节奏、钩子、可出版性 / Pacing, hooks, publishability
+2. **逻辑审计视角**: 因果关系、动机一致性 / Causality, motivation consistency
+3. **连续性审计视角**: 时间线、角色状态、道具 / Timeline, character state, items
 
-1. 读取本章详细大纲（从 `5-chapter-outlines.json`）
-2. 基于大纲起草正文
-3. 字数限制：每段 ≤2000 字
-4. 保持与前文章节风格一致
+**评分 (100分制, 加权):**
 
-**格式要求：**
+/ **Scoring (100-point, weighted):**
 
-- 每次回复必须确保 Markdown 格式正确
-- 特别是换行，避免文字挤成一团
-- 使用代码块展示正文内容
+| 维度 Dimension | 权重 Weight | 标准 Criteria |
+|---------------|------------|---------------|
+| 大纲符合度 Outline Adherence | 20 | 遵循大纲要求 / Follows outline requirements |
+| 主线推进 Main Plot | 15 | 服务主线故事 / Advances main storyline |
+| 人物一致性 Character | 15 | 与角色设定一致 / Consistent with character setup |
+| 逻辑自洽 Logic | 20 | 因果连贯 / Causally coherent |
+| 前后衔接 Continuity | 10 | 与上章自然连接 / Connects naturally to previous |
+| 节奏/钩子 Pacing/Hook | 10 | 节奏和悬念 / Rhythm and cliffhanger |
+| 文笔/重复 Style/Repetition | 10 | 无重复、风格统一 / No repetition, consistent style |
 
-**Token记录：**
+**判定映射 / Verdict Mapping:**
 
-记录本步骤消耗到 `token-report.json`
+| 分数 Score | 状态 Status | 动作 Action |
+|-----------|------------|------------|
+| ≥85 | PASS | 保存，继续 / Save, continue |
+| 75-84 | WARNING | 保存（带警告），继续 / Save with note, continue |
+| <75 | REVISE | 重试 (Attempt++) / Retry (Attempt++) |
+| 第三次<75 | FORCED | 保存（带⚠️），进入Backpatch / Save with ⚠️, queue for Backpatch |
 
----
+### 6.5 内容确认 / Content Confirmation
 
-### 6.4 Quality Check (质量检查)
+- Manual模式: 等待 "OK/保存/继续"
+- Auto模式: 带元数据保存到 `chapters/`
 
-**必须展示结构化 QC 报告：**
+### 6.6 状态提交 / State Commit
 
-| 检查项 | 结果 | 说明 |
-|--------|------|------|
-| 符合详细大纲 | ✅/⚠️/❌ | |
-| 符合主线大纲 | ✅/⚠️/❌ | |
-| 角色行为/语言 | ✅/⚠️/❌ | |
-| 无逻辑矛盾 | ✅/⚠️/❌ | |
-| 与前文衔接 | ✅/⚠️/❌ | |
-| 字数达标 | ✅/⚠️/❌ | |
-| 无重复描写 | ✅/⚠️/❌ | |
-| 伏笔/线索 | ✅/⚠️/❌ | |
+用证据链更新所有状态面板。
 
-**QC 结论格式：**
+/ Updates all state panels with Evidence chain.
 
-- ✅ **PASS** → 进入 6.5
-- ⚠️ **WARNING** → 列出问题，建议修改但可继续
-- ❌ **REVISE** → 必须返修，重新 QC
+**forced_streak 管理:**
+- FORCED后 +1
+- PASS/WARNING后 重置为0
+- Backpatch成功关闭后 -1
 
-**Token记录：**
-
-记录本步骤消耗到 `token-report.json`
+**熔断:** 若 forced_streak ≥ 2，暂停等待人工审查。
 
 ---
 
-### 6.5 User Confirmation (用户确认正文)
+## 安全机制 / Safety Mechanisms
 
-**必须执行：**
+### Auto-Rescue (自动救援)
 
-- 向用户展示完整正文
-- 等待用户确认
-- **用户说"保存"或"OK"后才能执行 6.6**
+在可恢复错误时触发 (qc_low, drift, minor_inconsistency, budget_warning)。
 
-**禁止：**
+/ Triggered on recoverable errors (qc_low, drift, minor_inconsistency, budget_warning).
 
-❌ 未经用户确认直接保存文件
+**策略 Strategies:**
+- S1: 缩小范围 (字数 -20-40%) / Reduce scope
+- S2: 回归锚点 / Rebase to anchor points
+- S3: 优先Backpatch / Backpatch first
+- S4: 模型降级 / Model downgrade
+- S5: 兜底模板 / Fallback template
 
-**Token记录：**
+最多3轮，之后升级到Auto-Abort或人工处理。
 
-记录本步骤消耗到 `token-report.json`
+### Auto-Abort Guardrail (自动中止)
 
----
+检测卡死循环:
+- 连续3轮字数<200
+- 连续3轮QC<75且无改善
 
-### 6.6 File Output
+**动作:** 暂停运行，生成 `final/auto_abort_report.md`。
 
-**步骤：**
+### Backpatch (阶段7)
 
-1. 保存章节到 `chapters/第XXX章_章节名.txt`
-2. 文件命名：`第{3位数字}章_{章节名}.txt`
-3. 更新 `4-writing-state.json` 进度
-4. 生成保存确认信息
-
-**完成后：**
-
-- 报告已保存的文件路径
-- 更新字数统计
-- 准备进入下一章
-
-**Token记录：**
-
-记录本步骤消耗到 `token-report.json`
+仅回退修复FORCED章节:
+1. 在 `backpatch.jsonl` 中排队问题
+2. 每5章或阶段9前触发
+3. 通过后续章节对话/闪回/揭示修复
+4. 需要QC≥75才能关闭问题
 
 ---
 
-## Token Usage Tracking (Token 统计)
+## 配置 / Configuration
 
-**记录位置：** `token-report.json`
-
-**必须在每个步骤记录：**
-
-- Phase 切换
-- 大纲生成
-- 用户确认交互
-- 正文起草
-- 质量检查
-- 文件保存
-
-**格式：**
+### 0-book-config.json
 
 ```json
 {
-  "book_id": "...",
-  "total_prompt_tokens": 0,
-  "total_completion_tokens": 0,
-  "total_tokens": 0,
-  "steps": [
-    {
-      "phase": "6.1",
-      "chapter": 1,
-      "action": "generate_outline",
-      "timestamp": "...",
-      "prompt_tokens": 500,
-      "completion_tokens": 2000,
-      "total": 2500
-    }
-  ]
+  "version": "2.0.0",
+  "book": {
+    "title": "书名",
+    "title_slug": "book_slug",
+    "book_uid": "8char_hash",
+    "genre": "都市灵异",
+    "target_word_count": 100000,
+    "chapter_target_words": 2500
+  },
+  "generation": {
+    "model": "nvidia/moonshotai/kimi-k2.5",
+    "mode": "auto",
+    "max_attempts": 3,
+    "auto_threshold": 85,
+    "auto_rescue_enabled": true,
+    "auto_rescue_max_rounds": 3
+  },
+  "qc": {
+    "pass_threshold": 85,
+    "warning_threshold": 75,
+    "weights": { ... }
+  },
+  "run_id": "YYYYMMDD_HHMMSS_RAND6"
 }
 ```
 
 ---
 
-## Phase 7: Book Integration & Whole-Book Check
+## 提示词模板 / Prompt Templates
 
-After all chapters completed:
+模板位置 / Templates located in:
+- `prompts/v1/` - 核心模板 (Auto模式必须使用) / Core templates (MUST use for Auto mode)
+- `prompts/v2_addons/` - 额外评审、QC、Backpatch / Additional critics, QC, Backpatch
 
-### 7.1 Merge Book
+**注册表:** `4-state/prompt_registry.json` 追踪使用的模板。
 
-- Concatenate all chapters
-- Generate `final/{书名}_完整版.txt`
-
-### 7.2 Whole-Book Quality Check
-
-**Critical Step:** Must perform comprehensive check on complete book:
-
-| 检查项 | 内容 |
-|--------|------|
-| **设定一致性** | 角色能力是否前后一致？世界观规则有无矛盾？ |
-| **大纲符合度** | 整体剧情是否偏离主线大纲？章节与规划是否对应？ |
-| **剧情逻辑** | 情节推进是否合理？有无逻辑漏洞？ |
-| **人物性格** | 角色行为是否符合人设？成长弧线是否自然？ |
-| **伏笔回收** | 前文伏笔是否在后文回收？有无废弃伏笔？ |
-| **节奏把控** | 整体松紧是否得当？有无拖沓/跳跃？ |
-| **字数统计** | 是否达到目标字数？各章节字数分配是否合理？ |
-
-**流程：**
-
-1. 读取完整书籍
-2. 读取主线大纲、世界观设定
-3. 逐卷/逐章检查上述 7 项
-4. 生成问题报告 (`final/quality-report.md`)
-5. 如有问题：定位章节 → 提出修改方案 → 用户同意后重写 → 重新检查
-6. 无问题 → 通过
+**审计:** 每次模型调用记录最终提示词到 `logs/prompts/{phase}_{chapter}_{event_id}.md`
 
 ---
 
-## Workspace Structure
+## 状态面板 (基于证据) / State Panels (Evidence-Based)
 
-```
-novels/
-└── {timestamp}_{book_title}/
-    ├── 0-book-config.json              # 总配置
-    ├── 1-main-outline.md               # 主线大纲
-    ├── 2-chapter-plan.json             # 章节规划
-    ├── 3-world-building.md             # 世界观设定
-    ├── 4-writing-state.json            # 写作进度
-    ├── 5-chapter-outlines.json         # 各章详细大纲索引
-    ├── 6-session-context.json          # 短期记忆
-    ├── token-report.json               # Token 消耗统计
-    ├── chapters/                       # 章节文件
-    │   ├── 第001章_开篇.txt
-    │   └── ...
-    ├── drafts/                         # 草稿/修订版本
-    └── final/                          # 最终版本
-        ├── {书名}_完整版.txt
-        └── 7-whole-book-check.md
+所有状态变更需要证据:
+```json
+{
+  "value": "...",
+  "evidence_chapter": "第015章",
+  "evidence_snippet": "张大胆说：...",
+  "confidence": 0.85
+}
 ```
 
----
-
-## Quality Control Checklist
-
-Every chapter must pass:
-
-- [ ] 符合详细大纲
-- [ ] 符合主线大纲方向
-- [ ] 角色行为/语言符合人设
-- [ ] 无逻辑矛盾
-- [ ] 与前文章节衔接自然
-- [ ] 字数达标（±10%）
-- [ ] 无重复描写
-- [ ] 伏笔/线索处理一致
+**置信度阈值:** 0.7
+- ≥0.7: 直接更新到活跃状态
+- <0.7: 进入 `pending_changes` 待审核
 
 ---
 
-## Important Notes
+## 开发 / Development
 
-1. ✅ **Stop and wait for user confirmation at:**
-   - Phase 3, 4, 5 ends
-   - Phase 6.2 (大纲确认)
-   - Phase 6.5 (正文确认)
-2. ✅ **Save progress immediately after each chapter completes**
-3. ✅ **Always use file I/O for novel content** - never rely on conversation context
-4. ✅ **Auto-save session context after every user interaction**
-5. ✅ **Record token usage at every step** to `token-report.json`
-6. ✅ **Ensure Markdown format is correct** in every reply
+### 模块结构 / Module Structure
+
+```
+scripts/v2/
+├── utils.py              # ID生成、slug、路径 / IDs, slugs, paths
+├── atomic_io.py          # 原子写入、快照 / Atomic writes, snapshots
+├── workspace.py          # 目录管理 / Directory management
+├── config_manager.py     # 配置I/O / Config I/O
+├── state_manager.py      # 7面板 / 7 panels
+├── prompt_registry.py    # 模板注册表 / Template registry
+├── prompt_assembly.py    # 提示词构建 / Prompt building
+├── price_table.py       # 费率表管理 / Price table management
+├── resume_manager.py     # 断点续传、锁管理 / Resume, lock management
+├── phase_runner.py       # 阶段1-5 / Phases 1-5
+├── writing_loop.py       # 阶段6 / Phase 6
+├── safety_mechanisms.py  # 阶段7-9, 救援/中止 / Phases 7-9, rescue/abort
+└── cli.py               # CLI入口 / CLI entry point
+```
+
+### 测试 / Testing
+
+```bash
+python scripts/v2/test_v2.py
+```
+
+---
+
+## 从v1.0迁移 / Migration from v1.0
+
+v2.0保持与v1.0的兼容性:
+- `token-report.json` 格式保留
+- 阶段编号对齐 (6.2/6.5 确认闸门不变)
+- 可用 `--resume` 恢复v1.0书籍
+
+v2.0新增:
+- 运行级隔离 (`runs/{run_id}/`)
+- 基于证据的状态面板
+- 原子I/O + 回滚
+- 多视角QC
+- Auto-Rescue/Abort
+
+---
+
+## 许可证 / License
+
+MIT License - 参见 LICENSE 文件

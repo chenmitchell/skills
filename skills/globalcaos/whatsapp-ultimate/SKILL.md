@@ -1,7 +1,7 @@
 ---
 name: whatsapp-ultimate
-version: 1.8.1
-description: "Complete WhatsApp integration for OpenClaw agents — send messages, media, polls, stickers, voice notes, reactions & replies. Search chat history with full-text search (SQLite + FTS5). Download & transcribe voice messages. Import chat exports. Full history resync. NEW: 🤔 Thinking Reaction — visible progress indicator that works in groups (workaround for WhatsApp's broken typing indicator on linked devices). Owner voice messages bypass prefix filters. Native Baileys — zero Docker, zero external tools. Works alongside OpenClaw's built-in WhatsApp channel."
+version: 1.9.0
+description: "Complete WhatsApp integration for OpenClaw agents — send messages, media, polls, stickers, voice notes, reactions & replies. Search chat history with full-text search (SQLite + FTS5). Download & transcribe voice messages. Import chat exports. Full history resync. NEW: 🤔↔🧐 Thinking Heartbeat — alternating reaction indicator (~1s) that doubles as a watchdog (frozen = hung). Owner voice messages bypass prefix filters. Native Baileys — zero Docker, zero external tools. Works alongside OpenClaw's built-in WhatsApp channel."
 homepage: https://github.com/globalcaos/clawdbot-moltbot-openclaw
 repository: https://github.com/globalcaos/clawdbot-moltbot-openclaw
 metadata:
@@ -323,6 +323,24 @@ Messages must start with this prefix to trigger the agent. Works in:
 - Self-chat
 - Allowed DMs
 - Any DM where you (the owner) message with the prefix
+
+### Message Prefix (Outbound Identity)
+
+```json
+{
+  "channels": {
+    "whatsapp": {
+      "messagePrefix": "🤖"
+    }
+  }
+}
+```
+
+All outbound messages from the agent are prefixed with this string. Use an emoji (like 🤖) so recipients can instantly tell who's talking — especially useful in group chats or when the agent sends from your personal number. Common choices:
+
+- `🤖` — robot face (recommended)
+- `[Jarvis]` — named tag
+- Any short identifier that distinguishes agent messages from your own
 
 ---
 

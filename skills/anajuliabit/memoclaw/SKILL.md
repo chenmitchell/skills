@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.8.2
+version: 1.8.6
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 1000 free calls per wallet, then x402 micropayments.
@@ -21,7 +21,7 @@ Memory-as-a-Service for AI agents. Store and recall memories with semantic vecto
 
 **No API keys. No registration.** Your wallet address is your identity.
 
-**Free Tier:** Every wallet gets **1000 free API calls**. Just sign with your wallet — no payment required. After that, x402 micropayments ($0.001/call USDC on Base).
+**Free Tier:** Every wallet gets **1000 free API calls**. Just sign with your wallet — no payment required. After that, x402 micropayments (from $0.005/call USDC on Base).
 
 ---
 
@@ -332,17 +332,17 @@ The CLI handles both automatically. Just set your private key and go.
 
 | Operation | Price |
 |-----------|-------|
-| Store memory | $0.001 |
-| Store batch (up to 100) | $0.01 |
-| Update memory | $0.001 |
-| Recall (semantic search) | $0.001 |
-| List memories | $0.0005 |
-| Delete memory | $0.0001 |
-| Extract facts | $0.005 |
-| Consolidate | $0.005 |
-| Suggested | $0.001 |
-| Relations (create/list/delete) | $0.0005 |
-| Migrate (per request) | $0.005 |
+| Store memory | $0.005 |
+| Store batch (up to 100) | $0.04 |
+| Update memory | $0.005 |
+| Recall (semantic search) | $0.005 |
+| Extract facts | $0.01 |
+| Consolidate | $0.01 |
+| Ingest | $0.01 |
+| Context | $0.01 |
+| Migrate (per request) | $0.01 |
+
+**Free:** List, Get, Delete, Bulk Delete, Search (text), Suggested, Core memories, Relations, History, Export, Namespaces, Stats
 
 ## Setup
 

@@ -3,9 +3,15 @@
   "slug": "maestro-skill",
   "displayName": "Maestro Bitcoin",
   "latest": {
-    "version": "0.1.1",
-    "publishedAt": 1769900577025,
-    "commit": "https://github.com/clawdbot/skills/commit/7aeac88b0b2e1e286c28cc065c21f8ac8e82f5f6"
+    "version": "0.1.6",
+    "publishedAt": 1771220422880,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.1",
+      "publishedAt": 1769900577025,
+      "commit": "https://github.com/clawdbot/skills/commit/7aeac88b0b2e1e286c28cc065c21f8ac8e82f5f6"
+    }
+  ]
 }

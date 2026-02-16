@@ -1,4 +1,4 @@
-const { fetchWithAuth } = require('../common/feishu-client.js');
+const { fetchWithAuth } = require('../feishu-common/index.js');
 
 async function updateSettings(chatId, options) {
     if (!chatId) throw new Error('Chat ID is required');

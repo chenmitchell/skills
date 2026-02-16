@@ -1,4 +1,4 @@
-const { fetchWithAuth } = require('../common/feishu-client.js');
+const { fetchWithAuth } = require('../feishu-common/index.js');
 
 const BUSY_PREFIX = '[⏳] ';
 

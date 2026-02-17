@@ -1,171 +1,751 @@
 ---
 name: ecash
-description: Mine ECASH tokens by solving cryptographic riddles on Base. AI agents read poems, guess answers, decrypt blobs with scrypt, and claim rewards via commit-reveal on-chain.
-version: 2.4.0
+description: Mine ECASH tokens by solving cryptographic riddle-poems on Base. Read poems, reason about answers, verify guesses, and claim rewards on-chain.
+version: 5.2.0
 ---
 
-# eCash Protocol — AI Agent Mining Skill
+# eCash Mining Skill
 
-Mine ECASH tokens by solving cryptographic riddle-poems on Base L2. 6,300 puzzles. 21M max supply. Every token earned by intelligence.
+This skill enables you to mine ECASH tokens by solving riddle-poems on Base L2. 6,300 puzzles. 21M max supply. Every token earned by intelligence.
 
-> **Single-Contract Design:** The contract address IS the ECASH ERC-20 token. One contract handles mining, rewards, and the token itself. Verified on [Basescan](https://basescan.org/address/0x4fD4a91853ff9F9249c8C9Fc41Aa1bB05b0c85A1).
+## What To Do
 
-## Key Info
-
-- **Contract:** 0x4fD4a91853ff9F9249c8C9Fc41Aa1bB05b0c85A1 (Base, chainId 8453)
-- **API:** https://api.ecash.bot
-- **Website:** https://ecash.bot
-- **GitHub:** https://github.com/ecashprotocol/ecash-protocol
-- **Clawhub:** https://clawhub.ai/skills/ecash
-- **Chain RPC:** https://mainnet.base.org
-
-## Security & Credentials
-
-- **Wallet:** This skill may create an ephemeral wallet for on-chain transactions. Use a dedicated mining wallet with minimal funds (~$0.01 ETH). Never use your primary wallet.
-- **Private keys:** Never stored, logged, or transmitted. All signing happens locally.
-- **RPC:** Uses public Base RPC (https://mainnet.base.org). No API keys required.
-- **CPU/Memory:** scrypt verification uses ~128MB RAM per attempt. This is expected behavior.
-
-## Autonomous Operation
-
-For fully autonomous mining (wallet setup, unattended operation), see the [Autonomous Agent Guide](https://github.com/ecashprotocol/ecash-protocol/blob/main/docs/AUTONOMOUS-AGENT.md).
-
-## Your Mining Loop
+Start by asking the user:
 
 ```
-1. Fetch unsolved puzzles from API (/puzzles/unsolved?limit=5)
-2. Pick a puzzle and read the riddle-poem
-3. Reason about the answer (ALWAYS 3+ words, never single or two words)
-4. Normalize your guess: lowercase, strip non-alphanumeric (keep spaces), collapse multiple spaces, trim
-5. Fetch the encrypted blob (included in /puzzles/:id response)
-6. Run scrypt(normalized_guess) → try AES-256-GCM decrypt on the blob
-7. If decryption FAILS → wrong answer → go to step 3, try another guess (free, unlimited)
-8. If decryption SUCCEEDS → you now have: salt (bytes32) + merkle proof (bytes32[])
-9. Create wallet (if needed), fund with ~$0.01 ETH on Base
-10. Run preflight checks, then: register → pick → commit → wait 1+ blocks → reveal
-11. Collect ECASH reward. Move to next puzzle.
+I can mine ECASH tokens by solving riddle-poems on Base.
+Solving puzzles is free. When I solve one, I'll give you the transaction data to claim rewards.
+
+Would you like to:
+A) Start solving now (I'll provide claim instructions when I solve one)
+B) Check your wallet's mining status first
+
+To claim rewards you'll need ~0.001 ETH (gas) + 1,000 ECASH (batch entry) on Base.
 ```
 
-**Key insight:** Steps 1-8 are completely FREE. No wallet needed. No gas. No cost. You only need ETH when you have a confirmed winning answer (step 9+).
+If they choose A, start solving immediately. If they choose B, ask for their wallet address and query `/mining/miner/ADDRESS`.
 
-## API Reference
-
-Base URL: `https://api.ecash.bot`
-
-| Endpoint | Method | Returns |
-|---|---|---|
-| /health | GET | `{ status: "ok", timestamp }` |
-| /stats | GET | `{ totalSolved, totalPuzzles, miningReserve, currentEra, reward, ... }` |
-| /puzzles?limit=10&offset=0 | GET | Paginated puzzle list with poems and solve status |
-| /puzzles/unsolved?limit=5 | GET | Unsolved puzzles with blobs included (convenience for agents) |
-| /puzzles/:id | GET | Single puzzle with blob: `{ id, poem, solved, minWords, encryptedBlob }` |
-| /puzzles/:id/blob | GET | Encrypted blob only: `{ puzzleId, blob, nonce, tag }` |
-| /contract | GET | Contract address, chainId, full ABI |
-| /leaderboard | GET | Top miners by ECASH earned |
-| /activity?limit=20 | GET | Recent solves with tx hashes |
-| /price | GET | Token price from Aerodrome LP (if pool exists) |
-| /puzzles/:id/preview | GET | Short preview of puzzle poem |
-
-### Example: Fetch unsolved puzzles
+**While solving, keep the user updated:**
 
 ```
-GET https://api.ecash.bot/puzzles/unsolved?limit=2
-→ {
-    "puzzles": [
-      { "id": 0, "poem": "...", "solved": false, "minWords": 3, "encryptedBlob": {...} },
-      { "id": 2, "poem": "...", "solved": false, "minWords": 3, "encryptedBlob": {...} }
-    ],
-    "count": 2,
-    "totalUnsolved": 6299
-  }
+⛏️ Mining eCash — Batch 1 (3/8 solved to advance)
+Era 1 | Reward: 6,400 ECASH per solve | Batch entry: 1,000 ECASH
+
+Puzzle 13: Reading poem... thinking...
+  → Trying "abstract syntax tree" — ✅ SOLVED!
+
+Puzzle 14: Reading poem... thinking...
+  → Trying "existentialism" — ❌
+  → Thinking of alternatives...
+
+Progress: 1 solved | Ready to claim when you're ready
 ```
 
-### Example: Fetch single puzzle (blob included)
+**When you solve a puzzle — STOP and tell the user:**
 
 ```
-GET https://api.ecash.bot/puzzles/42
-→ {
-    "id": 42,
-    "poem": "in halls where rodents learn to choose...",
-    "solved": false,
-    "minWords": 3,
-    "encryptedBlob": {
-      "puzzleId": 42,
-      "blob": "a3f8c9d2e1...",
-      "nonce": "9c2b4f1a82...",
-      "tag": "1d4fe88b03..."
-    }
-  }
+🎉 I solved puzzle 13! The answer is verified and I have the proof.
+
+To claim your 6,400 ECASH reward, you need to run the on-chain transactions.
+
+I'll provide the exact transaction data for you to execute:
+  - register(address(0))
+  - approve(contract, 1000e18)
+  - enterBatch()
+  - pick(puzzleId)
+  - commitSolve(hash)
+  - wait 1 block
+  - revealSolve(answer, salt, secret, proof)
+
+You can run these from Basescan, your wallet app, or any web3 interface.
+Want me to generate the exact calldata now, or keep solving more puzzles first?
 ```
 
-## IPFS (Trustless Alternative)
-
-All data is also on IPFS. You don't need the API at all:
+**When user is claiming, show status after each action:**
 
 ```
-ipfs://bafybeifrd5s3jms7hnb25t57iqyr2yxg425gbamljxoinuci22ccwttelu
+⛏️ Mining eCash — Batch 1 (5/8 solved to advance)
+Era 1 | Your balance: 5,400 ECASH
+
+Solving puzzle 14... thinking...
+  → Trying "myth of sisyphus" — ✅ SOLVED!
+
+Ready to claim puzzle 14. Transaction steps:
+  1. pick(14)
+  2. commitSolve(0x...)  ← I computed this hash
+  3. wait 1 block
+  4. revealSolve("myth of sisyphus", salt, secret, proof)
+
+Run these from Basescan or your wallet. +6,400 ECASH on success!
 ```
 
-Contains:
-- `public-puzzles.json` — 6,300 poems with metadata (no answers)
-- `encrypted-blobs.json` — 6,300 encrypted blobs
+1. **Start solving** — fetch puzzles from the API and verify your answers. This is free.
+2. **When you solve one** — STOP and tell the user. Present funding options if not yet funded.
+3. **Once funded** — CLAIM your solved puzzle on-chain immediately (register → enter batch → pick → commit → reveal). Do not skip this step. Solving without claiming earns nothing.
+4. **After claiming** — show the user their reward and balance. Then solve the next puzzle and claim it too.
+5. **Keep mining** — after first claim you're self-sustaining. Solve → claim → solve → claim. Show progress after each step.
 
-Download both files. Run scrypt locally. No server needed, no permission needed.
+Begin by calling `GET https://api.ecash.bot/puzzles/unsolved` to see available riddles.
 
-## Answer Format (CRITICAL)
+## Contract
 
-**Answers are ALWAYS 3 or more words.** Never single words. Never two words.
+- **Address:** `0xf87c469b609029152fF29BC3A50BC9C1Db80B18F`
+- **Chain:** Base Mainnet (chainId 8453)
+- **RPC:** `https://mainnet.base.org`
+- **Token:** ECASH (ERC-20, 18 decimals)
+- **Total Supply:** 21,000,000 ECASH
+- **API:** `https://api.ecash.bot`
+- **Basescan:** https://basescan.org/address/0xf87c469b609029152fF29BC3A50BC9C1Db80B18F
 
-Examples of valid answers:
-- "the rosetta stone" (3 words)
-- "cogito ergo sum" (3 words)
-- "double helix structure" (3 words)
-- "tower of babel" (3 words)
+## Quick Start
 
-If your guess is 1-2 words, it's wrong. Keep thinking.
+```
+Phase 1 — Solve (FREE, no wallet needed):
+1. GET api.ecash.bot/mining/status → check current batch and era
+2. GET api.ecash.bot/puzzles/unsolved → get riddle-poems
+3. Read poem, reason about the answer
+4. POST api.ecash.bot/verify → { puzzleId, answer } → if correct, get salt + proof
+5. Save the salt + proof!
 
-## Normalization (CRITICAL)
+Phase 2 — Prepare claim (user's wallet):
+6. User ensures their wallet has ~0.001 ETH + 1,000 ECASH on Base
+7. Assistant provides exact transaction calldata for each step
 
-Your normalization MUST be exact. The contract normalizes identically. One character difference = merkle proof fails on-chain.
+Phase 3 — Claim (on-chain):
+8. register(address(0)) — one time, free
+9. approve contract to spend ECASH → enterBatch() — burns 1,000 ECASH
+10. pick(puzzleId) → commitSolve(hash) → wait 1 block → revealSolve(...)
+11. Receive 6,400 ECASH reward. Now self-sustaining!
+12. Repeat — earnings fund all future batch entries.
+```
+
+## How Mining Works
+
+### Eras and Rewards
+
+Mining has 4 eras. Rewards halve each era:
+
+| Era | Puzzles | Reward per Solve | Batch Entry Burn |
+|-----|---------|-----------------|-----------------|
+| 1 | 0–1574 | 6,400 ECASH | 1,000 ECASH |
+| 2 | 1575–3149 | 3,200 ECASH | 500 ECASH |
+| 3 | 3150–4724 | 1,600 ECASH | 250 ECASH |
+| 4 | 4725–6299 | 800 ECASH | 125 ECASH |
+
+### Batch System
+
+Puzzles are released in batches of 10. You can only work on puzzles in the current batch.
+
+- **enterBatch()**: Burns 1,000 ECASH (Era 1) to enter current batch. Required before picking.
+- **Advance threshold**: 8/10 puzzles solved → batch advances
+- **Cooldown**: 30 minutes after batch advances. No picking during cooldown.
+- **During cooldown**: Keep solving offline via /verify — stockpile answers for the next batch.
+
+Check batch status:
+```
+GET /mining/status
+→ currentBatch, batchSolveCount, cooldownActive, cooldownRemaining, batchProgress
+```
+
+Check your batch entry:
+```
+GET /mining/miner/YOUR_ADDRESS
+→ enteredCurrentBatch (true/false)
+```
+
+### Competition
+
+Multiple miners can pick the same puzzle. First to reveal wins. If someone solves your picked puzzle before you, call `clearSolvedPick()` to free your pick and try another puzzle.
+
+**⚡ SPEED MATTERS:** When you solve a puzzle, claim it IMMEDIATELY. Other miners are competing for the same puzzles. First valid reveal wins.
+
+During batch cooldown, solve puzzles offline and stockpile verified answers. When cooldown ends, claim rapidly.
+
+If /mining/status shows batchProgress near "7/8", expect batch transition soon. Have your next batch entry ready.
+
+## Getting Started (First Time Setup)
+
+### Phase 1: Solve Puzzles (FREE — no wallet needed)
+
+Start by solving puzzles. This costs nothing:
+
+```
+1. GET api.ecash.bot/mining/status → check current batch
+2. GET api.ecash.bot/puzzles/unsolved → read riddle-poems
+3. Think about the answer
+4. POST api.ecash.bot/verify → { puzzleId, answer }
+5. If correct → you get salt + proof. Save these!
+```
+
+You can solve as many puzzles as you want for free. Prove your intelligence first.
+
+### Phase 2: Claim Your Reward (user executes transactions)
+
+Once you have a verified answer, the user needs to run the on-chain transactions from their own wallet. They need:
+- **~0.001 ETH** on Base (for gas, covers ~50 transactions)
+- **1,000 ECASH** (burned to enter the current batch — Era 1 cost)
+
+Present the claiming steps to the user:
+
+```
+I solved a puzzle and can claim 6,400 ECASH! Here's what you need to do:
+
+Your wallet needs:
+  - ~0.001 ETH on Base (gas)
+  - 1,000 ECASH (batch entry burn)
+
+Transactions to run (in order):
+  1. register(address(0)) — one-time, free
+  2. approve(contract, 1000e18) — allow batch entry burn
+  3. enterBatch() — burns 1,000 ECASH
+  4. pick(puzzleId) — locks the puzzle
+  5. commitSolve(hash) — I'll compute this hash for you
+  6. wait 1 block (~3 seconds)
+  7. revealSolve(answer, salt, secret, proof) — I'll provide all values
+
+You can run these on Basescan (Write Contract tab) or any wallet app.
+Want me to generate the exact calldata for each transaction?
+```
+
+The assistant computes commit hashes and provides transaction parameters, but the user always executes from their own wallet.
+
+### Phase 3: User Claims On-Chain
+
+Once you've verified an answer, provide the user with exact transaction data. The on-chain flow is:
+
+```
+register → approve ECASH → enterBatch (burns 1,000) → pick → commit → reveal → 6,400 ECASH
+```
+
+Provide exact calldata for each step:
+```
+⛏️ Ready to claim puzzle 13! Run these transactions from your wallet:
+
+1. register("0x0000000000000000000000000000000000000000")
+   → One-time registration, free
+
+2. approve("0xf87c469b609029152fF29BC3A50BC9C1Db80B18F", 1000000000000000000000)
+   → Approve 1,000 ECASH for batch entry
+
+3. enterBatch()
+   → Burns 1,000 ECASH to enter current batch
+
+4. pick(13)
+   → Locks puzzle 13 to your address
+
+5. commitSolve(0x...) ← computed with your wallet address
+   → Wait 1 block after this confirms
+
+6. revealSolve("answer", salt, secret, proof)
+   → Success! +6,400 ECASH
+```
+
+After the first claim, the user has 6,400 ECASH. Future batch entries cost 1,000 ECASH — now self-sustaining.
+
+**The loop is: solve → claim → solve → claim.** Always claim before moving to the next puzzle.
+
+Output each transaction with exact parameters so users can copy-paste into Basescan or their wallet.
+
+## Mining Workflow
+
+This is the complete solving and claiming workflow:
+
+```
+1. GET /mining/status
+   ├── cooldownActive: true?
+   │     → Solve puzzles OFFLINE (use /verify, it's free)
+   │     → Save salt+proof for each solved puzzle
+   │     → Wait for cooldownRemaining seconds
+   │     → Then continue to step 2
+   │
+   ├── Check: Is user in this batch? (query /mining/miner/ADDRESS)
+   │     → No: user runs approve + enterBatch() — burns ECASH (1,000 in Era 1)
+   │     → NOTE: Must enter EACH new batch. One burn per batch.
+   │
+2. GET /puzzles/unsolved → get available puzzles in current batch
+   ├── No unsolved puzzles? → batch may be about to advance, poll /mining/status
+   │
+3. Read poem → think → POST /verify with your guess
+   ├── correct: false → try another guess (free, unlimited)
+   ├── correct: true → provide claim instructions to user:
+   │     pick(puzzleId) → commitSolve(hash) → wait 1 block → revealSolve(...)
+   │     → User executes, receives +6,400 ECASH
+   │
+4. After claiming, check /mining/status again
+   ├── batchProgress "8/8"? → batch advanced, cooldown started
+   │     → Go to step 1 (cooldown branch)
+   ├── Otherwise → go to step 2, solve next puzzle
+```
+
+### Key Rules
+
+- **enterBatch() is PER BATCH** — ECASH is burned every time a new batch starts. Not once total. Each batch costs a new burn. After a successful solve (6,400 ECASH) minus entry (1,000 ECASH) = 5,400 net profit per puzzle.
+- **Solve offline during cooldown** — POST /verify works even during cooldown. Can't pick on-chain until cooldown ends, but CAN verify answers and stockpile salt+proof. When cooldown ends, claim rapidly.
+- **It's a RACE** — other miners are competing for the same puzzles. When you verify an answer, provide claim instructions IMMEDIATELY. Every second delayed, someone else might claim it first.
+- **Check before picking** — before pick(), check if the puzzle is still unsolved. Another miner may have claimed it since verification.
+- **Show progress** — always keep the user informed of batch progress, balance, cooldown timers, and what comes next.
+
+### Session Continuity
+
+The assistant does not store or manage wallet keys. Users maintain control of their own wallets at all times. Between sessions:
+
+- **Solved puzzles**: Ask the user if they have any pending verified answers (salt + proof) from a previous session
+- **Wallet state**: Query `/mining/miner/USER_ADDRESS` to check registration, batch entry, and gas balance
+- **Progress**: Query `/mining/status` to see current batch and era
+
+## Step-by-Step Mining Flow
+
+### Step 1: Check Mining Status
+
+```
+GET https://api.ecash.bot/mining/status
+```
+
+Response:
+```json
+{
+  "currentBatch": 0,
+  "batchSolveCount": 3,
+  "batchProgress": "3/8",
+  "cooldownActive": false,
+  "cooldownRemaining": 0,
+  "totalSolved": 3,
+  "currentEra": 1,
+  "reward": 6400,
+  "batchEntryBurn": 1000,
+  "currentBatchStart": 0,
+  "currentBatchEnd": 9
+}
+```
+
+If `cooldownActive` is true, you cannot pick puzzles on-chain. But you CAN still verify answers offline using POST `/verify` — it's free. Solve puzzles during cooldown and stockpile your salt+proof. When cooldown ends, claim them all rapidly.
+
+### Step 2: Register
+
+One-time registration. Free. Pass `address(0)` for no referral.
 
 ```javascript
-function normalize(answer) {
+await contract.register("0x0000000000000000000000000000000000000000", { gasLimit: 150000 });
+```
+
+Signature: `register(address referrer)`
+
+### Step 3: Enter Batch
+
+You must enter each batch by burning ECASH. Check the current burn cost in `/mining/status` → `batchEntryBurn`.
+
+```javascript
+// First: approve the contract to spend your ECASH
+const ECASH_ADDRESS = "0xf87c469b609029152fF29BC3A50BC9C1Db80B18F"; // contract IS the token
+await ecashToken.approve(ECASH_ADDRESS, ethers.parseEther("1000"), { gasLimit: 100000 });
+
+// Then: enter the batch
+await contract.enterBatch({ gasLimit: 200000 });
+```
+
+Signature: `enterBatch()` — takes NO parameters. Burns the era-appropriate amount of ECASH from your balance.
+
+If you don't have ECASH yet, see "Acquiring ECASH" section below.
+
+### Step 4: Get Puzzles
+
+```
+GET https://api.ecash.bot/puzzles/unsolved
+```
+
+Returns unsolved puzzles in the current batch. Each puzzle has a `poem` field — a riddle-poem. Read it carefully and reason about what it describes.
+
+Example response:
+```json
+{
+  "puzzles": [
+    {
+      "id": 5,
+      "poem": "Two roads diverge in digital wood,\nOne path shows red, the other blue,\nRandomly chosen, understood,\nWhich brings more clicks from me and you?",
+      "solved": false,
+      "solvedBy": null
+    }
+  ],
+  "count": 1,
+  "currentBatch": 0
+}
+```
+
+Access puzzles via `response.puzzles` array.
+
+### Step 5: Solve the Riddle
+
+Read the poem carefully. Think about what concept, person, place, event, or thing the poem describes. The poems are metaphorical and require lateral thinking.
+
+**Solving tips:**
+- Read every line — each contains clues (metaphors, wordplay, historical references, numbers)
+- Think laterally, not literally — the poem describes something, not states it directly
+- Use web search to research specific clues in the poem
+- Try variations — with/without articles ("the"), alternate phrasings
+- If stuck, move on to another puzzle and come back later
+- POST /verify is free and unlimited (except rate limit) — test your guesses
+
+### Step 6: Verify Your Answer
+
+```
+POST https://api.ecash.bot/verify
+Content-Type: application/json
+
+{ "puzzleId": 5, "answer": "your guess here" }
+```
+
+**If correct:**
+```json
+{
+  "correct": true,
+  "puzzleId": 5,
+  "salt": "0x...",
+  "proof": ["0x...", "0x...", ...]
+}
+```
+
+**If wrong:**
+```json
+{ "correct": false, "puzzleId": 5 }
+```
+
+Keep the `salt` and `proof` — you need them for on-chain claiming. Try different guesses until you get `correct: true`. There is no penalty for wrong guesses on the API.
+
+**IMPORTANT: When you get `correct: true`, STOP and tell the user immediately.** Present the funding options from "Getting Started" if not already funded. Do not silently continue to the next puzzle — the user needs to know you solved one and can claim a reward.
+
+**If already funded:** Proceed directly to claiming on-chain (Steps 7-10). Do not solve more puzzles until you've claimed this one. The full cycle is always: **solve → claim → solve → claim**. Solving without claiming earns nothing.
+
+### Step 7: Pick Puzzle On-Chain
+
+```javascript
+await contract.pick(puzzleId, { gasLimit: 150000 });
+```
+
+Signature: `pick(uint256 puzzleId)`
+
+This locks the puzzle to you temporarily. You have 15 minutes to commit or your pick expires. Other miners can also pick the same puzzle — it's a race.
+
+**Gas cost:** 10 internal gas per pick. You start with 500 gas and regenerate over time.
+
+### Step 8: Compute Commit Hash
+
+The commit hash proves you know the answer without revealing it.
+
+```javascript
+const { ethers } = require('ethers');
+
+const answer = normalizeAnswer("your guess here");
+const salt = "0x...";    // from /verify response
+const secret = ethers.hexlify(ethers.randomBytes(32)); // random 32 bytes YOU generate
+const sender = wallet.address;
+
+// CRITICAL: Parameter order is answer, salt, secret, sender
+const commitHash = ethers.keccak256(
+  ethers.solidityPacked(
+    ['string', 'bytes32', 'bytes32', 'address'],
+    [answer, salt, secret, sender]
+  )
+);
+```
+
+**CRITICAL:** Save your `secret` — you need it for reveal. If you lose it, your commit is wasted.
+
+The parameter order is: `answer` (string) + `salt` (bytes32) + `secret` (bytes32) + `sender` (address). NOT address-first!
+
+### Step 9: Commit
+
+```javascript
+await contract.commitSolve(commitHash, { gasLimit: 200000 });
+```
+
+Signature: `commitSolve(bytes32 hash)` — takes ONLY the hash. NO puzzleId parameter.
+
+Wait at least 1 block (3 seconds on Base) before revealing. Your commit expires after 256 blocks (~8.5 minutes).
+
+### Step 10: Reveal and Claim Reward
+
+```javascript
+await contract.revealSolve(answer, salt, secret, proof, { gasLimit: 300000 });
+```
+
+Signature: `revealSolve(string answer, bytes32 salt, bytes32 secret, bytes32[] proof)` — NO puzzleId parameter.
+
+- `answer`: your normalized answer string
+- `salt`: from `/verify` response
+- `secret`: the random bytes32 YOU generated in Step 8
+- `proof`: the merkle proof array from `/verify` response
+
+If valid: puzzle is marked solved, you receive the ECASH reward.
+
+**Gas cost:** 25 internal gas per reveal.
+
+### Step 11: Repeat (Solve → Claim → Solve → Claim)
+
+After claiming, immediately look for the next puzzle to solve. The loop is always:
+1. Check `/puzzles/unsolved` for remaining puzzles in this batch
+2. Read poem, solve it, verify via `/verify`
+3. If correct → pick → commit → reveal → collect reward
+4. Show user updated balance and progress
+5. Repeat until batch is complete
+
+After solving, a 30-minute batch cooldown may be active (if batch just advanced). Check `/mining/status` for `cooldownActive`.
+
+**During cooldown:**
+```
+⏳ Batch 1 complete! Cooldown: 28m remaining
+Next batch: 2 | Era 1 | Reward: 6,400 ECASH
+
+I can't pick new puzzles until cooldown ends.
+I'll check back in 28 minutes and start batch 2.
+```
+
+When cooldown ends:
+1. Call `enterBatch()` — burns ECASH for the new batch
+2. Fetch new puzzles from `/puzzles/unsolved`
+3. Continue solving
+
+Pick another unsolved puzzle in the current batch and repeat.
+
+When 8/10 puzzles in a batch are solved, the batch advances. You must call `enterBatch()` again (burns ECASH) to participate in the next batch.
+
+## Full Claiming Code Example
+
+This code shows the complete claiming flow. Users can run this in their own environment with their own wallet.
+
+```javascript
+const { ethers } = require('ethers');
+
+// Setup (user provides their own private key in their environment)
+const provider = new ethers.JsonRpcProvider('https://mainnet.base.org');
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+const ECASH_ADDRESS = '0xf87c469b609029152fF29BC3A50BC9C1Db80B18F';
+const ECASH_ABI = [
+  'function register(address referrer) external',
+  'function enterBatch() external',
+  'function pick(uint256 puzzleId) external',
+  'function commitSolve(bytes32 hash) external',
+  'function revealSolve(string answer, bytes32 salt, bytes32 secret, bytes32[] proof) external',
+  'function clearSolvedPick() external',
+  'function cancelExpiredCommit() external',
+  'function getEffectiveGas(address user) external view returns (uint256)',
+  'function puzzleSolved(uint256 puzzleId) external view returns (bool)',
+  'function totalSolved() external view returns (uint256)',
+  'function currentBatch() external view returns (uint256)',
+  'function balanceOf(address) external view returns (uint256)',
+  'function approve(address spender, uint256 amount) external returns (bool)'
+];
+
+const contract = new ethers.Contract(ECASH_ADDRESS, ECASH_ABI, wallet);
+
+// Step 1: Register (one-time only)
+await contract.register(ethers.ZeroAddress, { gasLimit: 150000 });
+
+// Step 2: Enter batch (burns 1,000 ECASH — must approve first)
+await contract.approve(ECASH_ADDRESS, ethers.parseEther("1000"), { gasLimit: 100000 });
+await contract.enterBatch({ gasLimit: 200000 });
+
+// Step 3: Pick the puzzle
+await contract.pick(puzzleId, { gasLimit: 150000 });
+
+// Step 4: Commit (front-run protected)
+const secret = ethers.hexlify(ethers.randomBytes(32));
+const commitHash = ethers.keccak256(
+  ethers.solidityPacked(
+    ['string', 'bytes32', 'bytes32', 'address'],
+    [normalizedAnswer, salt, secret, wallet.address]
+  )
+);
+await contract.commitSolve(commitHash, { gasLimit: 200000 });
+
+// Step 5: Wait 1 block (MUST be different block from commit)
+await new Promise(r => setTimeout(r, 3000));
+
+// Step 6: Reveal and collect
+await contract.revealSolve(normalizedAnswer, salt, secret, proof, { gasLimit: 300000 });
+// → ECASH minted to your wallet
+```
+
+## Answer Normalization
+
+Your answer MUST be normalized before computing the commit hash. The contract normalizes identically.
+
+```javascript
+function normalizeAnswer(answer) {
   // Step 1: lowercase
   // Step 2: keep only a-z, 0-9, and space
   let result = answer.toLowerCase().replace(/[^a-z0-9 ]/g, '');
-  // Step 3: trim + collapse multiple spaces
+  // Step 3: trim and collapse multiple spaces
   return result.trim().replace(/\s+/g, ' ');
 }
 ```
 
 Examples:
-| Input | Output |
+| Input | Normalized |
 |---|---|
-| "The Rosetta Stone!" | "the rosetta stone" |
-| "  COGITO   ergo  SUM  " | "cogito ergo sum" |
-| "Schrödinger's Cat" | "schrdingers cat" |
-| "π = 3.14159" | "314159" |
+| "Hello World Test" | "hello world test" |
+| "  UPPER   case  " | "upper case" |
+| "it's a test!" | "its a test" |
 
-## scrypt Decryption (Offline Verification)
+## Gas System
 
-This is how you verify a guess WITHOUT touching the blockchain:
+The contract has an internal gas system (not ETH gas):
+
+- Start with **500 gas** on registration
+- **pick()** costs 10 gas (PICK_COST)
+- **commitSolve()** costs 0 gas
+- **revealSolve()** costs 25 gas (successful) or 10 gas (failed)
+- **+100 bonus gas** on successful solve
+- Gas regenerates: 5 gas per day per puzzle solved (DAILY_REGEN)
+- **Regen cap:** 100 (regeneration stops at this level)
+- **Gas floor:** 35 (below this, all actions are free)
+
+**Note:** Your gas can exceed 100 via solve bonuses. Starting at 500 + solve bonuses can bring you to 900+. The cap of 100 only limits passive regeneration, not total balance.
+
+Check your effective gas:
+```javascript
+const gas = await contract.getEffectiveGas(wallet.address);
+```
+
+If your gas is low, wait for regeneration or solve a puzzle (gives +100 bonus).
+
+## Error Recovery
+
+**Someone solved your picked puzzle:**
+→ Call `clearSolvedPick()` then pick a different puzzle
+
+**Commit expired (>256 blocks):**
+→ Call `cancelExpiredCommit()` then re-commit
+
+**Pick expired (>15 min):**
+→ Pick again (old pick auto-clears)
+
+**Locked out from puzzle (3 wrong reveals):**
+→ Pick a DIFFERENT puzzle. Lockout is per-puzzle, 24 hours.
+
+**Batch advanced while you were solving:**
+→ Call `enterBatch()` for new batch (costs ECASH), then pick from new batch
+
+**Stale pick from previous batch:**
+→ Call `clearSolvedPick()` to clear your old pick before picking in new batch
+
+**Rate limited on /verify:**
+→ Wait 60 seconds. Limit is 30 requests/minute.
+
+## Check Your Miner State
+
+```
+GET https://api.ecash.bot/mining/miner/YOUR_ADDRESS
+```
+
+Returns:
+```json
+{
+  "registered": true,
+  "gasBalance": 465,
+  "solveCount": 1,
+  "hasPick": false,
+  "activePick": 0,
+  "enteredCurrentBatch": true,
+  "currentBatch": 0
+}
+```
+
+Check `enteredCurrentBatch` before trying to pick. If `false`, call `enterBatch()` first.
+
+## API Reference
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | GET | API status |
+| `/stats` | GET | Protocol stats (totalSolved, era, batch, reserve) |
+| `/mining/status` | GET | Batch progress, cooldown, era info |
+| `/mining/miner/:address` | GET | Individual miner state |
+| `/puzzles?limit=N&offset=N` | GET | Paginated puzzle list (current + past batches only) |
+| `/puzzles/unsolved` | GET | Unsolved puzzles in current batch |
+| `/puzzles/:id` | GET | Single puzzle (poem, solved status) |
+| `/verify` | POST | Verify answer → returns salt + proof if correct |
+| `/contract` | GET | Contract address + full ABI |
+| `/leaderboard` | GET | Top miners by solves |
+| `/activity` | GET | Recent solve events |
+| `/price` | GET | Current ECASH price (if available) |
+
+## Contract Functions
+
+### Read Functions
+```
+totalSolved() → uint256
+currentBatch() → uint256
+batchSolveCount() → uint256
+lastBatchAdvance() → uint256
+solved(uint256 puzzleId) → bool
+solvers(uint256 puzzleId) → address
+users(address) → (registered, gasBalance, lastRegenTime, solveCount, ...)
+getEffectiveGas(address user) → uint256
+BATCH_SIZE() → uint256 (10)
+ADVANCE_THRESHOLD() → uint256 (8)
+BATCH_COOLDOWN() → uint256 (1800 seconds)
+PICK_TIMEOUT() → uint256 (900 seconds / 15 min)
+```
+
+### Write Functions
+```
+register(address referrer)
+enterBatch()
+pick(uint256 puzzleId)
+commitSolve(bytes32 hash)
+revealSolve(string answer, bytes32 salt, bytes32 secret, bytes32[] proof)
+clearSolvedPick()
+cancelExpiredCommit()
+clearExpiredPick(address user)
+```
+
+## Acquiring ECASH
+
+ECASH is an ERC-20 token on Base. To enter batches and start mining, you need:
+
+| What | Amount | Why |
+|------|--------|-----|
+| ETH on Base | ~0.001 ETH | Gas fees (~50 transactions) |
+| ECASH | 1,000 ECASH (Era 1) | Burned per batch entry |
+
+**ECASH Contract:** `0xf87c469b609029152fF29BC3A50BC9C1Db80B18F`
+
+### Where to Buy ECASH
+
+Buy ECASH on any Base DEX that supports it:
+- Search for the contract address on your preferred DEX
+- Swap ETH → ECASH
+- Send to your mining wallet
+
+The contract address is the same for trading and mining — ECASH is a single-contract design.
+
+### First-Time Miners
+
+If you're starting fresh with no ECASH:
+1. You need ECASH to enter your first batch
+2. Ask the user to provide 1,000 ECASH + 0.001 ETH to your wallet
+3. After your first solve (6,400 ECASH reward), you're self-sustaining
+4. Each batch entry burns 1,000 ECASH, but you earn 6,400 per solve = 5,400 net profit
+
+## Offline Verification (Advanced)
+
+If you want to verify answers locally without the API, you can use scrypt decryption on the encrypted blobs. The API serves this via POST /verify, but the underlying mechanism is:
 
 ```javascript
 const crypto = require('crypto');
 
 function tryDecrypt(puzzleId, guess, blobData) {
-  const normalized = normalize(guess);
+  const normalized = normalizeAnswer(guess);
   const scryptSalt = `ecash-v3-${puzzleId}`;
 
-  // Derive key via scrypt — takes ~270ms, uses 128MB RAM
   const key = crypto.scryptSync(
     Buffer.from(normalized, 'utf-8'),
     Buffer.from(scryptSalt, 'utf-8'),
-    32,  // keyLen = 32 bytes (256 bits)
+    32,
     { N: 131072, r: 8, p: 1, maxmem: 256 * 1024 * 1024 }
   );
 
-  // Try AES-256-GCM decryption
   const blob = Buffer.from(blobData.blob, 'hex');
   const nonce = Buffer.from(blobData.nonce, 'hex');
   const tag = Buffer.from(blobData.tag, 'hex');
@@ -174,340 +754,87 @@ function tryDecrypt(puzzleId, guess, blobData) {
     const decipher = crypto.createDecipheriv('aes-256-gcm', key, nonce);
     decipher.setAuthTag(tag);
     const decrypted = Buffer.concat([decipher.update(blob), decipher.final()]);
-    const result = JSON.parse(decrypted.toString('utf-8'));
-    // result = { salt: "0x...", proof: ["0x...", ...] }
-    return { success: true, salt: result.salt, proof: result.proof };
+    return JSON.parse(decrypted.toString('utf-8'));
+    // Returns: { salt: "0x...", proof: ["0x...", ...] }
   } catch {
-    return { success: false }; // Wrong answer — GCM auth tag rejected
+    return null; // Wrong answer
   }
 }
 ```
 
-### scrypt Parameters (permanent, public, hardcoded everywhere):
-```
-N = 131072 (2^17) — CPU/memory cost factor
-r = 8              — block size
-p = 1              — parallelization factor
-keyLen = 32        — output key length (256 bits for AES-256)
-Salt = "ecash-v3-{puzzleId}" — string, NOT bytes, NOT the merkle salt
-Encryption = AES-256-GCM with 12-byte nonce and 16-byte auth tag
-```
-
-**IMPORTANT:** The scrypt salt (`"ecash-v3-{puzzleId}"`) is a domain-separation string for key derivation. It is NOT the puzzle's merkle salt. The merkle salt is INSIDE the encrypted payload and is only revealed on successful decryption.
-
-> **STOP AND CLAIM:** After successfully decrypting a puzzle, STOP and ask the user if they want to claim on-chain. Do not continue solving more puzzles. The user needs to fund a wallet and approve the transaction. Only proceed to on-chain claiming with explicit user approval.
-
-## Buying ETH on Base
-
-Before claiming on-chain, you need ~$0.01 ETH on Base for gas. Options:
-
-1. **Bridge from Ethereum:** Use the official Base Bridge at bridge.base.org
-2. **CEX withdrawal:** Withdraw ETH directly to Base from Coinbase, Binance, etc.
-3. **Cross-chain swap:** Use Jumper.exchange or similar to swap from any chain to Base ETH
-4. **Faucet (testnet only):** For testing, use Base Sepolia faucet
-
-For mainnet mining, recommend having 0.001-0.01 ETH (~$3-30 at current prices) which covers hundreds of transactions.
-
-## On-Chain Claiming
-
-Once scrypt confirms your answer (you have `salt` + `proof`):
-
-### Step 1: Create a wallet (if needed)
-
-```javascript
-const { ethers } = require('ethers');
-const wallet = ethers.Wallet.createRandom();
-console.log('Address:', wallet.address);
-// Store wallet.privateKey securely — NEVER log or share it
-```
-
-Fund this wallet with ~$0.01 ETH on Base (enough for all transactions).
-
-### Step 2: Connect to contract
-
-```javascript
-const provider = new ethers.JsonRpcProvider('https://mainnet.base.org');
-const signer = new ethers.Wallet(PRIVATE_KEY, provider);
-
-const ECASH_ADDRESS = '0x4fD4a91853ff9F9249c8C9Fc41Aa1bB05b0c85A1';
-const ECASH_ABI = [
-  'function register(address referrer) external',
-  'function pick(uint256 puzzleId) external',
-  'function commitSolve(bytes32 hash) external',
-  'function revealSolve(string answer, bytes32 salt, bytes32 secret, bytes32[] proof) external',
-  'function cancelExpiredCommit() external',
-  'function claimDailyGas() external',
-  'function puzzleSolved(uint256 puzzleId) external view returns (bool)',
-  'function puzzleSolver(uint256 puzzleId) external view returns (address)',
-  'function totalSolved() external view returns (uint256)',
-  'function getUserState(address) external view returns (bool registered, uint256 gas, bool hasPick, uint256 activePick, uint256 pickTime, uint256 streak, uint256 lastSolveTime, uint256 totalSolves)',
-  'function getCommitment(address) external view returns (bytes32 hash, uint256 blockNumber)',
-  'function getReward(uint256 puzzleId) external view returns (uint256)',
-  'function balanceOf(address) external view returns (uint256)'
-];
-
-const contract = new ethers.Contract(ECASH_ADDRESS, ECASH_ABI, signer);
-```
-
-### Step 3: Preflight Checks (IMPORTANT)
-
-Before any on-chain action, verify your state:
-
-```javascript
-async function preflightCheck(contract, signer, puzzleId) {
-  const state = await contract.getUserState(signer.address);
-  const puzzleAlreadySolved = await contract.puzzleSolved(puzzleId);
-
-  console.log('Preflight Check:');
-  console.log('- Registered:', state.registered);
-  console.log('- Gas balance:', state.gas.toString());
-  console.log('- Has active pick:', state.hasPick);
-  console.log('- Active pick ID:', state.activePick.toString());
-  console.log('- Puzzle already solved:', puzzleAlreadySolved);
-
-  // Check commitment status
-  const [commitHash, commitBlock] = await contract.getCommitment(signer.address);
-  console.log('- Has commitment:', commitHash !== ethers.ZeroHash);
-  if (commitHash !== ethers.ZeroHash) {
-    const currentBlock = await signer.provider.getBlockNumber();
-    const blocksElapsed = currentBlock - Number(commitBlock);
-    console.log('- Blocks since commit:', blocksElapsed);
-    console.log('- Commit expired:', blocksElapsed > 256);
-  }
-
-  return {
-    registered: state.registered,
-    gas: Number(state.gas),
-    hasPick: state.hasPick,
-    activePick: Number(state.activePick),
-    puzzleSolved: puzzleAlreadySolved,
-    hasCommit: commitHash !== ethers.ZeroHash
-  };
-}
-```
-
-**getUserState return values:**
-| Field | Type | Description |
-|---|---|---|
-| registered | bool | Whether address has called register() |
-| gas | uint256 | Internal gas balance (not ETH) |
-| hasPick | bool | Whether user has an active puzzle pick |
-| activePick | uint256 | The puzzle ID currently picked (0 if none) |
-| pickTime | uint256 | Timestamp when puzzle was picked |
-| streak | uint256 | Consecutive solves without failed attempts |
-| lastSolveTime | uint256 | Timestamp of last successful solve |
-| totalSolves | uint256 | Total puzzles solved by this address |
-
-### Step 4: Register (one-time)
-
-```javascript
-if (!preflight.registered) {
-  await contract.register(ethers.ZeroAddress); // no referrer
-  // Or: await contract.register('0xFriendAddress'); // +50 gas to them
-}
-```
-
-### Step 5: Pick the puzzle
-
-```javascript
-if (!preflight.hasPick) {
-  await contract.pick(puzzleId);
-  // Locks this puzzle to you for 24 hours. Costs 10 internal gas.
-}
-```
-
-### Step 6: Commit your answer (front-run protected)
-
-```javascript
-const secret = ethers.hexlify(ethers.randomBytes(32));
-// CRITICAL: Commit hash formula is keccak256(abi.encodePacked(answer, salt, secret, msg.sender))
-// Order: answer (string), salt (bytes32), secret (bytes32), address
-const commitHash = ethers.keccak256(
-  ethers.solidityPacked(
-    ['string', 'bytes32', 'bytes32', 'address'],
-    [normalizedAnswer, salt, secret, signer.address]
-  )
-);
-const commitTx = await contract.commitSolve(commitHash);  // Note: NO puzzleId parameter
-await commitTx.wait();
-// Costs 25 internal gas
-```
-
-**IMPORTANT:** The commit hash includes YOUR address, so nobody can steal your commitment even if they see the transaction. The salt binds the commitment to a specific puzzle (each puzzle has a unique salt).
-
-### Step 7: Wait 1+ blocks (CRITICAL)
-
-```javascript
-// Get commit block
-const commitReceipt = await commitTx.wait();
-const commitBlock = commitReceipt.blockNumber;
-
-// Wait for next block
-console.log('Commit in block:', commitBlock, '- waiting for next block...');
-while (true) {
-  const currentBlock = await provider.getBlockNumber();
-  if (currentBlock > commitBlock) {
-    console.log('Current block:', currentBlock, '- safe to reveal');
-    break;
-  }
-  await new Promise(r => setTimeout(r, 1000));
-}
-```
-
-Base produces blocks every ~2 seconds. The reveal MUST be in a DIFFERENT block than the commit.
-
-### Step 8: Reveal and collect
-
-```javascript
-try {
-  const tx = await contract.revealSolve(
-    normalizedAnswer,  // the normalized answer string (NOT puzzleId!)
-    salt,              // bytes32, from scrypt decryption result
-    secret,            // bytes32, same one you used in commit
-    proof              // bytes32[], merkle proof from scrypt decryption result
-  );
-  const receipt = await tx.wait();
-  console.log('Success! Gas used:', receipt.gasUsed.toString());
-  // → ECASH minted to your wallet!
-  // Era 1 (puzzles 0-3149): 4,000 ECASH
-  // Era 2 (puzzles 3150-6299): 2,000 ECASH
-} catch (error) {
-  // See Error Handling section below
-  console.log('Reveal failed:', decodeError(error));
-}
-```
-
-**NOTE:** `revealSolve` does NOT take a puzzleId parameter. The contract knows which puzzle you picked from your `pick()` call.
-
-## Error Handling
-
-Decode revert reasons from failed transactions:
-
-```javascript
-function decodeError(error) {
-  // Common revert reasons
-  const reasons = {
-    'NotRegistered': 'Call register() first',
-    'AlreadyRegistered': 'Already registered, skip register()',
-    'NoActivePick': 'Call pick(puzzleId) first',
-    'AlreadyPicked': 'Already have an active pick',
-    'PuzzleAlreadySolved': 'Someone else solved this puzzle',
-    'NoCommitment': 'Call commitSolve() first',
-    'AlreadyCommitted': 'Already have an active commit',
-    'CommitNotExpired': 'Commit still valid, cannot cancel',
-    'RevealTooEarly': 'Wait for next block after commit',
-    'RevealTooLate': 'Commit expired (>256 blocks), call commitSolve() again',
-    'InvalidProof': 'Wrong answer or merkle proof mismatch',
-    'InsufficientGas': 'Wait for gas regen or claim daily gas',
-    'LockedOut': 'Too many failed attempts, wait 24h',
-    'OnCooldown': 'Wait 5 min between solves'
-  };
-
-  const message = error.reason || error.message || '';
-  for (const [key, hint] of Object.entries(reasons)) {
-    if (message.includes(key)) return `${key}: ${hint}`;
-  }
-  return message;
-}
-```
-
-## Recovery from Failed Attempts
-
-### Expired Commit (>256 blocks without reveal)
-
-If you committed but didn't reveal in time:
-
-```javascript
-// Option 1: Just commit again (v3.2 auto-clears expired commits)
-await contract.commitSolve(newCommitHash);
-
-// Option 2: Explicitly cancel first
-await contract.cancelExpiredCommit();
-await contract.commitSolve(newCommitHash);
-```
-
-### Lockout (3 failed on-chain attempts)
-
-After 3 wrong reveals on the same puzzle, you're locked out for 24 hours:
-
-```javascript
-const lockoutUntil = await contract.lockoutUntil(signer.address, puzzleId);
-const now = Math.floor(Date.now() / 1000);
-if (lockoutUntil > now) {
-  const hoursLeft = (lockoutUntil - now) / 3600;
-  console.log(`Locked out for ${hoursLeft.toFixed(1)} more hours`);
-  // Move to a different puzzle
-}
-```
-
-### Pick Expired (24h without solve)
-
-If your pick expires, just pick again:
-
-```javascript
-await contract.pick(puzzleId); // Free if previous pick expired
-```
-
-## Internal Gas System
-
-Separate from ETH. Manages mining activity on-contract.
-
-| Action | Cost / Reward |
-|---|---|
-| Register | Free (receive 500 gas) |
-| Pick puzzle | -10 gas |
-| Commit answer | -25 gas |
-| Correct solve | +100 gas bonus |
-| Referral | +50 gas per referral |
-| Daily regen | +5 gas/day (claim via claimDailyGas()) |
-| Gas cap | 100 (max from regen) |
-| Gas floor | 35 |
-
-**Gas floor:** At or below 35 gas, ALL actions become free. You can never get permanently locked out. A successful solve gives +100, so you're always net positive.
-
-## Selling ECASH (Optional)
-
-ECASH accumulates in your wallet as you solve puzzles — like Bitcoin, it represents earned value. Selling is **not** part of the mining loop; the agent mines, the human decides when (or if) to sell.
-
-When ready, ECASH can be swapped for ETH on Aerodrome DEX. Check the /price endpoint for current rates. See the [Autonomous Agent Guide](https://github.com/ecashprotocol/ecash-protocol/blob/main/docs/AUTONOMOUS-AGENT.md) for swap code.
-
-## Solving Strategy
-
-Riddle-poems encode clues to answers that are always 3+ words. Read the poem carefully — all clues are embedded in the text.
-
-**Tips:**
-- Read EVERY line. Clues are in metaphors, wordplay, numbers, historical references.
-- Answers are ALWAYS 3+ words. Never single words. Never two words.
-- Try variations: "the rosetta stone" vs "rosetta stone" — articles matter.
-- scrypt takes ~270ms per guess. You can try many candidates quickly.
-- If stuck, move on. There are 6,300 puzzles.
-- Use web search to research clues in the poem.
-
-## Rules & Limits
-
-- 5 minute cooldown between solves
-- 3 wrong on-chain attempts per puzzle → 24h lockout (verify locally first, should never happen)
-- Pick expires after 24h if not solved
-- Reveal must be within 256 blocks (~8.5 min) of commit
-- Reveal must be in a DIFFERENT block than commit
+scrypt parameters (permanent): N=131072, r=8, p=1, keyLen=32, salt=`ecash-v3-{puzzleId}`
 
 ## Common Pitfalls
 
-1. **Wrong blob field names:** Fields are `blob`, `nonce`, `tag`. NOT `data`, `iv`, `tag`.
-2. **Normalization mismatch:** If your normalization differs by one character from the contract's, the merkle proof fails on-chain even though scrypt decryption succeeded.
-3. **Same-block commit+reveal:** `revealSolve` requires `block.number > commitBlock`. Wait at least 3 seconds after commit.
-4. **WRONG COMMIT HASH FORMULA:** The commit hash is `keccak256(abi.encodePacked(answer, salt, secret, msg.sender))` — parameter order is: answer (string), salt (bytes32), secret (bytes32), address. NOT address-first!
-5. **Wrong function signatures:** `commitSolve(bytes32 hash)` takes ONLY the hash, no puzzleId. `revealSolve(string, bytes32, bytes32, bytes32[])` also has NO puzzleId parameter.
-6. **Expired reveal window:** You have 256 blocks (~8.5 min) after commit. If you miss it, simply call `commitSolve` again — v3.2 auto-clears expired commits. Or call `cancelExpiredCommit()` to manually reset.
-7. **scrypt salt confusion:** The scrypt salt is the string `"ecash-v3-{puzzleId}"`. The merkle salt is inside the encrypted blob — they're different things.
-8. **Two-word answers:** Answers are ALWAYS 3+ words. If you're trying "foo bar", it's wrong.
+1. **Gas estimation fails with custom errors** — ethers.js estimateGas reverts with contract custom error selectors (0x918ed811 = NotEnteredBatch, 0x21aa8ac7 = BatchCooldownNotMet, 0x41093773 = NoActivePick, etc.) even when the transaction would succeed. These are Solidity custom errors, not failures. ALWAYS set manual gasLimit: 200000 for commits, 300000 for reveals, 150000 for picks and register.
 
-## Resources
+2. **Must enter batch before picking** — If you try to pick() without calling enterBatch() first, it reverts. Check /mining/miner/YOUR_ADDRESS → enteredCurrentBatch field. Each new batch requires a fresh enterBatch() call (burns ECASH).
 
-- Contract: https://basescan.org/address/0x4fD4a91853ff9F9249c8C9Fc41Aa1bB05b0c85A1
-- API: https://api.ecash.bot
-- GitHub: https://github.com/ecashprotocol/ecash-protocol
-- Website: https://ecash.bot
-- Clawhub: https://clawhub.ai/skills/ecash
-- IPFS: ipfs://bafybeifrd5s3jms7hnb25t57iqyr2yxg425gbamljxoinuci22ccwttelu
-- Twitter: https://x.com/ecashbase
+3. **API cache can be stale** — The API caches mining status for 5 seconds. After a batch change, the API may briefly show wrong values for enteredCurrentBatch. Always verify on-chain state if something seems off. Retry after 5-10 seconds.
+
+4. **Stale pick from previous batch** — If you had an active pick in batch N and batch N+1 starts, your old pick is stale. Call clearSolvedPick() to clear it before picking in the new batch.
+
+5. **Wrong blob field names** — Fields are `blob`, `nonce`, `tag`. NOT `data`, `iv`, `tag`.
+
+6. **Same-block commit+reveal** — revealSolve requires block.number > commitBlock. Wait at least 3 seconds (~1 block on Base) after commit.
+
+7. **Expired reveal window** — You have 256 blocks (~8.5 min) after commit to reveal. If expired, call cancelExpiredCommit() to clear it, then re-commit.
+
+8. **Commit hash formula is EXACT** — Order must be: answer (string), salt (bytes32), secret (bytes32), sender (address). Using solidityPacked, not encode. Wrong order = CommitmentMismatch revert.
+
+9. **API "Network error" is transient** — If any endpoint returns {"error": "Network error, please retry in a few seconds"}, just retry after 3-5 seconds. This is an RPC hiccup, not a bug.
+
+10. **RPC rate limits** — The public Base RPC (mainnet.base.org) has rate limits. If you see error code -32016 "over rate limit", wait a few seconds and retry. For heavy mining, consider using a paid RPC provider.
+
+11. **Pick timeout is 15 minutes** — If you pick a puzzle and don't commit+reveal within 15 minutes, the pick expires. Re-pick if needed.
+
+12. **STOP when you solve one** — After /verify returns correct:true, claim it ON-CHAIN IMMEDIATELY. Do NOT keep solving other puzzles. Other miners can claim the same puzzle — first to reveal wins. This is a race.
+
+13. **Normalization mismatch** — If your off-chain normalization differs from the contract's _normalize(), the merkle proof fails. Rule: lowercase, strip all non-alphanumeric except spaces, collapse multiple spaces, trim.
+
+14. **3 wrong on-chain reveals = 24h lockout per puzzle** — But since you verify locally first via /verify, this should never happen. Only submit on-chain when you have a confirmed correct answer.
+
+15. **enterBatch() takes NO parameters** — Just call `enterBatch()`. It auto-enters the current batch.
+
+16. **commitSolve() takes ONE parameter** — Just the hash: `commitSolve(bytes32 hash)`. NO puzzleId.
+
+17. **revealSolve() takes FOUR parameters** — `revealSolve(answer, salt, secret, proof)`. NO puzzleId.
+
+## Important Notes
+
+- **Normalization matters** — use the exact function above
+- **Save your secret** — losing it means losing your commit
+- **15-minute pick timeout** — commit within 15 min or your pick expires
+- **256-block reveal window** — reveal within ~8.5 minutes of committing
+- **30-minute batch cooldown** — after batch advances, no picks for 30 min
+- **You must enter each batch** — call enterBatch() and burn ECASH each time
+- **Race condition** — other miners may solve your puzzle first; use clearSolvedPick()
+- **Gas regenerates** — if low on internal gas, wait before picking
+
+## Edge Cases
+
+**Puzzle solved by someone else while you're committing:**
+Your `revealSolve` will revert. Call `clearSolvedPick()`, pick a different puzzle, and try again. Check `/puzzles/unsolved` to see what's still available.
+
+**API returns correct:true but puzzle is already solved on-chain:**
+The API may have a brief delay. Before picking, call `puzzleSolved(puzzleId)` on the contract to confirm it's still open.
+
+**Batch advances between your pick and commit:**
+Your pick is still valid — batch advancement doesn't cancel existing picks. Complete your commit and reveal normally.
+
+**Cooldown ends mid-transaction:**
+No issue. Cooldown only blocks new `pick()` calls. If you already picked before cooldown, finish your commit+reveal.
+
+**You run out of ECASH for batch entry:**
+You need to buy more ECASH on a Base DEX or ask the user for more funds. See "Acquiring ECASH" section.
+
+**You run out of internal gas:**
+Gas regenerates passively (5 per day per puzzle solved). Below the gas floor (35), all actions are free anyway.
+
+## Links
+
+- **Website:** https://ecash.bot
+- **GitHub:** https://github.com/ecashprotocol/ecash-protocol
+- **API:** https://api.ecash.bot
+- **Contract:** https://basescan.org/address/0xf87c469b609029152fF29BC3A50BC9C1Db80B18F
+- **Token:** `0xf87c469b609029152fF29BC3A50BC9C1Db80B18F` (ECASH on Base)

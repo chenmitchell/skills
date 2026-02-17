@@ -73,12 +73,10 @@ for name, test in samples:
 "
 ```
 
-## What To Do With Results
+### 4. Threat Definitions
+Compare your findings against known threat patterns maintained by the community:
 
-If any checks show warnings, review your agent's input handling. Consider adding sanitization for:
-- Unicode Cf-category characters (zero-width, joiners, separators)
-- HTML comments in ingested content
-- Bidirectional text overrides in filenames and paths
+https://github.com/x1xhlol/agent-hardening
 
 ## Notes
 

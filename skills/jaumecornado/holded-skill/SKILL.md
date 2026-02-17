@@ -25,6 +25,7 @@ Use `holdedcli` to read and modify Holded data with a safe, repeatable workflow.
 
 ## Safety Rules
 
+- **ALWAYS check deductibility rules BEFORE creating any document.** See "Accounting Rules for Spain" section below.
 - Treat any `POST`, `PUT`, `PATCH`, or `DELETE` action as **write**.
 - Treat any `GET` action (or `HEAD` when present) as **read**.
 - Before any operation, always run `holded actions describe <action> --json` (after `holded actions list`) to validate accepted parameters.
@@ -118,6 +119,25 @@ from datetime import datetime, timezone, timedelta
 dt = datetime(2026, 2, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=1)))
 print(int(dt.timestamp()))  # 1770764400
 ```
+
+## Accounting Rules for Spain
+
+**⚠️ ALWAYS check these rules BEFORE creating any expense document:**
+
+| Expense Type | IVA Deductible | Expense Deductible | Account |
+|--------------|----------------|---------------------|---------|
+| Restaurants/Meals | ❌ No | ✅ Yes (with justification) | 629 |
+| Displacement | ❌ No | ✅ Yes | 629 |
+| Fuel | ⚠️ Mixed | ✅ Yes | 625/622 |
+| Office supplies | ✅ Yes | ✅ Yes | 600/602 |
+| Insurance | ⚠️ Mixed | ✅ Yes | 625 |
+
+**Before creating any document, ALWAYS verify:**
+1. Is the expense tax deductible?
+2. Is the IVA deductible? (usually NO for restaurants, displacement)
+3. If in doubt, ASK before creating the document.
+
+**Common mistake to avoid:** Never set `tax: 10` or `tax: 21` for restaurant expenses - IVA is NOT deductible for meals unless it's a business event with proper justification.
 
 ## Error Handling
 

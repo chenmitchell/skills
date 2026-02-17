@@ -1,5 +1,5 @@
 """
-Prompt Guard - Core detection engine (v3.1.0)
+Prompt Guard - Core detection engine (v3.2.0)
 
 The PromptGuard class: configuration, analyze(), rate limiting, canary detection,
 language detection. Delegates to standalone functions in other modules.
@@ -16,6 +16,8 @@ from typing import Optional, Dict, List, Any
 
 from prompt_guard.models import Severity, Action, DetectionResult, SanitizeResult
 from prompt_guard.cache import get_cache, MessageCache
+
+__version__ = "3.2.0"
 from prompt_guard.pattern_loader import TieredPatternLoader, LoadTier, get_loader
 from prompt_guard.patterns import (
     CRITICAL_PATTERNS,
@@ -42,6 +44,9 @@ from prompt_guard.patterns import (
     CAUSAL_MECHANISTIC_ATTACKS, AGENT_TOOL_ATTACKS, TEMPLATE_CHAT_ATTACKS,
     EVASION_STEALTH_ATTACKS, MULTIMODAL_PHYSICAL_ATTACKS, DEFENSE_BYPASS_ANALYSIS,
     INFRASTRUCTURE_PROTOCOL_ATTACKS,
+    # v3.2.0 patterns - Skill Weaponization Defense (Min Hong Analysis)
+    SKILL_REVERSE_SHELL, SKILL_SSH_INJECTION, SKILL_EXFILTRATION_PIPELINE,
+    SKILL_COGNITIVE_ROOTKIT, SKILL_SEMANTIC_WORM, SKILL_OBFUSCATED_PAYLOAD,
 )
 from prompt_guard.normalizer import normalize
 from prompt_guard.decoder import decode_all, detect_base64
@@ -77,6 +82,37 @@ class PromptGuard:
         tier_map = {"critical": LoadTier.CRITICAL, "high": LoadTier.HIGH, "full": LoadTier.FULL}
         self._pattern_loader = get_loader()
         self._pattern_loader.load_tier(tier_map.get(tier_config, LoadTier.HIGH))
+
+        # v3.2.0: Optional API client (lazy-loaded, off by default)
+        # Enable via config or env var: PG_API_ENABLED=true
+        import os as _os
+        api_config = self.config.get("api", {})
+        self._api_enabled = (
+            api_config.get("enabled", True)
+            and _os.environ.get("PG_API_ENABLED", "").lower() not in ("false", "0", "no")
+        )
+        self._api_reporting = (
+            api_config.get("reporting", False)
+            or _os.environ.get("PG_API_REPORTING", "").lower() in ("true", "1", "yes")
+        )
+        self._api_client = None  # lazy: only created when _api_enabled is True
+        self._api_extra_patterns: List[Dict] = []  # early + premium patterns from API
+        if self._api_enabled:
+            try:
+                from prompt_guard.api_client import PGAPIClient
+                self._api_client = PGAPIClient(
+                    api_url=api_config.get("url") or _os.environ.get("PG_API_URL"),
+                    api_key=api_config.get("key") or _os.environ.get("PG_API_KEY"),
+                    client_version=__version__,
+                    reporting_enabled=self._api_reporting,
+                )
+                # Fetch early-access + premium patterns (additive to local)
+                self._api_extra_patterns = self._api_client.fetch_extra_patterns()
+            except Exception as e:
+                import logging
+                logging.getLogger("prompt_guard").warning(
+                    "API client init failed (continuing offline): %s", e
+                )
 
     @staticmethod
     def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
@@ -115,7 +151,51 @@ class PromptGuard:
                 "json_path": "memory/security-log.jsonl",
                 "hash_chain": False,
             },
+            # API client (optional — off by default)
+            # Also controllable via env vars:
+            #   PG_API_ENABLED=true    — enable pattern fetching
+            #   PG_API_REPORTING=true  — enable anonymous threat reporting
+            #   PG_API_URL=https://... — custom API endpoint
+            "api": {
+                "enabled": True,     # API enabled by default (beta key built in)
+                "reporting": False,   # Anonymous threat reporting (opt-in)
+                "url": None,         # Default: https://pg-secure-api.vercel.app
+                "key": None,         # Default: beta key (override with PG_API_KEY env var)
+            },
         }
+
+    # ------------------------------------------------------------------
+    # API status helpers
+    # ------------------------------------------------------------------
+
+    @property
+    def api_enabled(self) -> bool:
+        """True if the API client is active (pattern updates / reporting)."""
+        return self._api_enabled and self._api_client is not None
+
+    @property
+    def api_client(self):
+        """
+        Access the PGAPIClient instance (None if API is disabled).
+
+        Usage:
+            guard = PromptGuard(config={"api": {"enabled": True}})
+            if guard.api_enabled:
+                manifest = guard.api_client.get_manifest()
+        """
+        return self._api_client
+
+    def _maybe_report_threat(self, result: 'DetectionResult') -> None:
+        """Auto-report HIGH+ threats to collective intelligence (if opted in)."""
+        if (
+            self._api_client
+            and self._api_reporting
+            and result.severity.value >= Severity.HIGH.value
+        ):
+            try:
+                self._api_client.report_threat(result)
+            except Exception:
+                pass  # Never let reporting failure affect detection
 
     # ------------------------------------------------------------------
     # Delegate methods -- call standalone functions from submodules
@@ -166,8 +246,39 @@ class PromptGuard:
         return decode_all(text)
 
     def _scan_text_for_patterns(self, text: str) -> tuple:
-        """Run all pattern sets against a single text string."""
-        return scan_text_for_patterns(text)
+        """Run all pattern sets against a single text string,
+        including API extra patterns (early + premium) if available."""
+        reasons, patterns_matched, max_severity = scan_text_for_patterns(text)
+
+        # Merge API extra patterns (early-access + premium)
+        if self._api_extra_patterns:
+            text_lower = text.lower()
+            severity_map = {
+                "critical": Severity.CRITICAL,
+                "high": Severity.HIGH,
+                "medium": Severity.MEDIUM,
+                "low": Severity.LOW,
+            }
+            for entry in self._api_extra_patterns:
+                try:
+                    # Use pre-compiled regex (validated at fetch time in api_client)
+                    compiled = entry.get("_compiled")
+                    if compiled is None:
+                        continue  # Skip entries without pre-compiled regex
+                    if compiled.search(text_lower):
+                        sev = severity_map.get(entry.get("severity", "high"), Severity.HIGH)
+                        if sev.value > max_severity.value:
+                            max_severity = sev
+                        cat = entry.get("category", "api_extra")
+                        if cat not in reasons:
+                            reasons.append(cat)
+                        patterns_matched.append(
+                            f"api:{entry['source']}:{entry['pattern'][:40]}"
+                        )
+                except (re.error, TypeError, KeyError):
+                    pass  # Skip any unexpected errors
+
+        return reasons, patterns_matched, max_severity
 
     def check_rate_limit(self, user_id: str) -> bool:
         """Check if user has exceeded rate limit.
@@ -221,6 +332,24 @@ class PromptGuard:
         user_id = context.get("user_id", "unknown")
         is_group = context.get("is_group", False)
         is_owner = str(user_id) in self.owner_ids
+
+        # Early-exit for owners: Skip all scanning if user is trusted
+        # This provides zero-overhead for known/trusted users while still
+        # protecting against external/unknown sources.
+        if is_owner and self.config.get("owner_bypass_scanning", True):
+            return DetectionResult(
+                severity=Severity.SAFE,
+                action=Action.ALLOW,
+                reasons=["owner_bypass"],
+                patterns_matched=[],
+                normalized_text=None,
+                base64_findings=[],
+                recommendations=[],
+                fingerprint=hashlib.sha256(f"{user_id}:owner_bypass".encode()).hexdigest()[:16],
+                scan_type="input",
+                decoded_findings=[],
+                canary_matches=[],
+            )
 
         # SECURITY FIX (CRIT-003): Reject oversized messages to prevent CPU DoS
         if len(message) > self.MAX_MESSAGE_LENGTH:
@@ -473,6 +602,32 @@ class PromptGuard:
                 except re.error:
                     pass
 
+        # v3.2.0: Check API extra patterns (early-access + premium)
+        if self._api_extra_patterns:
+            api_severity_map = {
+                "critical": Severity.CRITICAL,
+                "high": Severity.HIGH,
+                "medium": Severity.MEDIUM,
+                "low": Severity.LOW,
+            }
+            for entry in self._api_extra_patterns:
+                try:
+                    compiled = entry.get("_compiled")
+                    if compiled is None:
+                        continue
+                    if compiled.search(text_lower):
+                        sev = api_severity_map.get(entry.get("severity", "high"), Severity.HIGH)
+                        if sev.value > max_severity.value:
+                            max_severity = sev
+                        cat = entry.get("category", "api_extra")
+                        if cat not in reasons:
+                            reasons.append(cat)
+                        patterns_matched.append(
+                            f"api:{entry['source']}:{entry['pattern'][:40]}"
+                        )
+                except (re.error, TypeError, KeyError):
+                    pass
+
         # Detect invisible character attacks (includes Unicode Tags U+E0001-U+E007F)
         invisible_chars = ['\u200b', '\u200c', '\u200d', '\u2060', '\ufeff', '\u00ad']
         if any(char in message for char in invisible_chars):
@@ -499,6 +654,36 @@ class PromptGuard:
                 reasons.append("repetition_detected")
                 if Severity.HIGH.value > max_severity.value:
                     max_severity = Severity.HIGH
+
+        # v3.3.0: Check TieredPatternLoader YAML patterns (token optimization)
+        # This integrates the YAML-based tiered loading system that was previously
+        # initialized but never used in detection.
+        if self._pattern_loader:
+            loaded_patterns = self._pattern_loader.get_patterns()
+            for entry in loaded_patterns:
+                try:
+                    if entry.compiled and entry.compiled.search(text_lower):
+                        # Map YAML severity to Severity enum
+                        yaml_severity_map = {
+                            "critical": Severity.CRITICAL,
+                            "high": Severity.HIGH,
+                            "medium": Severity.MEDIUM,
+                            "low": Severity.LOW,
+                        }
+                        sev = yaml_severity_map.get(entry.severity.lower(), Severity.MEDIUM)
+                        if sev.value > max_severity.value:
+                            max_severity = sev
+                        
+                        # Add category to reasons (avoid duplicates)
+                        category_key = f"{entry.category}_{entry.lang}" if entry.lang != "en" else entry.category
+                        if category_key not in reasons:
+                            reasons.append(category_key)
+                        
+                        # Track matched patterns
+                        patterns_matched.append(f"yaml:{entry.lang}:{entry.category}:{entry.pattern[:40]}")
+                except (AttributeError, TypeError, re.error) as e:
+                    # Skip malformed pattern entries
+                    pass
 
         # Check language-specific patterns (10 languages as of v2.6.2)
         all_patterns = [
@@ -649,6 +834,9 @@ class PromptGuard:
         # Report HIGH+ detections to HiveFence for collective immunity
         if max_severity.value >= Severity.HIGH.value:
             self.report_to_hivefence(result, message, context or {})
+
+        # v3.2.0: Auto-report to PG API (if opted in, HIGH+ only)
+        self._maybe_report_threat(result)
 
         # v3.1.0: Store in cache for future lookups
         if self._cache_enabled:

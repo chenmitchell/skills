@@ -3,11 +3,16 @@
   "slug": "prompt-guard",
   "displayName": "Prompt Guard",
   "latest": {
-    "version": "3.1.0",
-    "publishedAt": 1770604362296,
-    "commit": "https://github.com/openclaw/skills/commit/14c75e4d50dcfe84f68a655588a526c8e9de2f5c"
+    "version": "3.4.0",
+    "publishedAt": 1771334671626,
+    "commit": null
   },
   "history": [
+    {
+      "version": "3.1.0",
+      "publishedAt": 1770604362296,
+      "commit": "https://github.com/openclaw/skills/commit/14c75e4d50dcfe84f68a655588a526c8e9de2f5c"
+    },
     {
       "version": "2.6.1",
       "publishedAt": 1770218810244,

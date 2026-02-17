@@ -1,4 +1,4 @@
-# Prompt Guard v2.8.0 Configuration
+# Prompt Guard v3.2.0 Configuration
 # Copy to config.yaml and customize for your deployment
 
 prompt_guard:
@@ -8,13 +8,17 @@ prompt_guard:
   # - high: Aggressive detection, may have false positives
   # - paranoid: Maximum security, flags anything remotely suspicious
   sensitivity: medium
+
+  # Owner bypass: Skip ALL scanning for trusted users (zero overhead)
+  # When enabled, messages from owner_ids bypass pattern scanning entirely.
+  owner_bypass_scanning: false
   
   # Owner user IDs (these users bypass most restrictions)
   # Add your Telegram/Discord/etc user IDs here
   owner_ids:
     - "46291309"  # Example: Telegram user ID
   
-  # Canary tokens (NEW in v2.8.0)
+  # Canary tokens
   # Plant these strings in your system prompt. If they appear in user
   # messages or LLM outputs, it confirms system prompt extraction.
   canary_tokens:
@@ -41,11 +45,31 @@ prompt_guard:
     path: memory/security-log.md  # Markdown log path
     include_message: true  # Include message content (privacy consideration)
     
-    # Structured JSON logging (NEW in v2.8.0)
+    # Structured JSON logging
     # Set format to "json" for SIEM-compatible JSONL output
     format: markdown       # "markdown" (default) or "json"
     json_path: memory/security-log.jsonl
     hash_chain: false      # Enable SHA-256 hash chain for tamper detection
+
+  # =========================================================================
+  # API-Enhanced Mode (NEW in v3.2.0 — optional, off by default)
+  # =========================================================================
+  # Prompt Guard works 100% offline with 577+ bundled patterns.
+  # Enable the API for early-access + premium patterns and threat intelligence.
+  #
+  # Three tiers:
+  #   Core    — same 577+ patterns as offline (always available)
+  #   Early   — newest patterns, API users get 7-14 days before open-source
+  #   Premium — advanced detection (DNS tunneling, steganography, etc.)
+  #
+  # Beta key is built in — API works out of the box.
+  # Override with your own key if you have one.
+  # Disable with: enabled: false (or PG_API_ENABLED=false)
+  api:
+    enabled: true           # API on by default (beta key built in)
+    key: null               # Default: built-in beta key (override with PG_API_KEY env var)
+    reporting: false         # Opt-in: send anonymous threat data (hashes only)
+    url: null               # Default: https://pg-secure-api.vercel.app
   
   # Custom patterns (regex)
   custom_patterns:

@@ -20,7 +20,7 @@ Cryptographic identity and trust infrastructure for AI agents, powered by the [A
 
 All operations use `scripts/aip.py` (Python 3.8+, requires `pynacl` for messaging/encryption).
 
-Also available via PyPI: `pip install aip-identity` → `aip` CLI.
+Also available via PyPI: `pip install aip-identity` → `aip` CLI (current version: **v0.5.21**).
 
 ## Commands
 
@@ -73,6 +73,15 @@ python3 scripts/aip.py badge --did did:aip:abc123  # SVG trust badge
 
 Stored as JSON in `aip_credentials.json`: `{ "did", "public_key", "private_key", "platform", "username" }`.
 **Never share `private_key`.** DID and public_key are safe to share.
+
+Set `AIP_CREDENTIALS_PATH` env var to use a custom credential file location instead of the default search path.
+
+## Utility Commands
+
+```bash
+aip --version          # Print CLI version
+aip doctor             # Check registration status, connectivity, and credential health
+```
 
 ## Signing Formats
 

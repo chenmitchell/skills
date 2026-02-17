@@ -3,11 +3,16 @@
   "slug": "aip-identity",
   "displayName": "Aip Identity",
   "latest": {
-    "version": "1.5.0",
-    "publishedAt": 1770939681614,
-    "commit": "https://github.com/openclaw/skills/commit/d45732ca92f845e7dcdbc9061d920210990c6223"
+    "version": "1.6.0",
+    "publishedAt": 1771102245504,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.5.0",
+      "publishedAt": 1770939681614,
+      "commit": "https://github.com/openclaw/skills/commit/d45732ca92f845e7dcdbc9061d920210990c6223"
+    },
     {
       "version": "1.4.0",
       "publishedAt": 1770917683200,

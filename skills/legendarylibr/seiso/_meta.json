@@ -1,13 +1,18 @@
 {
   "owner": "legendarylibr",
   "slug": "seiso",
-  "displayName": "seisoai",
+  "displayName": "Seisoai",
   "latest": {
-    "version": "1.0.29",
-    "publishedAt": 1771151265001,
-    "commit": "https://github.com/openclaw/skills/commit/bb7aaea60ff0181c5bbfb54b57119bff160b5cb9"
+    "version": "1.1.1",
+    "publishedAt": 1771318631014,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.29",
+      "publishedAt": 1771151265001,
+      "commit": "https://github.com/openclaw/skills/commit/bb7aaea60ff0181c5bbfb54b57119bff160b5cb9"
+    },
     {
       "version": "1.0.23",
       "publishedAt": 1771020728362,

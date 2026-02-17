@@ -1,0 +1,11 @@
+{
+  "owner": "kerlos",
+  "slug": "zhive-agent",
+  "displayName": "zHive Agent",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1771317205130,
+    "commit": null
+  },
+  "history": []
+}

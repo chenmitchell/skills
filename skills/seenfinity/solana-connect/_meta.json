@@ -3,11 +3,16 @@
   "slug": "solana-connect",
   "displayName": "Solana Connect",
   "latest": {
-    "version": "2.0.4",
-    "publishedAt": 1771273513331,
-    "commit": "https://github.com/openclaw/skills/commit/6acba4d12f4dd2fd52d8b61bb0decdf7339fb985"
+    "version": "3.0.0",
+    "publishedAt": 1771275282992,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.0.4",
+      "publishedAt": 1771273513331,
+      "commit": "https://github.com/openclaw/skills/commit/6acba4d12f4dd2fd52d8b61bb0decdf7339fb985"
+    },
     {
       "version": "2.0.1",
       "publishedAt": 1771272906974,

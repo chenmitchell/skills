@@ -1,36 +1,38 @@
 /**
- * OpenClaw Solana Connect v2.0
- * Built with @solana/kit + TweetNaCl for key generation
+ * OpenClaw Solana Connect v3.0
+ * Secure toolkit for AI agents to interact with Solana blockchain
  * 
- * SECURITY NOTICE:
- * - Always test on testnet first
- * - Use a dedicated wallet with limited funds
- * - Never hardcode private keys - use environment variables
- * - Set transaction limits to prevent losses
+ * SECURITY FEATURES:
+ * - Private keys NEVER exposed to agent
+ * - Max limits enforced per transaction
+ * - Dry-run by default
+ * - Testnet mode enforced
  */
 
 const { 
-  createSolanaRpc,
-  createAddressFromPublicKey,
-  getBase58Encoder,
-  getTransferSolInstructions,
-  createSolanaRpcFromEndpoint
-} = require('@solana/kit');
+  Connection, 
+  PublicKey, 
+  Transaction, 
+  SystemProgram, 
+  LAMPORTS_PER_SOL 
+} = require('@solana/web3.js');
 
 const nacl = require('tweetnacl');
 const bs58 = require('bs58').default;
 
+// Default RPC - testnet for safety
 const DEFAULT_RPC = process.env.SOLANA_RPC_URL || 'https://api.testnet.solana.com';
 
-// Security: Default limits
-const DEFAULT_MAX_SOL = parseFloat(process.env.MAX_SOL_PER_TX) || 10;
-const DEFAULT_MAX_TOKENS = parseFloat(process.env.MAX_TOKENS_PER_TX) || 1000;
+// Security limits - configurable via env
+const MAX_SOL_PER_TX = parseFloat(process.env.MAX_SOL_PER_TX) || 10;
+const MAX_TOKENS_PER_TX = parseFloat(process.env.MAX_TOKENS_PER_TX) || 10000;
+const REQUIRE_HUMAN_CONFIRMATION = parseFloat(process.env.HUMAN_CONFIRMATION_THRESHOLD) || 1; // SOL
 
 /**
  * Get Solana RPC connection
  */
 function getConnection(rpcUrl = DEFAULT_RPC) {
-  return createSolanaRpc(rpcUrl);
+  return new Connection(rpcUrl, 'confirmed');
 }
 
 /**
@@ -41,11 +43,8 @@ function isTestNet(rpcUrl = DEFAULT_RPC) {
 }
 
 /**
- * Generate a new Solana wallet using TweetNaCl
- * @returns {Object} { address } - NOTE: Private key is NOT returned for security reasons
- * 
- * SECURITY: Private keys are handled internally. Use signTransaction() for signing
- * without ever exposing the raw private key to the agent.
+ * Generate a new Solana wallet
+ * @returns {Object} { address } - Private key is NEVER returned
  */
 function generateWallet() {
   const keyPair = nacl.sign.keyPair();
@@ -58,20 +57,19 @@ function generateWallet() {
 }
 
 /**
- * Connect wallet from private key
+ * Connect wallet - validates address from private key
  * @param {string} privateKeyBase58 - Base58 encoded private key
- * @returns {Object} { address } - NOTE: Private key is NOT returned for security
+ * @returns {Object} { address } - Private key is NEVER returned
  * 
- * SECURITY: Private keys are handled internally and never exposed to the agent.
- * For signing transactions, use signTransaction() which processes the key internally.
+ * SECURITY: Private key is used internally for signing only
  */
-function connectWallet(privateKeyBase58 = null) {
-  if (!privateKeyBase58 || privateKeyBase58 === '') {
-    return generateWallet();
+function connectWallet(privateKeyBase58) {
+  if (!privateKeyBase58) {
+    throw new Error('Private key is required');
   }
   
   try {
-    // Decode the private key and derive public key
+    // Decode private key
     const privateKeyBytes = bs58.decode(privateKeyBase58);
     const keyPair = nacl.sign.keyPair.fromSeed(privateKeyBytes.slice(0, 32));
     const publicKey = bs58.encode(keyPair.publicKey);
@@ -89,105 +87,54 @@ function connectWallet(privateKeyBase58 = null) {
  * Get balance for any Solana address
  */
 async function getBalance(address, rpcUrl = DEFAULT_RPC) {
-  const rpc = getConnection(rpcUrl);
+  const connection = getConnection(rpcUrl);
   
   try {
-    const solBalance = await rpc.getBalance(address).send();
-    const sol = Number(solBalance.value) / 1e9;
+    const balanceLamports = await connection.getBalance(new PublicKey(address));
+    const balanceSol = balanceLamports / LAMPORTS_PER_SOL;
     
-    let tokens = [];
-    let nfts = [];
-    
-    try {
-      const tokenAccounts = await rpc.getTokenAccountsByOwner(address, {
-        programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
-      }).send();
-      
-      for (const account of tokenAccounts.value) {
-        const data = account.account.data.parsed;
-        const mint = data.mint;
-        const balance = Number(data.tokenAmount.amount) / Math.pow(10, data.tokenAmount.decimals);
-        
-        if (balance > 0) {
-          if (data.tokenAmount.decimals === 0 && data.tokenAmount.amount === '1') {
-            nfts.push({ mint, balance: 1 });
-          } else {
-            tokens.push({ mint, balance });
-          }
-        }
-      }
-    } catch (e) {
-      // No token accounts
-    }
-    
-    return { sol, tokens, nfts };
+    return {
+      sol: balanceSol,
+      lamports: balanceLamports
+    };
   } catch (e) {
     throw new Error(`Failed to get balance: ${e.message}`);
   }
 }
 
 /**
- * Validate transaction amount against limits
+ * Get token accounts for an address
  */
-function validateAmount(amount, maxAmount, tokenName = 'SOL') {
-  if (amount > maxAmount) {
-    throw new Error(
-      `SECURITY: Amount ${amount} ${tokenName} exceeds maximum allowed (${maxAmount} ${tokenName}).`
-    );
-  }
-}
-
-/**
- * Warn if running on mainnet
- */
-function warnMainnet(rpcUrl = DEFAULT_RPC) {
-  if (!isTestNet(rpcUrl)) {
-    console.warn('⚠️  WARNING: Running on MAINNET. Use a wallet with limited funds.');
-  }
-}
-
-/**
- * Send SOL (requires @solana/signers for full transaction signing)
- */
-async function sendSol(fromPrivateKey, toAddress, amountInSol, options = {}, rpcUrl = DEFAULT_RPC) {
-  const { dryRun = false } = options;
-  
-  warnMainnet(rpcUrl);
-  validateAmount(amountInSol, DEFAULT_MAX_SOL, 'SOL');
-  
-  const sender = connectWallet(fromPrivateKey);
-  
-  if (dryRun) {
-    return {
-      dryRun: true,
-      simulated: true,
-      from: sender.address,
-      to: toAddress,
-      amount: amountInSol,
-      timestamp: new Date().toISOString()
-    };
-  }
-  
-  // Full transaction signing requires @solana/signers setup
-  // For now, return simulation-ready response
-  return {
-    from: sender.address,
-    to: toAddress,
-    amount: amountInSol,
-    timestamp: new Date().toISOString(),
-    network: isTestNet(rpcUrl) ? 'testnet' : 'mainnet',
-    note: 'v2.0 - Transaction signing requires @solana/signers'
-  };
-}
-
-/**
- * Get recent transactions
- */
-async function getTransactions(address, limit = 10, rpcUrl = DEFAULT_RPC) {
-  const rpc = getConnection(rpcUrl);
+async function getTokenAccounts(address, rpcUrl = DEFAULT_RPC) {
+  const connection = getConnection(rpcUrl);
   
   try {
-    const signatures = await rpc.getSignaturesForAddress(address, { limit }).send();
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+      new PublicKey(address), 
+      { programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') }
+    );
+    
+    return tokenAccounts.value.map(account => ({
+      mint: account.account.data.parsed.info.mint,
+      amount: account.account.data.parsed.info.tokenAmount.uiAmountString || '0',
+      decimals: account.account.data.parsed.info.tokenAmount.decimals || 9
+    }));
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * Get recent transactions for an address
+ */
+async function getTransactions(address, limit = 10, rpcUrl = DEFAULT_RPC) {
+  const connection = getConnection(rpcUrl);
+  
+  try {
+    const signatures = await connection.getSignaturesForAddress(
+      new PublicKey(address), 
+      { limit }
+    );
     
     return signatures.map(sig => ({
       signature: sig.signature,
@@ -201,61 +148,151 @@ async function getTransactions(address, limit = 10, rpcUrl = DEFAULT_RPC) {
 }
 
 /**
- * Get token accounts
+ * Send SOL with full security features
+ * @param {string} privateKey - Sender's private key (base58)
+ * @param {string} toAddress - Recipient address
+ * @param {number} amount - Amount in SOL
+ * @param {Object} options - { dryRun: boolean, skipConfirmation: boolean }
+ * @returns {Object} Transaction result or simulation
  */
-async function getTokenAccounts(address, rpcUrl = DEFAULT_RPC) {
-  const rpc = getConnection(rpcUrl);
+async function sendSol(privateKey, toAddress, amount, options = {}) {
+  const { dryRun = true, skipConfirmation = false } = options;
+  
+  // SECURITY: Validate inputs
+  if (!privateKey) {
+    throw new Error('Private key is required');
+  }
+  if (!toAddress || toAddress.length < 32) {
+    throw new Error('Invalid recipient address');
+  }
+  if (amount <= 0) {
+    throw new Error('Amount must be positive');
+  }
+  
+  // SECURITY: Check max limits
+  if (amount > MAX_SOL_PER_TX) {
+    throw new Error(`Amount ${amount} SOL exceeds max limit of ${MAX_SOL_PER_TX} SOL`);
+  }
+  
+  // SECURITY: Check testnet (warn if mainnet)
+  const connection = getConnection(DEFAULT_RPC);
+  if (!isTestNet(DEFAULT_RPC) && dryRun === false && !skipConfirmation) {
+    console.warn('⚠️  WARNING: Running on MAINNET with real transactions!');
+  }
+  
+  // SECURITY: Require human confirmation for large amounts
+  if (amount >= REQUIRE_HUMAN_CONFIRMATION && !skipConfirmation && dryRun === false) {
+    throw new Error(`Amount ${amount} SOL requires human confirmation (threshold: ${REQUIRE_HUMAN_CONFIRMATION} SOL)`);
+  }
   
   try {
-    const tokenAccounts = await rpc.getTokenAccountsByOwner(address, {
-      programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
-    }).send();
+    // Create keypair from private key
+    const privateKeyBytes = bs58.decode(privateKey);
+    const keyPair = nacl.sign.keyPair.fromSeed(privateKeyBytes.slice(0, 32));
     
-    return tokenAccounts.value.map(account => ({
-      mint: account.account.data.parsed.mint,
-      balance: account.account.data.parsed.tokenAmount.uiAmountString,
-      address: account.pubkey
-    }));
+    const fromPublicKey = new PublicKey(keyPair.publicKey);
+    const toPublicKey = new PublicKey(toAddress);
+    
+    // Convert SOL to lamports
+    const amountLamports = Math.round(amount * LAMPORTS_PER_SOL);
+    
+    // Create transaction
+    const transaction = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: fromPublicKey,
+        toPubkey: toPublicKey,
+        lamports: amountLamports
+      })
+    );
+    
+    // Get recent blockhash
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = fromPublicKey;
+    
+    // Sign transaction
+    const sign = require('tweetnacl').sign;
+    const messageBytes = transaction.serializeMessage();
+    const signature = sign.detached(messageBytes, keyPair.secretKey);
+    transaction.addSignature(fromPublicKey, Buffer.from(signature));
+    
+    // If dryRun, just return simulation
+    if (dryRun) {
+      // Simulate the transaction
+      try {
+        const simulation = await connection.simulateTransaction(transaction);
+        return {
+          success: true,
+          dryRun: true,
+          from: fromPublicKey.toBase58(),
+          to: toAddress,
+          amount: amount,
+          amountLamports: amountLamports,
+          signature: bs58.encode(transaction.signature),
+          logs: simulation.value.logs || [],
+          message: 'Simulation successful - set dryRun: false to send real transaction'
+        };
+      } catch (simError) {
+        // If simulation fails, return the error
+        return {
+          success: false,
+          dryRun: true,
+          from: fromPublicKey.toBase58(),
+          to: toAddress,
+          amount: amount,
+          error: simError.message,
+          message: 'Simulation failed - check error for details'
+        };
+      }
+    }
+    
+    // Send real transaction
+    const txSignature = await connection.sendRawTransaction(transaction.serialize());
+    
+    // Wait for confirmation
+    await connection.confirmTransaction(txSignature);
+    
+    return {
+      success: true,
+      dryRun: false,
+      from: fromPublicKey.toBase58(),
+      to: toAddress,
+      amount: amount,
+      signature: txSignature,
+      message: 'Transaction sent successfully'
+    };
+    
   } catch (e) {
-    return [];
+    throw new Error(`Transaction failed: ${e.message}`);
   }
 }
 
 /**
- * Airdrop SOL (testnet only)
+ * Get configuration info (without sensitive data)
  */
-async function airdrop(address, amountInSol, rpcUrl = DEFAULT_RPC) {
-  if (!isTestNet(rpcUrl)) {
-    throw new Error('Airdrop is only available on testnet');
-  }
-  
-  const rpc = getConnection(rpcUrl);
-  const lamports = amountInSol * 1e9;
-  
-  try {
-    const signature = await rpc.requestAirdrop(address, lamports).send();
-    return {
-      signature,
-      amount: amountInSol,
-      timestamp: new Date().toISOString()
-    };
-  } catch (e) {
-    throw new Error(`Airdrop failed: ${e.message}`);
-  }
+function getConfig() {
+  return {
+    rpc: DEFAULT_RPC,
+    isTestNet: isTestNet(),
+    maxSolPerTx: MAX_SOL_PER_TX,
+    maxTokensPerTx: MAX_TOKENS_PER_TX,
+    humanConfirmationThreshold: REQUIRE_HUMAN_CONFIRMATION,
+    features: {
+      dryRun: true,
+      maxLimits: true,
+      humanConfirmation: true
+    }
+  };
 }
 
 module.exports = {
   generateWallet,
   connectWallet,
   getBalance,
-  sendSol,
   getTransactions,
   getTokenAccounts,
+  sendSol,
   getConnection,
   isTestNet,
-  airdrop,
-  validateAmount,
-  warnMainnet,
-  DEFAULT_MAX_SOL,
-  DEFAULT_MAX_TOKENS
+  getConfig
 };

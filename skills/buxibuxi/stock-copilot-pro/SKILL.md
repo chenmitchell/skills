@@ -3,10 +3,13 @@ name: stock-copilot-pro
 description: OpenClaw stock analysis skill for US/HK/CN markets. Combines QVeris data sources (THS, Caidazi, Alpha Vantage, Finnhub, X sentiment) for quote, fundamentals, technicals, news radar, morning/evening brief, and actionable investment insights.
 env:
   - QVERIS_API_KEY
+requirements:
+  env_vars:
+    - QVERIS_API_KEY
 credentials:
   required:
     - QVERIS_API_KEY
-  primary_env: QVERIS_API_KEY
+  primary: QVERIS_API_KEY
   scope: read-only
   endpoint: https://qveris.ai/api/v1
 network:
@@ -27,7 +30,7 @@ Global Multi-Source Stock Analysis with QVeris.
 
 ## SEO Keywords
 
-OpenClaw, stock analysis skill, AI stock copilot, A股分析, 港股分析, 美股分析, 量化分析, 基本面分析, 技术分析, 情绪分析, 行业热点雷达, 早报晚报, watchlist, portfolio monitoring, QVeris API, THS iFinD, Caidazi, Alpha Vantage, Finnhub, X sentiment, investment research assistant
+OpenClaw, stock analysis skill, AI stock copilot, China A-shares, Hong Kong stocks, US stocks, quantitative analysis, fundamental analysis, technical analysis, sentiment analysis, industry radar, morning evening brief, watchlist, portfolio monitoring, QVeris API, THS iFinD, Caidazi, Alpha Vantage, Finnhub, X sentiment, investment research assistant
 
 ## Supported Capabilities
 
@@ -92,7 +95,7 @@ It then generates a data-rich analyst report with:
 
 ## Core Workflow
 
-1. Resolve user input to symbol + market (supports company-name aliases, e.g. `特变电工` -> `600089.SH`).
+1. Resolve user input to symbol + market (supports company-name aliases, e.g. Chinese name -> `600089.SH`).
 2. Search tools by capability (quote, fundamentals, indicators, sentiment, X sentiment).
 3. Route by hardcoded tool chains first (market-aware), then fallback generic capability search.
    - For CN/HK sentiment, prioritize `caidazi` channels (report/news/wechat).
@@ -122,7 +125,7 @@ Primary script: `scripts/stock_copilot_pro.mjs`
 
 - Analyze one symbol:
   - `node scripts/stock_copilot_pro.mjs analyze --symbol AAPL --market US --mode comprehensive`
-  - `node scripts/stock_copilot_pro.mjs analyze --symbol "特变电工" --mode comprehensive`
+  - `node scripts/stock_copilot_pro.mjs analyze --symbol "<company-name>" --mode comprehensive`
 - Compare multiple symbols:
   - `node scripts/stock_copilot_pro.mjs compare --symbols AAPL,MSFT --market US --mode comprehensive`
 - Manage watchlist:
@@ -134,6 +137,14 @@ Primary script: `scripts/stock_copilot_pro.mjs`
   - `node scripts/stock_copilot_pro.mjs brief --type evening --format markdown`
 - Run industry radar:
   - `node scripts/stock_copilot_pro.mjs radar --market GLOBAL --limit 10`
+
+## OpenClaw scheduled tasks (morning/evening brief and radar)
+
+To set up morning brief, evening brief, or daily radar in OpenClaw, use **only** the official OpenClaw cron format and create jobs via the CLI or Gateway cron tool. Do not edit `~/.openclaw/cron/jobs.json` directly.
+
+- Reference: the `jobs` array in `config/openclaw-cron.example.json`; each item is one `cron.add` payload (fields: `name`, `schedule: { kind, expr, tz }`, `sessionTarget: "isolated"`, `payload: { kind: "agentTurn", message: "..." }`, `delivery`).
+- Example (morning brief): `openclaw cron add --name "Stock morning brief" --cron "0 9 * * 1-5" --tz Asia/Shanghai --session isolated --message "Use stock-copilot-pro to generate morning brief: run brief --type morning --max-items 8 --format chat" --announce`. To deliver to Feishu, add `--channel feishu --to <group-or-chat-id>`.
+- Incorrect: using the legacy example format (e.g. `schedule` as string, `command`, `delivery.channels` array) or pasting the example into jobs.json will cause Gateway parse failure or crash.
 
 ## CN/HK Coverage Details
 
@@ -182,10 +193,12 @@ Primary script: `scripts/stock_copilot_pro.mjs`
 
 - Uses only `QVERIS_API_KEY`.
 - Calls only QVeris APIs over HTTPS.
+- `full_content_file_url` fetching is kept enabled for data completeness, but only HTTPS URLs under `qveris.ai` are allowed.
 - Does not store API keys in logs, reports, or evolution state.
 - Runtime persistence is limited to `.evolution/tool-evolution.json` (metadata + parameter templates only).
 - Watchlist state is stored at `config/watchlist.json` (bootstrap from `config/watchlist.example.json`).
-- OpenClaw cron integration example is available at `config/openclaw-cron.example.json`.
+- OpenClaw scheduled tasks: see `config/openclaw-cron.example.json`. Create jobs with the official format (`schedule.kind`, `payload.kind`, `sessionTarget`, etc.) via `openclaw cron add` or the Gateway cron tool; do not paste or merge the example JSON into `~/.openclaw/cron/jobs.json` (schema mismatch can cause Gateway parse failure or crash). Set `delivery.channel` and `delivery.to` for your channel (e.g. feishu).
+- External source URLs remain hidden by default; only shown when `--include-source-urls` is explicitly enabled.
 - No package installation or arbitrary command execution is performed by this skill script.
 - Research-only output. Not investment advice.
 
@@ -195,52 +208,52 @@ When analyzing `analyze` output, act as a senior buy-side analyst and deliver a 
 
 ### Required Output (5 Sections)
 
-1. **核心观点（30秒）**
+1. **Key view (30 seconds)**
    - One-line conclusion: buy/hold/avoid + key reason.
 
-2. **投资逻辑**
-   - 多头逻辑: 2 points (growth driver, moat/catalyst)
-   - 空头逻辑: 2 points (valuation/risk/timing)
+2. **Investment thesis**
+   - Bull case: 2 points (growth driver, moat/catalyst)
+   - Bear case: 2 points (valuation/risk/timing)
    - Final balance: what dominates now.
 
-3. **估值与关键价位**
+3. **Valuation and key levels**
    - PE/PB vs peer or history percentile (cheap/fair/expensive)
    - Key levels: current price, support, resistance, stop-loss reference
 
-4. **投资建议（必须）**
+4. **Recommendation (required)**
    - Different advice by position status:
-     - 空仓
-     - 轻仓
-     - 重仓/被套
+     - No position
+     - Light position
+     - Heavy position / underwater
    - Each suggestion must include concrete trigger/price/condition.
 
-5. **风险监控**
+5. **Risk monitor**
    - Top 2-3 risks + invalidation condition (what proves thesis wrong).
 
 ### Quality Bar
 
 - Avoid data dumping; each key number must include interpretation.
-- Keep concise but complete (target 250-500 Chinese characters).
+- Keep concise but complete (target 250-500 characters for narrative).
 - Must include actionable guidance and time window.
-- Use Chinese for narrative; keep ticker/technical terms in English.
+- Ticker and technical terms in English.
 
 ## Daily Brief Analysis Guide
 
 When analyzing `brief` output, generate an actionable morning/evening briefing for OpenClaw conversation.
 
-### Morning Brief (早报)
+### Morning Brief
 
-1. **市场概况**: risk-on/off + key overnight move + today's tone
-2. **持仓检视**: holdings that need action first
-3. **热点关联**: which radar themes impact holdings
-4. **今日计划（必须）**: specific watch levels / event / execution plan
+1. **Market overview**: risk-on/off + key overnight move + today's tone
+2. **Holdings check**: holdings that need action first
+3. **Radar relevance**: which radar themes impact holdings
+4. **Today's plan (required)**: specific watch levels / event / execution plan
 
-### Evening Brief (晚报)
+### Evening Brief
 
-1. **今日复盘**: index + sector + portfolio one-line recap
-2. **持仓变化**: biggest winners/losers and why
-3. **逻辑复核**: whether thesis changed
-4. **明日计划（必须）**: explicit conditions and actions
+1. **Session recap**: index + sector + portfolio one-line recap
+2. **Holdings change**: biggest winners/losers and why
+3. **Thesis check**: whether thesis changed
+4. **Tomorrow's plan (required)**: explicit conditions and actions
 
 ### Quality Bar
 
@@ -254,16 +267,16 @@ When analyzing `radar` output, cluster signals into investable themes and provid
 
 ### Required Output (per theme)
 
-- **主题**: clear, investable label
-- **核心驱动**: what changed and why now
-- **影响评估**: beneficiaries/losers + magnitude + duration
-- **投资建议（必须）**: concrete trigger or level
-- **风险提示**: key invalidation or monitoring signal
+- **Theme**: clear, investable label
+- **Driver**: what changed and why now
+- **Impact**: beneficiaries/losers + magnitude + duration
+- **Recommendation (required)**: concrete trigger or level
+- **Risk note**: key invalidation or monitoring signal
 
 ### Execution Rules
 
 - Cluster into 3-5 themes max.
 - Cross-verify sources; lower confidence for social-only signals.
 - Distinguish short-term trade vs mid-term allocation.
-- Keep each theme concise (<200 Chinese characters preferred).
+- Keep each theme concise (<200 characters preferred).
 

@@ -36,9 +36,15 @@ This is the critical step. For each element you cannot immediately identify:
    - Historical events
    - Other memes (memes referencing memes)
 
-2. **Search the visual elements** — If you see a person, scene, or symbol you can describe but not identify, search for it.
+2. **Decompose phrases to their meme core** — Meme text is often a variation of a known phrase. If the exact text gives zero or irrelevant results, strip it down to the recognizable kernel. Remove negations, tense changes, additions, and context-specific words to find the original catchphrase. Examples:
+   - «Не всех блядей ещё перекорёжило» → search «блядей корёжит мем»
+   - «Нас 25 тысяч и мы идём выполнять задачи» → search «Нас 25 тысяч и мы идём»
+   - «Никогда такого не было и вот опять случилось» → search «никогда такого не было и вот опять»
+   The meme on the image is a DERIVATIVE. Always hunt for the ROOT phrase.
 
-3. **Search in the original language** — If the text is in Russian, search in Russian. Do NOT translate first. The reference only exists in its original cultural context.
+3. **Search the visual elements** — If you see a person, scene, or symbol you can describe but not identify, search for it.
+
+4. **Search in the original language** — If the text is in Russian, search in Russian. Do NOT translate first. The reference only exists in its original cultural context.
 
 **Example — the Prigozhin neuron meme:**
 ```

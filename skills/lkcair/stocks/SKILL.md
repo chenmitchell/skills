@@ -25,12 +25,15 @@ python3 -m venv .venv
 
 ## Quotation / Command Execution Reliability (common pitfall)
 - If a command invocation uses complex shell quoting, it may fail in various environments. Use a here-doc style or a tiny helper script to avoid escaping issues.
-- Prefer running Python via the venv explicitly and keep Python code separate when possible.
-- Example robust pattern:
-  - Here-doc approach (works well in most shells):
+- **Crucially, ensure you are executing Python scripts using the interpreter from the skill's virtual environment.** Simply calling `python3` might not use the correct interpreter if the venv is not activated, leading to `ModuleNotFoundError`.
+- **Always use the full path to the venv's Python interpreter** for execution, e.g.:
+  `/home/openclaw/.openclaw/venv/stocks/bin/python3`
+- Ensure that all necessary packages (like `pydantic` for `yfinance-ai`) are installed within this specific venv using its associated `pip` command:
+  `/home/openclaw/.openclaw/venv/stocks/bin/pip install <package_name>`
+- Example robust pattern using a here-doc:
 
 ```bash
-/venv/stocks/bin/python3 - << 'PY'
+/home/openclaw/.openclaw/venv/stocks/bin/python3 - << 'PY'
 import asyncio, sys
 sys.path.insert(0, '.')
 from yfinance_ai import Tools
@@ -42,8 +45,7 @@ async def main():
 asyncio.run(main())
 PY
 ```
-- If needed, wrap the call in a small Python script file in the workspace and execute that script to avoid inline quoting entirely.
-- Ensure the virtual environment actually contains the required packages (e.g., pydantic) and install them if missing.
+- If complex inline scripts are problematic, wrap the call in a small Python script file in the workspace (e.g., in `scripts/`) and execute that script using the venv's Python interpreter.
 
 ## Agent Quick-Start
 

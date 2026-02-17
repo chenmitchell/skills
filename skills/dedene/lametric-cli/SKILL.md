@@ -9,9 +9,6 @@ metadata:
   openclaw:
     primaryEnv: LAMETRIC_API_KEY
     requires:
-      env:
-        - LAMETRIC_API_KEY
-        - LAMETRIC_DEVICE
       bins:
         - lametric
     install:

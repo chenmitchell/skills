@@ -1,0 +1,7 @@
+name: save-to-obsidian
+description: Saves markdown content to remote Obsidian vault via SSH
+version: 1.0.0
+triggers:
+  - save to obsidian
+  - send to obsidian
+  - copy to obsidian

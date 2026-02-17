@@ -1,0 +1,18 @@
+{
+  "shouldTrigger": [
+    "save to obsidian",
+    "send to obsidian",
+    "copy to obsidian",
+    "save this to obsidian",
+    "can you send this to obsidian?",
+    "copy the output to obsidian"
+  ],
+  "shouldNotTrigger": [
+    "open obsidian",
+    "read from obsidian",
+    "search obsidian",
+    "save to notion",
+    "export to pdf",
+    "save locally"
+  ]
+}

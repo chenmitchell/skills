@@ -1,0 +1,11 @@
+{
+  "owner": "gizmo-dev",
+  "slug": "agentapi",
+  "displayName": "AgentAPI",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1771357479792,
+    "commit": null
+  },
+  "history": []
+}

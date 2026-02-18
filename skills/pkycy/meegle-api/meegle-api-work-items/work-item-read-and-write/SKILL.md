@@ -2,19 +2,13 @@
 name: meegle-api-work-item-read-and-write
 description: |
   Meegle OpenAPI for creating, reading, and updating work items.
-  Prerequisites: token and domain — see skill meegle-api-users.
 metadata:
   openclaw: {}
-  required_credentials:
-    domain: "From meegle-api-users"
-    plugin_access_token_or_user_access_token: "From meegle-api-users (obtain token first)"
 ---
 
 # Meegle API — Work Item Read & Write
 
 Create, get, and update work items in a Meegle space.
-
-**Prerequisites:** Obtain domain and access token first; see skill **meegle-api-users**.
 
 ---
 

@@ -3,19 +3,14 @@ name: meegle-api-work-item-lists
 description: |
   Meegle OpenAPI for listing, searching, and querying work items.
   Includes single-space filter, cross-space filter, complex search, full-text search,
-  associated items, and full search. Prerequisites: token and domain — see skill meegle-api-users.
+  associated items, and full search.
 metadata:
   openclaw: {}
-  required_credentials:
-    domain: "From meegle-api-users"
-    plugin_access_token_or_user_access_token: "From meegle-api-users (obtain token first)"
 ---
 
 # Meegle API — Work Item Lists & Search
 
 List, filter, search, and query work items in Meegle spaces. Read-only APIs.
-
-**Prerequisites:** Obtain domain and access token first; see skill **meegle-api-users**.
 
 ---
 

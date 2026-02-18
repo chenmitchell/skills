@@ -1,0 +1,11 @@
+{
+  "owner": "gizmo-dev",
+  "slug": "qa-check",
+  "displayName": "QA Check",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771355197958,
+    "commit": null
+  },
+  "history": []
+}

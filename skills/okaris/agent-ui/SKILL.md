@@ -1,17 +1,13 @@
 ---
 name: agent-ui
-description: |
-  Batteries-included agent component for React/Next.js from ui.inference.sh.
-  One component with runtime, tools, streaming, approvals, and widgets built in.
-  Capabilities: drop-in agent, human-in-the-loop, client-side tools, form filling.
-  Use for: building AI chat interfaces, agentic UIs, SaaS copilots, assistants.
-  Triggers: agent component, agent ui, chat agent, shadcn agent, react agent,
-  agentic ui, ai assistant ui, copilot ui, inference ui, human in the loop
+description: "Batteries-included agent component for React/Next.js from ui.inference.sh. One component with runtime, tools, streaming, approvals, and widgets built in. Capabilities: drop-in agent, human-in-the-loop, client-side tools, form filling. Use for: building AI chat interfaces, agentic UIs, SaaS copilots, assistants. Triggers: agent component, agent ui, chat agent, shadcn agent, react agent,"  agentic ui, ai assistant ui, copilot ui, inference ui, human in the loop
 ---
 
 # Agent Component
 
 Batteries-included agent component from [ui.inference.sh](https://ui.inference.sh).
+
+![Agent Component](https://cloud.inference.sh/app/files/u/4mg21r6ta37mpaz6ktzwtt8krr/01kgvftp7hb8wby7z66fvs9asd.jpeg)
 
 ## Quick Start
 
@@ -103,13 +99,13 @@ const scopedTools = createScopedTools(formRef)
 
 ```bash
 # Chat UI building blocks
-npx skills add inference-sh/agent-skills@chat-ui
+npx skills add inference-sh/skills@chat-ui
 
 # Declarative widgets from JSON
-npx skills add inference-sh/agent-skills@widgets-ui
+npx skills add inference-sh/skills@widgets-ui
 
 # Tool lifecycle UI
-npx skills add inference-sh/agent-skills@tools-ui
+npx skills add inference-sh/skills@tools-ui
 ```
 
 ## Documentation

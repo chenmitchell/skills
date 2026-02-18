@@ -1,19 +1,14 @@
 ---
 name: ai-video-generation
-description: |
-  Generate AI videos with Google Veo, Seedance, Wan, Grok and 40+ models via inference.sh CLI.
-  Models: Veo 3.1, Veo 3, Seedance 1.5 Pro, Wan 2.5, Grok Imagine Video, OmniHuman, Fabric, HunyuanVideo.
-  Capabilities: text-to-video, image-to-video, lipsync, avatar animation, video upscaling, foley sound.
-  Use for: social media videos, marketing content, explainer videos, product demos, AI avatars.
-  Triggers: video generation, ai video, text to video, image to video, veo, animate image,
-  video from image, ai animation, video generator, generate video, t2v, i2v, ai video maker,
-  create video with ai, runway alternative, pika alternative, sora alternative, kling alternative
+description: "Generate AI videos with Google Veo, Seedance, Wan, Grok and 40+ models via inference.sh CLI. Models: Veo 3.1, Veo 3, Seedance 1.5 Pro, Wan 2.5, Grok Imagine Video, OmniHuman, Fabric, HunyuanVideo. Capabilities: text-to-video, image-to-video, lipsync, avatar animation, video upscaling, foley sound. Use for: social media videos, marketing content, explainer videos, product demos, AI avatars. Triggers: video generation, ai video, text to video, image to video, veo, animate image, video from image, ai animation, video generator, generate video, t2v, i2v, ai video maker, create video with ai, runway alternative, pika alternative, sora alternative, kling alternative"
 allowed-tools: Bash(infsh *)
 ---
 
 # AI Video Generation
 
 Generate videos with 40+ AI models via [inference.sh](https://inference.sh) CLI.
+
+![AI Video Generation](https://cloud.inference.sh/app/files/u/4mg21r6ta37mpaz6ktzwtt8krr/01kg2c0egyg243mnyth4y6g51q.jpeg)
 
 ## Quick Start
 
@@ -24,6 +19,8 @@ curl -fsSL https://cli.inference.sh | sh && infsh login
 # Generate a video with Veo
 infsh app run google/veo-3-1-fast --input '{"prompt": "drone shot flying over a forest"}'
 ```
+
+> **Install note:** The [install script](https://cli.inference.sh) only detects your OS/architecture, downloads the matching binary from `dist.inference.sh`, and verifies its SHA-256 checksum. No elevated permissions or background processes. [Manual install & verification](https://dist.inference.sh/cli/checksums.txt) available.
 
 ## Available Models
 
@@ -153,22 +150,22 @@ infsh app run infsh/media-merger --input '{
 
 ```bash
 # Full platform skill (all 150+ apps)
-npx skills add inference-sh/agent-skills@inference-sh
+npx skills add inference-sh/skills@inference-sh
 
 # Google Veo specific
-npx skills add inference-sh/agent-skills@google-veo
+npx skills add inference-sh/skills@google-veo
 
 # AI avatars & lipsync
-npx skills add inference-sh/agent-skills@ai-avatar-video
+npx skills add inference-sh/skills@ai-avatar-video
 
 # Text-to-speech (for video narration)
-npx skills add inference-sh/agent-skills@text-to-speech
+npx skills add inference-sh/skills@text-to-speech
 
 # Image generation (for image-to-video)
-npx skills add inference-sh/agent-skills@ai-image-generation
+npx skills add inference-sh/skills@ai-image-generation
 
 # Twitter (post videos)
-npx skills add inference-sh/agent-skills@twitter-automation
+npx skills add inference-sh/skills@twitter-automation
 ```
 
 Browse all apps: `infsh app list`

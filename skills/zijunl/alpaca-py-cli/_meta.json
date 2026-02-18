@@ -1,0 +1,11 @@
+{
+  "owner": "zijunl",
+  "slug": "alpaca-py-cli",
+  "displayName": "Alpaca Trading (Python CLI)",
+  "latest": {
+    "version": "1.2.0",
+    "publishedAt": 1771395433192,
+    "commit": null
+  },
+  "history": []
+}

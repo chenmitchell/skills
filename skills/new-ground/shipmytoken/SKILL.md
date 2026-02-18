@@ -2,7 +2,7 @@
 name: shipmytoken
 description: Launch Solana tokens on Pumpfun, manage fee sharing, claim earnings, and track portfolio. All via chat.
 compatibility: Requires Node.js and ~0.02 SOL for network fees
-metadata: {"author":"new-ground","version":"1.4.0"}
+metadata: {"author":"new-ground","version":"1.5.0"}
 ---
 
 # SHIP MY TOKEN

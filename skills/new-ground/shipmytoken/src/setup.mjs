@@ -35,7 +35,10 @@ async function checkForUpdate() {
     clearTimeout(timeout);
 
     const latest = tag_name.replace(/^v/, "");
-    if (latest !== LOCAL_VERSION) {
+    const [lMaj, lMin, lPat] = latest.split(".").map(Number);
+    const [cMaj, cMin, cPat] = LOCAL_VERSION.split(".").map(Number);
+    const isNewer = lMaj > cMaj || (lMaj === cMaj && lMin > cMin) || (lMaj === cMaj && lMin === cMin && lPat > cPat);
+    if (isNewer) {
       return {
         current: LOCAL_VERSION,
         latest,

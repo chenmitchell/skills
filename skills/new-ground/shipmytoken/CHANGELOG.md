@@ -2,6 +2,20 @@
 
 All notable changes to Ship My Token will be documented in this file.
 
+## [1.5.0] - 2026-02-17
+
+### Added
+- ClawhHub distribution channel (`npx clawhub@latest install shipmytoken`)
+- README with install instructions and feature overview
+
+### Fixed
+- Version check showing false update notice when local version is newer than GitHub release
+- Version comparison now uses proper semver (only notifies when remote > local)
+
+### Changed
+- Restructured SKILL.md for better rendering on ClawhHub
+- Update notification now shows both install methods (npx skills + ClawhHub)
+
 ## [1.4.0] - 2026-02-10
 
 ### Added

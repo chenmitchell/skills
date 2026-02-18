@@ -1,19 +1,14 @@
 ---
 name: text-to-speech
-description: |
-  Convert text to natural speech with DIA TTS, Kokoro, Chatterbox, and more via inference.sh CLI.
-  Models: DIA TTS (conversational), Kokoro TTS, Chatterbox, Higgs Audio, VibeVoice (podcasts).
-  Capabilities: text-to-speech, voice cloning, multi-speaker dialogue, podcast generation, expressive speech.
-  Use for: voiceovers, audiobooks, podcasts, accessibility, video narration, IVR, voice assistants.
-  Triggers: text to speech, tts, voice generation, ai voice, speech synthesis, voice over,
-  generate speech, ai narrator, voice cloning, text to audio, elevenlabs alternative,
-  voice ai, ai voiceover, speech generator, natural voice
+description: "Convert text to natural speech with DIA TTS, Kokoro, Chatterbox, and more via inference.sh CLI. Models: DIA TTS (conversational), Kokoro TTS, Chatterbox, Higgs Audio, VibeVoice (podcasts). Capabilities: text-to-speech, voice cloning, multi-speaker dialogue, podcast generation, expressive speech. Use for: voiceovers, audiobooks, podcasts, accessibility, video narration, IVR, voice assistants. Triggers: text to speech, tts, voice generation, ai voice, speech synthesis, voice over, generate speech, ai narrator, voice cloning, text to audio, elevenlabs alternative, voice ai, ai voiceover, speech generator, natural voice"
 allowed-tools: Bash(infsh *)
 ---
 
 # Text-to-Speech
 
 Convert text to natural speech via [inference.sh](https://inference.sh) CLI.
+
+![Text-to-Speech](https://cloud.inference.sh/u/4mg21r6ta37mpaz6ktzwtt8krr/01jz00krptarq4bwm89g539aea.png)
 
 ## Quick Start
 
@@ -24,6 +19,8 @@ curl -fsSL https://cli.inference.sh | sh && infsh login
 # Generate speech
 infsh app run infsh/kokoro-tts --input '{"text": "Hello, welcome to our product demo."}'
 ```
+
+> **Install note:** The [install script](https://cli.inference.sh) only detects your OS/architecture, downloads the matching binary from `dist.inference.sh`, and verifies its SHA-256 checksum. No elevated permissions or background processes. [Manual install & verification](https://dist.inference.sh/cli/checksums.txt) available.
 
 ## Available Models
 
@@ -113,19 +110,19 @@ infsh app run bytedance/omnihuman-1-5 --input '{
 
 ```bash
 # Full platform skill (all 150+ apps)
-npx skills add inference-sh/agent-skills@inference-sh
+npx skills add inference-sh/skills@inference-sh
 
 # AI avatars (combine TTS with talking heads)
-npx skills add inference-sh/agent-skills@ai-avatar-video
+npx skills add inference-sh/skills@ai-avatar-video
 
 # AI music generation
-npx skills add inference-sh/agent-skills@ai-music-generation
+npx skills add inference-sh/skills@ai-music-generation
 
 # Speech-to-text (transcription)
-npx skills add inference-sh/agent-skills@speech-to-text
+npx skills add inference-sh/skills@speech-to-text
 
 # Video generation
-npx skills add inference-sh/agent-skills@ai-video-generation
+npx skills add inference-sh/skills@ai-video-generation
 ```
 
 Browse all apps: `infsh app list`

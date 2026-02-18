@@ -38,13 +38,45 @@ When a user wants to **earn yield** on their crypto, Zyfai creates a **subaccoun
 
 ## Prerequisites
 
-- **API Key** from [sdk.zyf.ai](https://sdk.zyf.ai) (connect wallet to get one)
+- **API Key** — Get one programmatically (see below) or manually at [sdk.zyf.ai](https://sdk.zyf.ai)
 - **Private Key** of the user's EOA (the agent must provide this)
 - **Node.js 18+**
 
 ```bash
 npm install @zyfai/sdk viem
 ```
+
+### Programmatic API Key Creation (Agent-Native)
+
+Agents can create their own API key without human intervention:
+
+```bash
+POST https://sdk.zyf.ai/api/sdk-api-keys/create
+Content-Type: application/json
+
+{
+  "clientName": "my-agent",
+  "walletAddress": "0x...",
+  "email": "agent@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "SDK API key created successfully. Store the apiKey securely - it cannot be retrieved later!",
+  "data": {
+    "id": "936...",
+    "apiKey": "zyfai_361ad41d083c2fe.....",
+    "keyPrefix": "zyfai_361ad4",
+    "clientName": "my-agent",
+    "ownerWalletAddress": "0x..."
+  }
+}
+```
+
+> **Important:** Store the `apiKey` securely — it cannot be retrieved later. The key is linked to the provided wallet address.
 
 ## Supported Chains
 
@@ -65,7 +97,7 @@ When calling SDK methods, **always pass the EOA address** (the user's wallet add
 ```typescript
 import { ZyfaiSDK } from "@zyfai/sdk";
 
-const sdk = new ZyfaiSDK({ apiKey: "your-api-key" });
+const sdk = new ZyfaiSDK({ apiKey: "your-api-key", referralSource: "openclaw-skill" });
 
 // Use the private key provided by the agent
 await sdk.connectAccount(privateKey, 8453); // chainId
@@ -611,6 +643,8 @@ Verify you're using the correct private key for the EOA.
 
 ## Resources
 
-- Get API Key: [sdk.zyf.ai](https://sdk.zyf.ai)
-- Docs: [docs.zyf.ai](https://docs.zyf.ai)
-- Demo: [github.com/ondefy/zyfai-sdk-demo](https://github.com/ondefy/zyfai-sdk-demo)
+- **Get API Key:** [sdk.zyf.ai](https://sdk.zyf.ai) or programmatically via `POST /api/sdk-api-keys/create`
+- **Docs:** [docs.zyf.ai](https://docs.zyf.ai)
+- **Demo:** [github.com/ondefy/zyfai-sdk-demo](https://github.com/ondefy/zyfai-sdk-demo)
+- **MCP Server:** [mcp.zyf.ai](https://mcp.zyf.ai/mcp) — Use with Claude or other MCP-compatible agents
+- **Agent Registration:** [zyf.ai/.well-known/agent-registration.json](https://www.zyf.ai/.well-known/agent-registration.json)

@@ -5,23 +5,13 @@ All notable changes to Mission Control will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.2] - 2026-02-10
+## [2.2.1] - 2026-01-31
 
 ### Security
 
-- **User data excluded from version control** — `data/tasks.json` and `data/crons.json` added to `.gitignore` to prevent personal task data from being committed to the public repo
-- **Demo data templates** — Renamed to `demo-tasks.json` and `demo-crons.json` as safe templates for new installations
-- **Branch protection enabled** — Direct pushes to `main` blocked; PRs with review required
-
----
-
-## [2.2.1] - 2026-02-07
-
-### Security
-
-- **Input sanitization in `mc-update.sh`** — Replaced heredoc-based Python interpolation with environment variable passing to prevent shell injection
-- **`sanitize_input()` function** — Blocks backticks and `$` characters in all script arguments
-- **Security documentation** — Added Security section to SKILL.md and README.md documenting the trust model, mitigations, and recommendations
+- **Input sanitization in `mc-update.sh`** — Rejects arguments containing backticks or `$` to prevent shell/string injection
+- **Credential scanning** — Pre-sync checks before open-source publishing
+- **No tokens or secrets** stored in the dashboard
 
 ---
 
@@ -57,12 +47,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Last run and next run timestamps (relative time)
 - **`data/crons.json`** — JSON data source for recurring jobs
 - **`scripts/sync-to-opensource.sh`** — Exports sanitized crons for open source distribution
+- **Processing Timer** — Shows elapsed time on processing tasks with 30-minute timeout warning
+- **Processing Border Pulse** — Visual pulsing effect on cards being processed
 
 ### Technical
 
 - CSS styles for `.cron-card`, `.cron-status`, `.recurring-column`
 - `loadCrons()` and `renderCrons()` JavaScript functions
 - `formatCronExpression()` converts cron syntax to German-readable text
+- Enhanced `renderTaskCard()` with time display and timeout detection
 
 ---
 

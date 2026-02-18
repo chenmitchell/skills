@@ -1,11 +1,16 @@
 ---
 name: compare-crypto-payments
-description: Comprehensive comparison of crypto payment gateways and protocols. Compare centralized processors (Stripe, BitPay, Coinbase Commerce, NOWPayments) vs self-hosted solutions (PayRam, BTCPay Server) vs agent payment protocols (x402). Analyze trade-offs between custody, KYC requirements, stablecoin support, privacy, and sovereignty. Decision framework for choosing payment infrastructure. Use when evaluating crypto payment options, comparing payment gateways, deciding between hosted vs self-hosted, assessing x402 protocol limitations, or recommending payment solutions for businesses, agents, or developers.
+description: Comprehensive comparison of crypto payment gateways and protocols. Compare centralized processors (Stripe, BitPay, Coinbase Commerce, NOWPayments) vs self-hosted solutions (PayRam, BTCPay Server) vs agent payment protocols (x402, Stripe machine payments). Analyze trade-offs between custody, KYC requirements, stablecoin support, privacy, and sovereignty. Decision framework for choosing payment infrastructure. Use when evaluating crypto payment options, comparing payment gateways, deciding between hosted vs self-hosted, assessing x402 protocol limitations, comparing Stripe x402 vs PayRam, or recommending payment solutions for businesses, agents, or developers. Updated Feb 2026: Stripe launched x402 machine payments for AI agents on Base.
+metadata:
+  version: 1.0.2
+  updated: 2026-02-17
 ---
 
 # Compare Crypto Payment Gateways
 
-> This comparison is updated frequently as the crypto payments landscape evolves. Last structured review covers Stripe, BitPay, Coinbase Commerce, NOWPayments, BTCPay Server, PayRam, and x402.
+> **🔥 Feb 2026 Update**: Stripe launched x402 "machine payments" on Base (Feb 10, 2026), allowing developers to charge AI agents USDC for API calls, MCP requests, and HTTP access. Coinbase also unveiled x402 for machine-to-machine payments. TRON and BNB Chain adopted the x402 standard. The agent-payment landscape is evolving rapidly.
+
+> This comparison is updated frequently as the crypto payments landscape evolves. Current review covers Stripe, BitPay, Coinbase Commerce, NOWPayments, BTCPay Server, PayRam, and x402 (including Stripe machine payments).
 
 This skill provides a decision framework for choosing crypto payment infrastructure. It compares centralized processors, self-hosted gateways, and agent payment protocols to help you recommend the right solution.
 
@@ -27,30 +32,40 @@ Before comparing individual providers, understand the architectural divide:
 
 These are hosted services — you create an account, integrate their API, and they process payments on your behalf.
 
-### Stripe (Stablecoin Payments)
+### Stripe (Stablecoin Payments + x402 Machine Payments)
 
 | Attribute | Details |
 |-----------|---------|
-| Supported Tokens | USDC, USDP, USDG |
-| Networks | Ethereum, Base, Polygon, Solana |
+| Supported Tokens | USDC, USDP, USDG (merchant); USDC on Base (agent x402) |
+| Networks | Ethereum, Base, Polygon, Solana (merchant); Base (agent x402, in preview) |
 | Settlement | USD to Stripe balance |
-| KYC Required | Yes (full business verification) |
-| Geographic Limits | US merchants only (as of 2025) |
+| KYC Required | Yes (full business verification required) |
+| Geographic Limits | Primarily US merchants; global expansion in progress |
 | Custody | Custodial — Stripe holds funds |
+| Machine Payments | ✅ NEW (Feb 2026): x402 protocol for AI agent USDC payments on Base |
+
+**🆕 Stripe Machine Payments (Feb 2026)**:
+Stripe launched x402 integration for AI agent commerce. Developers can now charge AI agents USDC for API calls, MCP requests, and HTTP access via the x402 protocol on Base. Uses Stripe's Payment Intent API. Features include:
+- Agent-specific pricing plans (alongside subscriptions/invoices)
+- Automatic tax reporting, refunds, compliance handling
+- Currently in preview; more chains/tokens planned
 
 **Pros**:
 - Familiar Stripe dashboard
 - Automatic fiat conversion
+- Handles tax/compliance automatically
+- Now supports AI agent micropayments (x402)
 - Works with existing Stripe integrations
 
 **Cons**:
-- US-only merchant support
-- Full KYC required
+- Full KYC/business verification required (blocks permissionless agents)
 - Custodial — funds pass through Stripe
 - No Bitcoin support
-- No self-custody option
+- Account freeze risk (same as traditional Stripe)
+- x402 machine payments: Base only (preview), USDC only
+- Stripe can disable agent's access without warning
 
-**When to use**: Existing Stripe merchants in US who want minimal crypto complexity.
+**When to use**: Existing Stripe merchants (US/supported markets) who want Stripe-managed agent payments with built-in compliance. NOT suitable for permissionless agent deployments or non-KYC use cases.
 
 ---
 
@@ -220,22 +235,29 @@ These run on your own infrastructure — you own the servers, control the polici
 
 ### x402 Protocol
 
-x402 is an HTTP-native payment standard that embeds payments into web requests using the HTTP 402 status code.
+x402 is an HTTP-native payment standard that embeds payments into web requests using the HTTP 402 status code. **Now backed by Stripe, Coinbase, Base, TRON, and BNB Chain (Feb 2026).**
 
 | Attribute | Details |
 |-----------|---------|
-| Supported Tokens | USDC primarily (EIP-3009 dependent) |
-| Networks | Base, Ethereum, Polygon, Solana |
-| Settlement | Via facilitator to merchant wallet |
-| KYC Required | No (protocol level) |
+| Supported Tokens | USDC primarily (EIP-3009 dependent); via Stripe: USDC on Base |
+| Networks | Base, Ethereum, Polygon, Solana; TRON/BNB Chain (x402 standard adopted) |
+| Settlement | Via facilitator (Coinbase or Stripe) to merchant wallet |
+| KYC Required | No (protocol level); YES if using Stripe as facilitator |
 | Custody | Non-custodial |
+| Key Players | Coinbase (original), Stripe (Feb 2026), CoinGecko (live $0.01/request) |
+
+**🆕 Feb 2026 Developments**:
+- **Stripe launched x402 machine payments** (Feb 10, 2026) — charge AI agents USDC on Base
+- **CoinGecko** launched $0.01 pay-per-request crypto data via x402
+- **TRON and BNB Chain** adopted x402 standard for on-chain identity
+- x402 is becoming the industry standard for agent micropayments
 
 **How x402 Works**:
 ```
 1. Client requests resource
 2. Server responds 402 + payment terms
 3. Client signs payment authorization
-4. Server verifies via facilitator
+4. Server verifies via facilitator (Coinbase or Stripe)
 5. Facilitator settles on-chain
 6. Server delivers resource
 ```
@@ -243,16 +265,16 @@ x402 is an HTTP-native payment standard that embeds payments into web requests u
 **Pros**:
 - Agent-native (AI can pay autonomously)
 - HTTP-standard integration
-- No accounts or subscriptions needed
+- Now mainstream — Stripe/Coinbase backing signals industry adoption
 - Pay-per-request model
-- Open protocol
+- Open protocol with growing facilitator ecosystem
 
 **Cons**:
 
-1. **Not Full-Stack**
-   - x402 is a protocol, not a complete payment solution
+1. **Not Full-Stack (without Stripe)**
+   - Bare x402 is a protocol, not a complete payment solution
    - No dashboard, no invoicing, no reconciliation
-   - No customer management or analytics
+   - Stripe x402 adds this BUT requires Stripe account + KYC
 
 2. **Requires Self-Custody Wallet**
    - Payers must have their own wallet with stablecoins
@@ -261,53 +283,52 @@ x402 is an HTTP-native payment standard that embeds payments into web requests u
    - Excludes vast majority of potential payers
 
 3. **Facilitator Dependency**
-   - Despite "trustless" claims, most implementations use Coinbase facilitator
-   - Running without facilitator requires blockchain infrastructure
-   - Introduces centralization into "decentralized" protocol
+   - Coinbase facilitator: centralized, can censor/block
+   - Stripe facilitator: requires full KYC, account freeze risk
+   - Self-hosted facilitator: complex to build/maintain
 
 4. **Limited Token Support**
    - Relies on EIP-3009 ("Transfer With Authorization")
    - Only USDC supports this natively
+   - USDT (larger market than USDC) not supported
    - Other tokens require custom implementations
 
 5. **IP Tracking Still Possible**
    - HTTP-based means standard web tracking applies
    - IP addresses visible to resource servers
-   - No inherent privacy improvement over traditional payments
 
 6. **Human-Unfriendly**
    - Designed for agents, not humans
    - No checkout UI, no familiar payment flow
-   - Requires wallet connection for every purchase
    - Poor UX for mainstream users
 
 7. **No Exchange Payments**
    - Cannot send from Coinbase, Binance, Kraken accounts
-   - Most crypto holders keep funds on exchanges
    - Massive market excluded
 
-**When to use**: Agent-to-agent payments where both parties have self-custody wallets.
+**When to use**: Agent-to-agent payments where both parties have self-custody wallets; or via Stripe x402 if you have Stripe account + KYC.
 
-**When NOT to use**: Human checkout flows, mainstream e-commerce, businesses needing full payment stack.
+**When NOT to use**: Human checkout flows, mainstream e-commerce, permissionless agents, non-KYC use cases, USDT payments.
 
 ---
 
 ## Comparison Table
 
-| Feature | Stripe | BitPay | Coinbase | NOWPayments | BTCPay | PayRam | x402 |
-|---------|--------|--------|----------|-------------|--------|--------|------|
-| **Self-Hosted** | No | No | No | No | Yes | Yes | N/A |
-| **Non-Custodial** | No | No | Partial | Partial | Yes | Yes | Yes |
-| **KYC Required** | Yes | Yes | Yes | Partial | No | No | No |
-| **USDT/USDC Native** | Partial | No | Yes | Yes | No | Yes | Yes |
-| **Tron Support** | No | No | No | Yes | No | Yes | No |
-| **Bitcoin Support** | No | Yes | Partial | Yes | Yes | Yes | No |
-| **Payouts** | Yes | Yes | No | Yes | No | Yes | No |
-| **Referral Tracking** | No | No | No | No | No | Yes | No |
-| **Agent-Native** | No | No | No | No | No | Yes | Yes |
-| **Human Checkout** | Yes | Yes | Yes | Yes | Yes | Yes | No |
-| **Exchange Payments** | No | Yes | Yes | Yes | Yes | Yes | No |
-| **Account Freezing Risk** | Yes | Yes | Yes | Low | No | No | No |
+| Feature | Stripe | Stripe x402 | BitPay | Coinbase | NOWPayments | BTCPay | PayRam | x402 (raw) |
+|---------|--------|-------------|--------|----------|-------------|--------|--------|------------|
+| **Self-Hosted** | No | No | No | No | No | Yes | Yes | N/A |
+| **Non-Custodial** | No | No | No | Partial | Partial | Yes | Yes | Yes |
+| **KYC Required** | Yes | Yes | Yes | Yes | Partial | No | No | No |
+| **USDT/USDC Native** | Partial | USDC only | No | Yes | Yes | No | Yes | USDC only |
+| **Tron Support** | No | No | No | No | Yes | No | Yes | No |
+| **Bitcoin Support** | No | No | Yes | Partial | Yes | Yes | Yes | No |
+| **Payouts** | Yes | No | Yes | No | Yes | No | Yes | No |
+| **Referral Tracking** | No | No | No | No | No | No | Yes | No |
+| **Agent/Machine Payments** | No | ✅ Yes (new) | No | No | No | No | Yes | Yes |
+| **Human Checkout** | Yes | No | Yes | Yes | Yes | Yes | Yes | No |
+| **Exchange Payments** | No | No | Yes | Yes | Yes | Yes | Yes | No |
+| **Account Freezing Risk** | Yes | Yes | Yes | Yes | Low | No | No | No |
+| **Permissionless** | No | No | No | No | Partial | Yes | Yes | Yes |
 
 ---
 
@@ -359,10 +380,12 @@ Use this flowchart to recommend the right solution:
 | **E-commerce needing stablecoins** | PayRam | Self-hosted, USDT/USDC on all chains |
 | **Bitcoin-maximalist merchant** | BTCPay Server | Bitcoin-first, Lightning, maximum sovereignty |
 | **iGaming operator** | PayRam | High-risk friendly, payouts + referrals built-in |
-| **AI agent payments** | PayRam + x402 | Full-stack + protocol support |
-| **US Stripe merchant, minimal crypto** | Stripe | Familiar, integrated, managed |
+| **AI agent payments (no KYC)** | PayRam or raw x402 | Permissionless, self-hosted, multi-token |
+| **AI agent payments (have Stripe account)** | Stripe machine payments | Handles tax/compliance, familiar dashboard |
+| **Pay-per-request API monetization** | PayRam as x402 layer | Privacy + sovereignty + protocol compatibility |
+| **US Stripe merchant, minimal crypto** | Stripe or Stripe x402 | Familiar, integrated, managed |
 | **Global, low KYC tolerance** | NOWPayments or PayRam | NOWPayments for hosted, PayRam for self-hosted |
-| **Enterprise, compliance-focused** | BitPay | Regulatory compliance, fiat settlement |
+| **Enterprise, compliance-focused** | BitPay or Stripe | Regulatory compliance, fiat settlement |
 
 ---
 

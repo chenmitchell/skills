@@ -1,19 +1,14 @@
 ---
 name: ai-voice-cloning
-description: |
-  AI voice generation, text-to-speech, and voice synthesis via inference.sh CLI.
-  Models: Kokoro TTS, DIA, Chatterbox, Higgs, VibeVoice for natural speech.
-  Capabilities: multiple voices, emotions, accents, long-form narration, conversation.
-  Use for: voiceovers, audiobooks, podcasts, video narration, accessibility.
-  Triggers: voice cloning, tts, text to speech, ai voice, voice generation,
-  voice synthesis, voice over, narration, speech synthesis, ai narrator,
-  elevenlabs alternative, natural voice, realistic speech, voice ai
+description: "AI voice generation, text-to-speech, and voice synthesis via inference.sh CLI. Models: Kokoro TTS, DIA, Chatterbox, Higgs, VibeVoice for natural speech. Capabilities: multiple voices, emotions, accents, long-form narration, conversation. Use for: voiceovers, audiobooks, podcasts, video narration, accessibility. Triggers: voice cloning, tts, text to speech, ai voice, voice generation, voice synthesis, voice over, narration, speech synthesis, ai narrator, elevenlabs alternative, natural voice, realistic speech, voice ai"
 allowed-tools: Bash(infsh *)
 ---
 
 # AI Voice Generation
 
 Generate natural AI voices via [inference.sh](https://inference.sh) CLI.
+
+![AI Voice Generation](https://cloud.inference.sh/u/4mg21r6ta37mpaz6ktzwtt8krr/01jz00krptarq4bwm89g539aea.png)
 
 ## Quick Start
 
@@ -26,6 +21,8 @@ infsh app run infsh/kokoro-tts --input '{
   "voice": "af_sarah"
 }'
 ```
+
+> **Install note:** The [install script](https://cli.inference.sh) only detects your OS/architecture, downloads the matching binary from `dist.inference.sh`, and verifies its SHA-256 checksum. No elevated permissions or background processes. [Manual install & verification](https://dist.inference.sh/cli/checksums.txt) available.
 
 ## Available Models
 
@@ -258,19 +255,19 @@ infsh app run infsh/kokoro-tts --input '{
 
 ```bash
 # All TTS models
-npx skills add inference-sh/agent-skills@text-to-speech
+npx skills add inference-sh/skills@text-to-speech
 
 # Podcast creation
-npx skills add inference-sh/agent-skills@ai-podcast-creation
+npx skills add inference-sh/skills@ai-podcast-creation
 
 # AI avatars
-npx skills add inference-sh/agent-skills@ai-avatar-video
+npx skills add inference-sh/skills@ai-avatar-video
 
 # Video generation
-npx skills add inference-sh/agent-skills@ai-video-generation
+npx skills add inference-sh/skills@ai-video-generation
 
 # Full platform skill
-npx skills add inference-sh/agent-skills@inference-sh
+npx skills add inference-sh/skills@inference-sh
 ```
 
 Browse audio apps: `infsh app list --category audio`

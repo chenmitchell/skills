@@ -9,7 +9,7 @@ description: "Scan any token for security risks, honeypots, and scams using Quic
 
 **This is NOT a free API.** Quick Intel uses the x402 payment protocol — you pay $0.03 USDC per scan, no API keys, no subscriptions. Your wallet signs a payment authorization, and the scan executes.
 
-**x402 is not complicated.** You call the endpoint → get a 402 response with payment requirements → sign an EIP-3009 authorization → retry with the payment header → get your scan results. Most wallet libraries handle this automatically.
+**x402 is not complicated.** You call the endpoint → get a 402 response with payment requirements → sign a payment → retry with the payment header → get your scan results. Most wallet libraries handle this automatically.
 
 **63 chains supported.** Not just EVM — Solana, Sui, Radix, Tron, and Injective are supported too. If you're checking a token, Quick Intel probably supports that chain.
 
@@ -19,7 +19,7 @@ description: "Scan any token for security risks, honeypots, and scams using Quic
 |--------|-------|
 | **Endpoint** | `POST https://x402.quickintel.io/v1/scan/full` |
 | **Cost** | $0.03 USDC (30000 atomic units) |
-| **Payment Networks** | Base, Ethereum, Arbitrum, Optimism, Polygon, Avalanche, Unichain, Linea, MegaETH |
+| **Payment Networks** | Base, Ethereum, Arbitrum, Optimism, Polygon, Avalanche, Unichain, Linea, MegaETH, **Solana** |
 | **Payment Token** | USDC (native Circle USDC on each chain) |
 | **Protocol** | x402 v2 (HTTP 402 Payment Required) |
 | **Idempotency** | Supported via `payment-identifier` extension |
@@ -53,7 +53,7 @@ Before calling the API, verify:
 
 ### 1. USDC Balance on a Supported Payment Chain
 
-You need at least $0.03 USDC on any supported payment chain. Base is recommended (lowest fees).
+You need at least $0.03 USDC on any supported payment chain. Base is recommended for EVM (lowest fees), Solana is also supported.
 
 **Check balance (viem):**
 ```javascript
@@ -82,6 +82,8 @@ const hasEnough = balance >= 30000n; // $0.03 with 6 decimals
 
 x402 is an HTTP-native payment protocol. Here's the complete flow:
 
+### EVM Payment Flow (Base, Ethereum, Arbitrum, etc.)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  1. REQUEST    POST to endpoint with scan parameters        │
@@ -92,7 +94,7 @@ x402 is an HTTP-native payment protocol. Here's the complete flow:
 │  3. SIGN       Your wallet signs EIP-3009 authorization     │
 │                (transferWithAuthorization for USDC)          │
 │                                                             │
-│  4. RETRY      Resend request with PAYMENT-SIGNATURE header  │
+│  4. RETRY      Resend request with PAYMENT-SIGNATURE header │
 │                Contains base64-encoded signed payment proof  │
 │                                                             │
 │  5. SETTLE     Server verifies signature, settles on-chain  │
@@ -102,13 +104,38 @@ x402 is an HTTP-native payment protocol. Here's the complete flow:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Solana (SVM) Payment Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. REQUEST    POST to endpoint with scan parameters        │
+│                                                             │
+│  2. 402        Server returns "Payment Required"            │
+│                Solana entry includes extra.feePayer address  │
+│                                                             │
+│  3. BUILD      Build SPL TransferChecked transaction:       │
+│                - Set feePayer to gateway's facilitator       │
+│                - Transfer USDC to gateway's payTo address    │
+│                - Partially sign with your wallet             │
+│                                                             │
+│  4. RETRY      Resend request with PAYMENT-SIGNATURE header │
+│                payload: { transaction: "<base64>" }          │
+│                                                             │
+│  5. SETTLE     Gateway co-signs as feePayer, submits to     │
+│                Solana, confirms transaction                  │
+│                                                             │
+│  6. RESPONSE   Server returns scan results (200 OK)         │
+│                PAYMENT-RESPONSE header contains tx signature │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ### x402 v2 Headers
 
 | Header | Direction | Description |
 |--------|-----------|-------------|
 | `PAYMENT-REQUIRED` | Response (402) | Base64 JSON with payment requirements and accepted networks |
-| `PAYMENT-SIGNATURE` | Request (retry) | Base64 JSON with signed EIP-3009 authorization |
-| `PAYMENT-RESPONSE` | Response (200) | Base64 JSON with settlement tx hash and block number |
+| `PAYMENT-SIGNATURE` | Request (retry) | Base64 JSON with signed EIP-3009 authorization (EVM) or partially-signed transaction (SVM) |
+| `PAYMENT-RESPONSE` | Response (200) | Base64 JSON with settlement tx hash/signature and block number |
 
 **Note:** The legacy `X-PAYMENT` header is also accepted for v1 backward compatibility, but `PAYMENT-SIGNATURE` is preferred.
 
@@ -141,7 +168,7 @@ Returns all routes, supported payment networks, pricing, and input/output schema
 
 ## Wallet Integration Patterns
 
-### Pattern 1: Local Wallet (Private Key)
+### Pattern 1: Local EVM Wallet (Private Key)
 
 Using `@x402/fetch` (recommended):
 
@@ -165,7 +192,37 @@ const response = await x402Fetch('https://x402.quickintel.io/v1/scan/full', {
 const scanResult = await response.json();
 ```
 
-### Pattern 2: AgentWallet (frames.ag)
+### Pattern 2: Solana Wallet (SVM)
+
+```javascript
+import { createSvmClient } from '@x402/svm/client';
+import { toClientSvmSigner } from '@x402/svm';
+import { wrapFetchWithPayment } from '@x402/fetch';
+import { createKeyPairSignerFromBytes } from '@solana/kit';
+import { base58 } from '@scure/base';
+
+// Create Solana signer
+const keypair = await createKeyPairSignerFromBytes(
+  base58.decode(process.env.SOLANA_PRIVATE_KEY)
+);
+const signer = toClientSvmSigner(keypair);
+const client = createSvmClient({ signer });
+const paidFetch = wrapFetchWithPayment(fetch, client);
+
+// Call scan API (x402 payment via Solana USDC)
+const response = await paidFetch('https://x402.quickintel.io/v1/scan/full', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    chain: 'base',
+    tokenAddress: '0xa4a2e2ca3fbfe21aed83471d28b6f65a233c6e00'
+  })
+});
+
+const scanResult = await response.json();
+```
+
+### Pattern 3: AgentWallet (frames.ag)
 
 AgentWallet handles the entire x402 flow in one call:
 
@@ -189,7 +246,7 @@ const response = await fetch('https://frames.ag/api/wallets/{username}/actions/x
 const scanResult = await response.json();
 ```
 
-### Pattern 3: Vincent Wallet (heyvincent.ai)
+### Pattern 4: Vincent Wallet (heyvincent.ai)
 
 ```javascript
 // Vincent handles x402 via its transaction signing API
@@ -211,7 +268,7 @@ const response = await fetch('https://x402.quickintel.io/v1/scan/full', {
 });
 ```
 
-### Pattern 4: Any EIP-3009 Compatible Wallet
+### Pattern 5: Any EIP-3009 Compatible Wallet
 
 If your wallet supports signing EIP-712 typed data:
 
@@ -441,7 +498,8 @@ console.log(result);
 - **Scan results are point-in-time.** A safe token today could be rugged tomorrow if not renounced.
 - **Not financial advice.** Quick Intel provides data, not recommendations.
 - **Solana tokens** use different analysis than EVM — some fields may be null.
-- **Multi-chain payment:** You can pay on any supported payment chain (Base, Ethereum, Arbitrum, etc.), not just Base. The 402 response lists all accepted networks.
+- **Multi-chain payment:** You can pay on any supported chain — 9 EVM chains (Base, Ethereum, Arbitrum, Optimism, Polygon, Avalanche, Unichain, Linea, MegaETH) plus Solana. The 402 response lists all accepted networks.
+- **Solana payment:** Pay with USDC on Solana using the SVM payment flow. The 402 response includes the `extra.feePayer` address needed to build the transaction.
 
 ## Cross-Reference
 

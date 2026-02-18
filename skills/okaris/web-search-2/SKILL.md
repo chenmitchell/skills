@@ -1,18 +1,14 @@
 ---
 name: web-search
-description: |
-  Web search and content extraction with Tavily and Exa via inference.sh CLI.
-  Apps: Tavily Search, Tavily Extract, Exa Search, Exa Answer, Exa Extract.
-  Capabilities: AI-powered search, content extraction, direct answers, research.
-  Use for: research, RAG pipelines, fact-checking, content aggregation, agents.
-  Triggers: web search, tavily, exa, search api, content extraction, research,
-  internet search, ai search, search assistant, web scraping, rag, perplexity alternative
+description: "Web search and content extraction with Tavily and Exa via inference.sh CLI. Apps: Tavily Search, Tavily Extract, Exa Search, Exa Answer, Exa Extract. Capabilities: AI-powered search, content extraction, direct answers, research. Use for: research, RAG pipelines, fact-checking, content aggregation, agents. Triggers: web search, tavily, exa, search api, content extraction, research, internet search, ai search, search assistant, web scraping, rag, perplexity alternative"
 allowed-tools: Bash(infsh *)
 ---
 
 # Web Search & Extraction
 
 Search the web and extract content via [inference.sh](https://inference.sh) CLI.
+
+![Web Search & Extraction](https://cloud.inference.sh/app/files/u/4mg21r6ta37mpaz6ktzwtt8krr/01kgndqjxd780zm2j3rmada6y8.jpeg)
 
 ## Quick Start
 
@@ -22,6 +18,8 @@ curl -fsSL https://cli.inference.sh | sh && infsh login
 # Search the web
 infsh app run tavily/search-assistant --input '{"query": "latest AI developments 2024"}'
 ```
+
+> **Install note:** The [install script](https://cli.inference.sh) only detects your OS/architecture, downloads the matching binary from `dist.inference.sh`, and verifies its SHA-256 checksum. No elevated permissions or background processes. [Manual install & verification](https://dist.inference.sh/cli/checksums.txt) available.
 
 ## Available Apps
 
@@ -132,13 +130,13 @@ infsh app run openrouter/claude-haiku-45 --input '{
 
 ```bash
 # Full platform skill (all 150+ apps)
-npx skills add inference-sh/agent-skills@inference-sh
+npx skills add inference-sh/skills@inference-sh
 
 # LLM models (combine with search for RAG)
-npx skills add inference-sh/agent-skills@llm-models
+npx skills add inference-sh/skills@llm-models
 
 # Image generation
-npx skills add inference-sh/agent-skills@ai-image-generation
+npx skills add inference-sh/skills@ai-image-generation
 ```
 
 Browse all apps: `infsh app list`

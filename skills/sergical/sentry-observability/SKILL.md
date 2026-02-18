@@ -1,45 +1,91 @@
 ---
 name: sentry
-description: Set up Sentry observability for OpenClaw (install plugin, configure DSN, investigate issues with Sentry CLI). Use when setting up error tracking, traces, or structured logs for an OpenClaw instance, or when investigating Sentry issues/errors.
+description: "Add observability to your OpenClaw instance — errors, logs, and traces sent to Sentry. Set up monitoring with the Sentry plugin, then investigate issues with the `sentry` CLI."
+metadata:
+  {
+    "openclaw":
+      {
+        "emoji": "🐛",
+        "requires": { "bins": ["sentry"] },
+        "install":
+          [
+            {
+              "id": "npm",
+              "kind": "npm",
+              "package": "sentry",
+              "global": true,
+              "bins": ["sentry"],
+              "label": "Install Sentry CLI (npm)",
+            },
+          ],
+      },
+  }
 ---
 
-# Sentry Observability for OpenClaw
+# Sentry — OpenClaw Observability
 
-## Overview
+See what your OpenClaw instance is doing: errors, structured logs, and performance traces — all in Sentry.
 
-This skill covers two things:
-1. **Setting up** the `openclaw-plugin-sentry` plugin for error/trace/log collection
-2. **Investigating** issues using the Sentry CLI
+Two halves: **setup** (get telemetry flowing) and **investigation** (query it with the CLI).
 
-## Plugin Setup
+---
 
-### Install
+## Setup
+
+### 1. Authenticate
 
 ```bash
-openclaw plugins install openclaw-plugin-sentry
+sentry auth login
 ```
 
-### Configure
+OAuth device flow — follow the browser prompt. Credentials stored in `~/.sentry/cli.db`.
 
-Two config changes needed in `openclaw.json`:
+Alternatives (one-liners):
+- `sentry auth login --token <TOKEN>` — paste an auth token directly
+- `SENTRY_AUTH_TOKEN=<token>` — env var, useful in CI
 
-1. **Enable diagnostics** (required for traces):
-```json
-{ "diagnostics": { "enabled": true } }
+### 2. Create a Project
+
+Create a dedicated Sentry project for your OpenClaw instance:
+
+```bash
+sentry api /teams/<org>/<team>/projects/ \
+  --method POST \
+  --field name="my-openclaw" \
+  --field platform=node
 ```
 
-2. **Configure the plugin**:
+Don't know your org/team slugs? List them:
+
+```bash
+sentry api /organizations/                          # list orgs
+sentry api /organizations/<org>/teams/              # list teams in org
+```
+
+### 3. Get the DSN
+
+```bash
+sentry project view <org>/my-openclaw --json | jq -r '.dsn'
+```
+
+Or via the keys endpoint:
+
+```bash
+sentry api /projects/<org>/my-openclaw/keys/ | jq '.[0].dsn.public'
+```
+
+### 4. Configure OpenClaw
+
+Add the DSN to your `openclaw.json`:
+
 ```json
 {
   "plugins": {
-    "allow": ["sentry"],
     "entries": {
       "sentry": {
         "enabled": true,
         "config": {
-          "dsn": "<your-sentry-dsn>",
-          "environment": "production",
-          "tracesSampleRate": 1.0,
+          "dsn": "https://examplePublicKey@o0.ingest.sentry.io/0",
           "enableLogs": true
         }
       }
@@ -48,91 +94,98 @@ Two config changes needed in `openclaw.json`:
 }
 ```
 
-Config lives under `plugins.entries.sentry.config` — not top-level under `sentry`.
+> **Note:** Config goes under `plugins.entries.sentry.config`, not directly under `sentry`.
 
-### Get your DSN
+Then install the Sentry plugin. See `references/plugin-setup.md` for the full plugin implementation using `@sentry/node`.
 
-1. Go to Sentry → Project Settings → Client Keys (DSN)
-2. Copy the DSN URL (looks like `https://key@o000000.ingest.us.sentry.io/0000000`)
+> **Log buffer gotcha:** Sentry's structured logs buffer up to 100 items before auto-flushing. For low-volume services like OpenClaw, logs may sit in the buffer for a long time. The plugin should call `_INTERNAL_flushLogsBuffer(client)` periodically (e.g. every 30s) and before `Sentry.flush()` on shutdown. See `references/plugin-setup.md` for the implementation.
 
-### What gets captured
+### 5. Verify
 
-| Signal | Source | Sentry Feature |
-|--------|--------|----------------|
-| Errors | Auto-captured exceptions (fetch failures, AbortError, etc.) | Issues |
-| Traces | `model.usage` → `ai.chat` spans, `message.processed` → `openclaw.message` spans | Tracing |
-| Messages | `webhook.error`, `session.stuck` → captureMessage | Issues |
-| Logs | Gateway log transport → `Sentry.logger` | Structured Logs |
+Restart your OpenClaw gateway, then check Sentry for incoming events:
 
-### Verify it works
-
-After restart, send a message to your bot and check:
 ```bash
-sentry issue list <org>/<project>        # Should see any errors
-sentry event list <org>/<project>        # Should see events
+sentry issue list <org>/my-openclaw --limit 5
 ```
 
-Or via API:
-```bash
-curl -s "https://sentry.io/api/0/organizations/<org>/events/?project=<project-id>&dataset=discover&field=id&field=title&field=event.type&field=timestamp&sort=-timestamp" \
-  -H "Authorization: Bearer $SENTRY_AUTH_TOKEN"
-```
+---
 
-## Sentry CLI Investigation
+## Investigation
 
-### Auth setup
+Once telemetry is flowing, use the CLI to query your OpenClaw's errors, traces, and events.
+
+### List Issues
 
 ```bash
-npm install -g sentry
-sentry login
-# Follow browser auth flow — stores config in ~/.sentry/cli.db
-```
-
-### Common commands
-
-```bash
-# List issues for a project
 sentry issue list <org>/<project>
-
-# View issue details
-sentry issue view <short-id>
-
-# AI-powered root cause analysis
-sentry issue explain <short-id>
-
-# List recent events
-sentry event list <org>/<project>
-
-# Direct API calls
-sentry api /organizations/<org>/projects/
+sentry issue list <org>/<project> --query "is:unresolved" --sort freq --limit 20
+sentry issue list <org>/                              # all projects in org
 ```
 
-### Checking traces via API
+### View an Issue
 
-Traces don't show in the CLI directly. Use the API:
 ```bash
-SENTRY_TOKEN="..."
-curl -s "https://sentry.io/api/0/organizations/<org>/events/?project=<id>&dataset=discover&per_page=10&sort=-timestamp&field=id&field=title&field=timestamp&field=transaction.duration&field=transaction.op&query=event.type:transaction" \
-  -H "Authorization: Bearer $SENTRY_TOKEN"
+sentry issue view <short-id>                          # e.g. MY-OPENCLAW-42
+sentry issue view <short-id> --json                   # structured output
 ```
 
-## Troubleshooting
+### AI Root Cause Analysis
 
-### No traces appearing
-- Check `diagnostics.enabled: true` in config (this gates event emission)
-- Check plugin loaded: look for `sentry: initialized` in gateway logs
-- Check for module isolation: plugin's `onDiagnosticEvent` must share the same listener set as the gateway (OpenClaw patches `globalThis.__oc_diag` for this)
+```bash
+sentry issue explain <issue-id>                       # Seer analyzes the root cause
+sentry issue explain <issue-id> --force               # force fresh analysis
+sentry issue plan <issue-id>                          # generate a fix plan (run explain first)
+```
 
-### Traces show 0ms duration
-- Sentry SDK v10 expects timestamps in **milliseconds** (not seconds)
-- The plugin uses `evt.ts` and `evt.durationMs` from diagnostic events
+### Structured Logs
 
-### Plugin not loading
-- Ensure `"sentry"` is in `plugins.allow` array
-- Ensure `openclaw.plugin.json` has `configSchema` with `additionalProperties: true`
-- Check gateway logs for config validation errors
+```bash
+sentry log list <org>/<project>                       # last 100 logs
+sentry log list <org>/<project> --limit 50            # last 50
+sentry log list <org>/<project> -q 'level:error'      # filter by level
+sentry log list <org>/<project> -q 'database'         # filter by message
+sentry log list <org>/<project> -f                    # stream in real-time (2s poll)
+sentry log list <org>/<project> -f 5                  # stream with 5s poll
+sentry log list <org>/<project> --json                # structured output
+```
 
-### Logs not appearing
-- `enableLogs: true` must be set in plugin config
-- Sentry structured logs may need to be enabled in your Sentry project settings
-- `Sentry.logger` API requires `@sentry/node` v10+
+View a specific log entry:
+
+```bash
+sentry log view <log-id>                              # 32-char hex ID
+sentry log view <log-id> --json
+sentry log view <log-id> --web                        # open in browser
+```
+
+### Inspect Events
+
+```bash
+sentry event view <event-id>                          # full stack trace + context
+sentry event view <event-id> --json
+```
+
+### Direct API Calls
+
+```bash
+sentry api /projects/<org>/<project>/issues/ --paginate
+sentry api /issues/<id>/ --method PUT --field status=resolved
+sentry api /issues/<id>/ --method PUT --field assignedTo="user@example.com"
+```
+
+### Workflow: Investigate an Error
+
+1. `sentry issue list <org>/<project> --query "is:unresolved" --sort date --limit 5`
+2. `sentry issue view <short-id>` — context, affected users, timeline
+3. `sentry issue explain <issue-id>` — AI root cause analysis
+4. `sentry issue plan <issue-id>` — concrete fix steps
+5. Fix → `sentry api /issues/<id>/ --method PUT --field status=resolved`
+
+---
+
+## Reference
+
+- Full CLI commands: `references/cli-commands.md`
+- Plugin implementation: `references/plugin-setup.md`
+- CLI docs: https://cli.sentry.dev
+- Sentry API: https://docs.sentry.io/api/
+- Node SDK: https://docs.sentry.io/platforms/javascript/guides/node/

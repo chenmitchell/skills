@@ -3,11 +3,16 @@
   "slug": "opengfx",
   "displayName": "OpenGFX",
   "latest": {
-    "version": "1.2.2",
-    "publishedAt": 1771313528804,
-    "commit": "https://github.com/openclaw/skills/commit/084ed9d579b9386ef647e2c5adecaddd8bcfa59a"
+    "version": "1.4.0",
+    "publishedAt": 1771371481322,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.2",
+      "publishedAt": 1771313528804,
+      "commit": "https://github.com/openclaw/skills/commit/084ed9d579b9386ef647e2c5adecaddd8bcfa59a"
+    },
     {
       "version": "1.2.1",
       "publishedAt": 1771311364517,

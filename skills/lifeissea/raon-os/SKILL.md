@@ -1,6 +1,6 @@
 ---
 name: raon-os
-version: 0.7.9
+version: 0.7.10
 description: "AI-powered startup companion for Korean founders. Evaluate business plans, match government funding programs (TIPS/DeepTech/Global TIPS), connect with 3,972+ TIPS-selected startups, get investor recommendations, and integrate with Kakao i OpenBuilder. Features Agentic RAG (HyDE, Multi-Query, CRAG), structured extraction, and Track B financial matching."
 metadata:
   openclaw:
@@ -31,7 +31,7 @@ metadata:
     notes: "At least one LLM API key (GEMINI, OPENROUTER, ANTHROPIC, or OPENAI) is recommended. Falls back to local Ollama if no keys are set. API keys are stored in ~/.openclaw/.env (user-managed, chmod 600 recommended). The skill includes a local HTTP server (port 8400) and crawlers for public government data collection."
 ---
 
-# Raon OS — Startup Companion (v0.7.9)
+# Raon OS — Startup Companion (v0.7.10)
 
 ## 설치 요구사항
 
@@ -60,6 +60,7 @@ openclaw skill install @yeomyeonggeori/raon-os
 
 # 3. API 키 설정 (권장: OpenRouter)
 echo "OPENROUTER_API_KEY=sk-or-..." >> ~/.openclaw/.env
+chmod 600 ~/.openclaw/.env  # 보안: 소유자만 읽기/쓰기
 
 # 4. 모델 override (선택) — 기본은 프로바이더별 최적 모델 자동 선택
 echo "RAON_MODEL=anthropic/claude-opus-4-5" >> ~/.openclaw/.env

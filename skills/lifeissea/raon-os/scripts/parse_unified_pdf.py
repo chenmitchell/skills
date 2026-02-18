@@ -6,7 +6,7 @@ import json
 import re
 from pathlib import Path
 
-PDF_PATH = Path("/Users/tomas/.openclaw/workspace/drafts/gov/2026-통합공고.pdf")
+PDF_PATH = Path(os.environ.get("RAON_PDF_PATH", str(Path(__file__).parent.parent / "drafts" / "gov" / "2026-통합공고.pdf")))
 OUT_PATH = Path(__file__).resolve().parent.parent / "eval_data" / "unified_announcement_2026.jsonl"
 
 

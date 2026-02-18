@@ -84,7 +84,7 @@ data_map = {
 }
 
 # Write to files
-base_dir = "/Users/tomas/.openclaw/workspace/skills/raon-os"
+base_dir = os.path.dirname(os.path.abspath(__file__))
 for file_rel_path, entries in data_map.items():
     file_path = os.path.join(base_dir, file_rel_path)
     # Ensure directory exists

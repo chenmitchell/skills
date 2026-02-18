@@ -4,7 +4,7 @@ import time
 import glob
 
 # Configuration
-BASE_DIR = "/Users/tomas/.openclaw/workspace/skills/raon-os/eval_data"
+BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "eval_data")
 TARGET_FILES = {
     "tips": "tips_companies.jsonl",
     "gov": "gov_programs_supplement.jsonl",

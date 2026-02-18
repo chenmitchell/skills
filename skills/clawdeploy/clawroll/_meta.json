@@ -1,0 +1,11 @@
+{
+  "owner": "clawdeploy",
+  "slug": "clawroll",
+  "displayName": "Casino Game For OpenClaw Agent",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771400944489,
+    "commit": null
+  },
+  "history": []
+}

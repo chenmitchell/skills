@@ -16,6 +16,7 @@ import re
 import secrets
 import signal
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -30,6 +31,16 @@ def _openclaw_home():
 
 def _guard_state_path():
     return _openclaw_home() / "logs" / "gateway-guard.state.json"
+
+
+def _continue_state_path():
+    return _openclaw_home() / "logs" / "gateway-guard.continue-state.json"
+
+
+# Log line that triggers auto "continue" to the agent (run error from API/stream).
+RUN_ERROR_PATTERN = "Unhandled stop reason: error"
+GATEWAY_LOG = _openclaw_home() / "logs" / "gateway.log"
+CONTINUE_COOLDOWN_SEC = 90  # Don't trigger again for the same error within this window
 
 
 def _secret_hash(secret):
@@ -204,6 +215,22 @@ def _kill_pid(pid):
         pass
 
 
+def _mask_cmd_for_log(cmd):
+    """Return a safe string for logging: mask --token/--password values."""
+    out = []
+    i = 0
+    while i < len(cmd):
+        arg = cmd[i]
+        if arg in ("--token", "--password") and i + 1 < len(cmd):
+            out.append(arg)
+            out.append("***")
+            i += 2
+            continue
+        out.append(arg)
+        i += 1
+    return " ".join(out)
+
+
 def _restart_gateway(port, mode, secret):
     _run(["openclaw", "gateway", "stop"], timeout=10)
 
@@ -220,14 +247,20 @@ def _restart_gateway(port, mode, secret):
         raise ValueError(f"Unsupported auth mode: {mode}")
 
     log_path = _openclaw_home() / "logs" / "gateway-guard.restart.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     with open(log_path, "a", encoding="utf-8") as logf:
-        logf.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] restart: {' '.join(cmd)}\n")
-        subprocess.Popen(
-            cmd,
-            stdout=logf,
-            stderr=logf,
-            start_new_session=True,
-        )
+        logf.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] restart: {_mask_cmd_for_log(cmd)}\n")
+    # Run gateway process without redirecting its output to the log (avoids any risk of logging secrets)
+    subprocess.Popen(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    try:
+        log_path.chmod(0o600)
+    except OSError:
+        pass
 
     time.sleep(2.0)
     status = gateway_runtime_status(port, mode, secret)
@@ -257,6 +290,74 @@ def build_result(cfg_path, mode, port, runtime, fixed=False):
     }
 
 
+# --- continue-on-error: auto-prompt "continue" when run error appears in logs ---
+
+def _load_continue_state():
+    p = _continue_state_path()
+    if not p.exists():
+        return {"lastTriggeredAt": 0, "lastMatchedLine": ""}
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"lastTriggeredAt": 0, "lastMatchedLine": ""}
+
+
+def _save_continue_state(last_triggered_at, last_matched_line):
+    p = _continue_state_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump({
+            "lastTriggeredAt": last_triggered_at,
+            "lastMatchedLine": last_matched_line or "",
+        }, f, indent=2)
+
+
+def _trigger_continue_message():
+    """Send 'continue' to the agent via openclaw agent --message continue --deliver."""
+    openclaw_bin = os.environ.get("OPENCLAW_BIN", "openclaw")
+    env = {**os.environ, "OPENCLAW_HOME": str(_openclaw_home())}
+    cmd = [openclaw_bin, "agent", "--message", "continue", "--deliver"]
+    try:
+        r = subprocess.run(cmd, env=env, cwd=str(_openclaw_home()), timeout=60, capture_output=True, text=True)
+        if r.returncode != 0:
+            subprocess.run(
+                ["bash", "-l", "-c", f'exec "{openclaw_bin}" agent --message "continue" --deliver'],
+                env={**env, "OPENCLAW_HOME": str(_openclaw_home())},
+                cwd=str(_openclaw_home()),
+                timeout=60,
+                capture_output=True,
+            )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+
+def _read_log_tail(path, max_lines=200):
+    if not path.exists():
+        return []
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
+        lines = f.readlines()
+    return lines[-max_lines:] if len(lines) > max_lines else lines
+
+
+def check_and_trigger_continue_once():
+    """
+    Check gateway.log for RUN_ERROR_PATTERN. If found and not recently triggered, send 'continue' to the agent.
+    Returns dict with triggered (bool), reason (str), and optional error (str).
+    """
+    state = _load_continue_state()
+    now_ts = int(time.time())
+    if now_ts - state.get("lastTriggeredAt", 0) < CONTINUE_COOLDOWN_SEC:
+        return {"triggered": False, "reason": "cooldown"}
+
+    for line in _read_log_tail(GATEWAY_LOG, 300):
+        if RUN_ERROR_PATTERN in line and line.strip() != state.get("lastMatchedLine"):
+            _trigger_continue_message()
+            _save_continue_state(now_ts, line.strip())
+            return {"triggered": True, "reason": "run_error_detected"}
+    return {"triggered": False, "reason": "no_match"}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Gateway auth consistency guard")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -268,7 +369,76 @@ def main():
     p_ensure.add_argument("--apply", action="store_true", help="Auto-fix by restart")
     p_ensure.add_argument("--json", action="store_true", help="JSON output")
 
+    p_continue = sub.add_parser("continue-on-error", help="When run error (Unhandled stop reason: error) appears in gateway.log, send 'continue' to the agent")
+    p_continue.add_argument("--once", action="store_true", help="Check once and exit (default)")
+    p_continue.add_argument("--loop", action="store_true", help="Loop every --interval seconds")
+    p_continue.add_argument("--interval", type=int, default=30, help="Seconds between checks when --loop (default 30)")
+    p_continue.add_argument("--json", action="store_true", help="JSON output")
+
+    p_watch = sub.add_parser("watch", help="Single combined daemon: gateway-back (what-just-happened) + continue-on-error. Run once per LaunchAgent interval.")
+    p_watch.add_argument("--json", action="store_true", help="JSON output (summary of both checks)")
+
     args = parser.parse_args()
+
+    if args.command == "watch":
+        # 0) Proactive token sync (status + ensure --apply when mismatch) — keeps gateway auth in sync so TUI doesn't hit device_token_mismatch
+        ensure_ok = None
+        try:
+            r = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()), "ensure", "--apply", "--json"],
+                env={**os.environ, "OPENCLAW_HOME": str(_openclaw_home())},
+                cwd=str(_openclaw_home()),
+                timeout=25,
+                capture_output=True,
+                text=True,
+            )
+            if r.returncode == 0 and r.stdout.strip():
+                try:
+                    ensure_ok = json.loads(r.stdout.strip()).get("ok", False)
+                except json.JSONDecodeError:
+                    ensure_ok = False
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
+        # 1) Gateway back (what-just-happened): run the other skill's watcher script
+        wjh_script = _openclaw_home() / "workspace" / "skills" / "what-just-happened" / "scripts" / "gateway_back_watcher.py"
+        wjh_ran = False
+        if wjh_script.exists():
+            try:
+                subprocess.run(
+                    [sys.executable, str(wjh_script)],
+                    env={**os.environ, "OPENCLAW_HOME": str(_openclaw_home())},
+                    cwd=str(_openclaw_home()),
+                    timeout=25,
+                    capture_output=True,
+                )
+                wjh_ran = True
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+        # 2) Continue-on-error
+        cont_result = check_and_trigger_continue_once()
+        if getattr(args, "json", False):
+            print(json.dumps({"ensureOk": ensure_ok, "gatewayBackRan": wjh_ran, "continueOnError": cont_result}))
+        raise SystemExit(0)
+
+    if args.command == "continue-on-error":
+        if args.loop:
+            while True:
+                result = check_and_trigger_continue_once()
+                if args.json:
+                    print(json.dumps(result), flush=True)
+                elif result.get("triggered"):
+                    print("Triggered: sent 'continue' to agent (run error detected).", flush=True)
+                time.sleep(args.interval)
+        else:
+            result = check_and_trigger_continue_once()
+            if args.json:
+                print(json.dumps(result))
+            else:
+                if result.get("triggered"):
+                    print("Triggered: sent 'continue' to agent (run error detected).")
+                else:
+                    print(f"No trigger: {result.get('reason', 'no_match')}.")
+        raise SystemExit(0)
 
     cfg_path, cfg = load_openclaw_config()
     auth = auth_from_config(cfg)

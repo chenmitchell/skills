@@ -14,6 +14,8 @@ Use it when you see `device_token_mismatch`, “Gateway auth issue”, or before
 
 ## Install
 
+**ClawHub:** Update `clawhub install` and ClawHub links when the new ClawHub instance is live.
+
 **From ClawHub (if published):**
 
 ```bash
@@ -55,6 +57,8 @@ python3 ~/.openclaw/workspace/skills/gateway-guard/scripts/gateway_guard.py stat
 
 - OpenClaw `openclaw.json` with `gateway.auth` (token or password) and `gateway.port`.
 - `openclaw` CLI on PATH (for `ensure --apply`).
+
+For automatic recovery every 10s (check gateway, restart if not ok), use the separate **gateway-watchdog** skill (`workspace/skills/gateway-watchdog/`); it calls this guard script and can run as a LaunchAgent.
 
 ## Options
 

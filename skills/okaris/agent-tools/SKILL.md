@@ -1,19 +1,14 @@
 ---
 name: agent-tools
-description: |
-  Run 150+ AI apps via inference.sh CLI - image generation, video creation, LLMs, search, 3D, Twitter automation.
-  Models: FLUX, Veo, Gemini, Grok, Claude, Seedance, OmniHuman, Tavily, Exa, OpenRouter, and many more.
-  Use when running AI apps, generating images/videos, calling LLMs, web search, or automating Twitter.
-  Triggers: inference.sh, infsh, ai model, run ai, serverless ai, ai api, flux, veo, claude api,
-  image generation, video generation, openrouter, tavily, exa search, twitter api, grok
+description: "Run 150+ AI apps via inference.sh CLI - image generation, video creation, LLMs, search, 3D, Twitter automation. Models: FLUX, Veo, Gemini, Grok, Claude, Seedance, OmniHuman, Tavily, Exa, OpenRouter, and many more. Use when running AI apps, generating images/videos, calling LLMs, web search, or automating Twitter. Triggers: inference.sh, infsh, ai model, run ai, serverless ai, ai api, flux, veo, claude api, image generation, video generation, openrouter, tavily, exa search, twitter api, grok"
 allowed-tools: Bash(infsh *)
 ---
 
 # [inference.sh](https://inference.sh)
 
-![[inference.sh](https://inference.sh)](https://cloud.inference.sh/app/files/u/4mg21r6ta37mpaz6ktzwtt8krr/01kgjw8atdxgkrsr8a2t5peq7b.jpeg)
-
 Run 150+ AI apps in the cloud with a simple CLI. No GPU required.
+
+![[inference.sh](https://inference.sh)](https://cloud.inference.sh/app/files/u/4mg21r6ta37mpaz6ktzwtt8krr/01kgjw8atdxgkrsr8a2t5peq7b.jpeg)
 
 ## Install CLI
 
@@ -21,6 +16,20 @@ Run 150+ AI apps in the cloud with a simple CLI. No GPU required.
 curl -fsSL https://cli.inference.sh | sh
 infsh login
 ```
+
+> **What does the installer do?** The [install script](https://cli.inference.sh) detects your OS and architecture, downloads the correct binary from `dist.inference.sh`, verifies its SHA-256 checksum, and places it in your PATH. That's it — no elevated permissions, no background processes, no telemetry. If you have [cosign](https://docs.sigstore.dev/cosign/system_config/installation/) installed, the installer also verifies the Sigstore signature automatically.
+>
+> **Manual install** (if you prefer not to pipe to sh):
+> ```bash
+> # Download the binary and checksums
+> curl -LO https://dist.inference.sh/cli/checksums.txt
+> curl -LO $(curl -fsSL https://dist.inference.sh/cli/manifest.json | grep -o '"url":"[^"]*"' | grep $(uname -s | tr A-Z a-z)-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') | head -1 | cut -d'"' -f4)
+> # Verify checksum
+> sha256sum -c checksums.txt --ignore-missing
+> # Extract and install
+> tar -xzf inferencesh-cli-*.tar.gz
+> mv inferencesh-cli-* ~/.local/bin/inferencesh
+> ```
 
 ## Quick Examples
 
@@ -73,30 +82,30 @@ infsh app run infsh/rodin-3d-generator --input '{"prompt": "a wooden chair"}'
 
 ```bash
 # Image generation (FLUX, Gemini, Grok, Seedream)
-npx skills add inferencesh/skills@ai-image-generation
+npx skills add inference-sh/skills@ai-image-generation
 
 # Video generation (Veo, Seedance, Wan, OmniHuman)
-npx skills add inferencesh/skills@ai-video-generation
+npx skills add inference-sh/skills@ai-video-generation
 
 # LLMs (Claude, Gemini, Kimi, GLM via OpenRouter)
-npx skills add inferencesh/skills@llm-models
+npx skills add inference-sh/skills@llm-models
 
 # Web search (Tavily, Exa)
-npx skills add inferencesh/skills@web-search
+npx skills add inference-sh/skills@web-search
 
 # AI avatars & lipsync (OmniHuman, Fabric, PixVerse)
-npx skills add inferencesh/skills@ai-avatar-video
+npx skills add inference-sh/skills@ai-avatar-video
 
 # Twitter/X automation
-npx skills add inferencesh/skills@twitter-automation
+npx skills add inference-sh/skills@twitter-automation
 
 # Model-specific
-npx skills add inferencesh/skills@flux-image
-npx skills add inferencesh/skills@google-veo
+npx skills add inference-sh/skills@flux-image
+npx skills add inference-sh/skills@google-veo
 
 # Utilities
-npx skills add inferencesh/skills@image-upscaling
-npx skills add inferencesh/skills@background-removal
+npx skills add inference-sh/skills@image-upscaling
+npx skills add inference-sh/skills@background-removal
 ```
 
 ## Reference Files

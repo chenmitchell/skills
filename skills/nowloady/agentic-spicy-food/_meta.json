@@ -1,13 +1,18 @@
 {
   "owner": "nowloady",
   "slug": "agentic-spicy-food",
-  "displayName": "Lafeitu",
+  "displayName": "辣匪兔: Authentic Agentic Spicy Food Delivery",
   "latest": {
-    "version": "1.4.3",
-    "publishedAt": 1769498734310,
-    "commit": "https://github.com/clawdbot/skills/commit/61e6a11a6c95b21a3c03e1b35fd64d0fa1a3dd1f"
+    "version": "1.6.7",
+    "publishedAt": 1771472835199,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.4.3",
+      "publishedAt": 1769498734310,
+      "commit": "https://github.com/clawdbot/skills/commit/61e6a11a6c95b21a3c03e1b35fd64d0fa1a3dd1f"
+    },
     {
       "version": "1.4.2",
       "publishedAt": 1769437559604,

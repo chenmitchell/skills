@@ -10,13 +10,18 @@ from typing import Optional, Dict, Any, List
 class BaseCommerceClient:
     """
     通用电商 API 基础客户端，支持无状态身份验证、购物车管理、产品查询等。
-    可轻松迁移至任何遵循通用 Agent 协议的电商平台。
+    已升级：支持基于 Token 的安全身份验证，不再持久化或传输明文密码。
     """
     def __init__(self, base_url: str, brand_id: str):
         self.base_url = base_url.rstrip('/')
         self.brand_id = brand_id
-        self.creds_file = Path.home() / f".{brand_id}_creds.json"
-        self.visitor_file = Path.home() / f".{brand_id}_visitor.json"
+        
+        # 标准 Clawdbot 凭证目录
+        self.config_dir = Path.home() / ".clawdbot" / "credentials" / "agent-commerce-engine"
+        self.config_dir.mkdir(parents=True, exist_ok=True)
+        
+        self.creds_file = self.config_dir / f"{brand_id}_creds.json"
+        self.visitor_file = self.config_dir / f"{brand_id}_visitor.json"
         self.session = self._setup_session()
 
     def _setup_session(self):
@@ -30,12 +35,12 @@ class BaseCommerceClient:
         visitor_id = self._get_visitor_id()
         s.headers.update({"x-visitor-id": visitor_id})
         
-        # 注入身份信息（如果存在）
+        # 注入身份信息（Token）
         creds = self.load_credentials()
         if creds:
             s.headers.update({
                 "x-user-account": str(creds.get("account", "")),
-                "x-user-password": str(creds.get("password", ""))
+                "x-api-token": str(creds.get("token", ""))
             })
         return s
 
@@ -51,15 +56,18 @@ class BaseCommerceClient:
         except:
             return str(uuid.uuid4())
 
-    def save_credentials(self, account, password):
+    def save_credentials(self, account, token):
+        """保存 Token 而非密码"""
         with open(self.creds_file, "w") as f:
-            json.dump({"account": account, "password": password}, f)
+            json.dump({"account": account, "token": token}, f)
         os.chmod(self.creds_file, 0o600)
         # 更新当前会话
         self.session.headers.update({
             "x-user-account": account,
-            "x-user-password": password
+            "x-api-token": token
         })
+        # 移除旧的密码头（如果存在）
+        self.session.headers.pop("x-user-password", None)
 
     def load_credentials(self) -> Optional[Dict]:
         if self.creds_file.exists():
@@ -74,7 +82,18 @@ class BaseCommerceClient:
         if self.creds_file.exists():
             self.creds_file.unlink()
         self.session.headers.pop("x-user-account", None)
+        self.session.headers.pop("x-api-token", None)
         self.session.headers.pop("x-user-password", None)
+
+    def reset_visitor_id(self):
+        """重置访客 ID，用于隔离不同会话的购物车内容"""
+        if self.visitor_file.exists():
+            self.visitor_file.unlink()
+        visitor_id = str(uuid.uuid4())
+        with open(self.visitor_file, "w") as f:
+            json.dump({"visitor_id": visitor_id}, f)
+        self.session.headers.update({"x-visitor-id": visitor_id})
+        return visitor_id
 
     def request(self, method: str, path: str, **kwargs) -> Dict[str, Any]:
         url = f"{self.base_url}{path}"
@@ -99,6 +118,50 @@ class BaseCommerceClient:
                 "status_code": response.status_code
             }
 
+    # --- 身份验证增强 (Token/注册) ---
+
+    def get_api_token(self, account, password):
+        """用密码换取 API Token"""
+        url = f"{self.base_url}/auth/token"
+        try:
+            response = self.session.post(url, json={"account": account, "password": password}, timeout=10)
+            result = self._handle_response(response)
+            if result.get("success") and result.get("token"):
+                self.save_credentials(account, result["token"])
+            return result
+        except Exception as e:
+            return {"success": False, "error": f"Connection error: {str(e)}"}
+
+    def send_verification_code(self, email: str, type: str = 'register'):
+        auth_url = self.base_url.replace('/v1', '') if '/v1' in self.base_url else self.base_url
+        url = f"{auth_url}/auth/send-code"
+        try:
+            response = self.session.post(url, json={"email": email, "type": type}, timeout=10)
+            return self._handle_response(response)
+        except Exception as e:
+            return {"success": False, "error": f"Connection error: {str(e)}"}
+
+    def register(self, email: str, password: str, name: str = None, code: str = None, invite_code: str = None):
+        auth_url = self.base_url.replace('/v1', '') if '/v1' in self.base_url else self.base_url
+        url = f"{auth_url}/auth/register"
+        payload = {
+            "email": email,
+            "password": password,
+            "name": name,
+            "emailCode": code,
+            "inviteCode": invite_code,
+            "visitorId": self._get_visitor_id()
+        }
+        try:
+            response = self.session.post(url, json=payload, timeout=10)
+            result = self._handle_response(response)
+            if result.get("success") and result.get("token"):
+                # 注册成功后自动保存 Token
+                self.save_credentials(email, result["token"])
+            return result
+        except Exception as e:
+            return {"success": False, "error": f"Connection error: {str(e)}"}
+
     # --- 核心业务接口 ---
     
     def search_products(self, query: str):
@@ -120,7 +183,6 @@ class BaseCommerceClient:
         return self.request("GET", "/cart")
 
     def modify_cart(self, action: str, product_slug: str, gram: int, quantity: int = 1):
-        # action: "add" (increment) or "update" (set)
         method = "POST" if action == "add" else "PUT"
         return self.request(method, "/cart", json={
             "product_slug": product_slug,
@@ -144,5 +206,5 @@ class BaseCommerceClient:
         return self.request("GET", "/brand", params={"category": category})
 
     def list_orders(self):
-        # 兼容性处理：Lafeitu 目前 orders 在 /api/orders
+        # Compatibility fix: Lafeitu currently orders at /api/orders
         return self.request("GET", "/orders" if "/v1" not in self.base_url else "/../orders")

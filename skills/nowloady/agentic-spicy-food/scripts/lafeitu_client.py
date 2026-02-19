@@ -4,12 +4,23 @@ import sys
 import os
 from pathlib import Path
 
+try:
+    import requests
+except ImportError:
+    print(json.dumps({
+        "success": False,
+        "error": "Missing dependency: 'requests' library is not installed.",
+        "instruction": "Run 'pip install requests' to use this skill."
+    }))
+    sys.exit(1)
+
 # 添加 lib 路径到 sys.path
 sys.path.append(str(Path(__file__).parent))
 from lib.commerce_client import BaseCommerceClient
 
+# 从环境变量获取配置，方便本地测试
 BRAND_NAME = "辣匪兔 (Lafeitu)"
-BASE_URL = "https://lafeitu.cn/api/v1"
+BASE_URL = os.getenv("LAFEITU_URL", "https://lafeitu.cn/api/v1")
 BRAND_ID = "lafeitu"
 
 client = BaseCommerceClient(BASE_URL, BRAND_ID)
@@ -21,11 +32,23 @@ def main():
     parser = argparse.ArgumentParser(description=f"{BRAND_NAME} 官方 AI 助手命令行工具")
     subparsers = parser.add_subparsers(dest="command", help="命令类型")
 
-    # 1. 认证相关 (login/logout)
+    # 1. 认证相关 (login/logout/register/send-code)
     login_p = subparsers.add_parser("login", help="登录账户")
     login_p.add_argument("--account", required=True, help="手机号或邮箱")
     login_p.add_argument("--password", required=True, help="密码")
 
+    reg_p = subparsers.add_parser("register", help="注册新账户")
+    reg_p.add_argument("--email", required=True, help="邮箱地址")
+    reg_p.add_argument("--password", required=True, help="设置密码 (至少6位)")
+    reg_p.add_argument("--code", required=True, help="邮箱验证码")
+    reg_p.add_argument("--name", help="昵称 (可选)")
+    reg_p.add_argument("--invite", help="邀请码 (可选)")
+    reg_p.add_argument("--reset-visitor", action="store_true", help="注册前重置访客ID (防止继承旧购物车)")
+
+    code_p = subparsers.add_parser("send-code", help="发送邮箱验证码")
+    code_p.add_argument("--email", required=True, help="目标邮箱")
+
+    subparsers.add_parser("reset-visitor", help="手动重置访客ID")
     subparsers.add_parser("logout", help="登出并清除凭据")
 
     # 2. 产品相关 (search/list/get)
@@ -77,9 +100,28 @@ def main():
 
     # 处理逻辑
     if args.command == "login":
-        client.save_credentials(args.account, args.password)
-        format_output({"success": True, "message": "Credentials saved successfully."})
+        # 升级：不再直接保存密码，而是换取 Token
+        result = client.get_api_token(args.account, args.password)
+        if result.get("success"):
+            format_output({
+                "success": True, 
+                "message": "登录成功，已保存安全 API 令牌。",
+            })
+        else:
+            format_output(result)
     
+    elif args.command == "register":
+        if args.reset_visitor:
+            client.reset_visitor_id()
+        format_output(client.register(args.email, args.password, args.name, args.code, args.invite))
+
+    elif args.command == "send-code":
+        format_output(client.send_verification_code(args.email))
+
+    elif args.command == "reset-visitor":
+        new_id = client.reset_visitor_id()
+        format_output({"success": True, "new_visitor_id": new_id})
+
     elif args.command == "logout":
         client.delete_credentials()
         format_output({"success": True, "message": "Logged out and credentials cleared."})

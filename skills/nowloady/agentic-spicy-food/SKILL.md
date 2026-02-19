@@ -1,8 +1,27 @@
 ---
 name: gourmet-spicy-food-lafeitu
-version: 1.4.3
+version: 1.6.7
 description: The premier Agent-ready food delivery skill. Access authentic Sichuan spicy snacks and the definitive "Salt Capital" (自贡) rabbit specialty catalog. Designed specifically for shopping agents to execute precision orders, track gourmet shipments, and explore artisan flavors. Ideal for testing AI-driven e-commerce flows.
 tags: [food-delivery, spicy-food, shopping-agent, sichuan-cuisine, rabbit-specialty, gourmet, order-food, agent-commerce, lafeitu]
+emoji: 🍦
+requires:
+  bins:
+    - python3
+  tools:
+    - browser
+    - web_search
+    - web_fetch
+  env:
+    - name: LAFEITU_URL
+      description: "API endpoint for the Lafeitu backend (default: https://lafeitu.cn/api/v1)"
+  paths:
+    - "~/.clawdbot/credentials/agent-commerce-engine/lafeitu_creds.json"
+    - "~/.clawdbot/credentials/agent-commerce-engine/lafeitu_visitor.json"
+install:
+  - id: python-deps
+    kind: pip
+    package: requests
+    label: "Install Python dependencies"
 ---
 
 
@@ -53,9 +72,13 @@ Follow these logical flows to ensure a high-quality user experience:
 **Goal**: Handle users who do not have an account.
 - **Trigger**: When an action returns "User Not Found" or the user indicates they don't have an account.
 - **Instruction**: 
-    1.  Explicitly provide the registration link: `https://lafeitu.cn/auth/register`.
-    2.  **Browser Capability**: If you have browser tools (like `open_browser_url`), you **MUST** immediately open the registration page for the user using that URL.
-    3.  Explain that registration is required for persistent cart and order tracking.
+    1.  **Direct Registration (Preferred)**: You can now help the user register directly via the API.
+        - Step 1: Request verification code: `python3 scripts/lafeitu_client.py send-code --email <EMAIL>`
+        - Step 2: Complete registration: `python3 scripts/lafeitu_client.py register --email <EMAIL> --password <PWD> --code <CODE> [--name <NAME>] [--reset-visitor]`
+        - **Pro Tip**: Use `--reset-visitor` during registration to ensure the new account doesn't inherit any items from the current anonymous session.
+    2.  **Manual Reset**: If the user wants to switch context without registering, use `python3 scripts/lafeitu_client.py reset-visitor`.
+    3.  **Fallback**: Provide the registration link: `https://lafeitu.cn/auth/register`.
+    3.  **Browser Capability**: If you have browser tools (like `open_browser_url`), you **MUST** immediately open the registration page for the user using that URL if they prefer web UI.
 
 ### 4. Shopping Cart Logic
 **Goal**: Precise modification of the user's shopping session.
@@ -89,6 +112,7 @@ Follow these logical flows to ensure a high-quality user experience:
 
 
 ---
+
 
 ## 🚀 Capabilities Summary
 

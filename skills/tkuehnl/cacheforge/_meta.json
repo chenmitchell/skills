@@ -1,11 +1,17 @@
 {
   "owner": "tkuehnl",
   "slug": "cacheforge",
-  "displayName": "CacheForge",
+  "displayName": "Cacheforge",
   "latest": {
-    "version": "0.1.1",
-    "publishedAt": 1771322607030,
-    "commit": "https://github.com/openclaw/skills/commit/1cf7a218218bff157bab45f793092373d0598db6"
+    "version": "1.0.0",
+    "publishedAt": 1771471449573,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.1",
+      "publishedAt": 1771322607030,
+      "commit": "https://github.com/openclaw/skills/commit/1cf7a218218bff157bab45f793092373d0598db6"
+    }
+  ]
 }

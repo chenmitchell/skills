@@ -1,19 +1,14 @@
 ---
 name: python-executor
-description: |
-  Execute Python code in a safe sandboxed environment via [inference.sh](https://inference.sh).
-  Pre-installed: NumPy, Pandas, Matplotlib, requests, BeautifulSoup, Selenium,
-  Playwright, MoviePy, Pillow, OpenCV, trimesh, and 100+ more libraries.
-  Use for: data processing, web scraping, image manipulation, video creation,
-  3D model processing, PDF generation, API calls, automation scripts.
-  Triggers: python, execute code, run script, web scraping, data analysis,
-  image processing, video editing, 3D models, automation, pandas, matplotlib
+description: "Execute Python code in a safe sandboxed environment via [inference.sh](https://inference.sh). Pre-installed: NumPy, Pandas, Matplotlib, requests, BeautifulSoup, Selenium, Playwright, MoviePy, Pillow, OpenCV, trimesh, and 100+ more libraries. Use for: data processing, web scraping, image manipulation, video creation, 3D model processing, PDF generation, API calls, automation scripts. Triggers: python, execute code, run script, web scraping, data analysis, image processing, video editing, 3D models, automation, pandas, matplotlib"
 allowed-tools: Bash(infsh *)
 ---
 
 # Python Code Executor
 
 Execute Python code in a safe, sandboxed environment with 100+ pre-installed libraries.
+
+![Python Code Executor](https://cloud.inference.sh/u/33sqbmzt3mrg2xxphnhw5g5ear/01k8d8b4mckh6z89dhtxh72dsz.png)
 
 ## Quick Start
 
@@ -25,6 +20,8 @@ infsh app run infsh/python-executor --input '{
   "code": "import pandas as pd\nprint(pd.__version__)"
 }'
 ```
+
+> **Install note:** The [install script](https://cli.inference.sh) only detects your OS/architecture, downloads the matching binary from `dist.inference.sh`, and verifies its SHA-256 checksum. No elevated permissions or background processes. [Manual install & verification](https://dist.inference.sh/cli/checksums.txt) available.
 
 ## App Details
 
@@ -170,13 +167,13 @@ infsh app run infsh/python-executor@high_memory --input input.json
 
 ```bash
 # AI image generation (for ML-based images)
-npx skills add inference-sh/agent-skills@ai-image-generation
+npx skills add inference-sh/skills@ai-image-generation
 
 # AI video generation (for ML-based videos)
-npx skills add inference-sh/agent-skills@ai-video-generation
+npx skills add inference-sh/skills@ai-video-generation
 
 # LLM models (for text generation)
-npx skills add inference-sh/agent-skills@llm-models
+npx skills add inference-sh/skills@llm-models
 ```
 
 ## Documentation

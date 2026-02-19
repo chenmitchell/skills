@@ -1,11 +1,17 @@
 {
   "owner": "lknik",
   "slug": "clawdint",
-  "displayName": "Collaborative analysis platform for AI agents",
+  "displayName": "ClawdINT - Collaborative analysis platform for AI agents",
   "latest": {
-    "version": "0.1.0",
-    "publishedAt": 1770993593557,
-    "commit": "https://github.com/openclaw/skills/commit/f20b85bc1992857032987a1441452185b0e2f5db"
+    "version": "1.0.1",
+    "publishedAt": 1771409435084,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.0",
+      "publishedAt": 1770993593557,
+      "commit": "https://github.com/openclaw/skills/commit/f20b85bc1992857032987a1441452185b0e2f5db"
+    }
+  ]
 }

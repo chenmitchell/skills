@@ -1,15 +1,16 @@
 ---
 name: x1-vault-memory
 description: Backup and restore OpenClaw agent memory to IPFS with AES-256-GCM encryption and X1 blockchain CID anchoring
-version: 1.1.0
+version: 0.2.0
 author: Lokoweb3
 homepage: https://github.com/Lokoweb3/x1-vault-memory
 metadata:
   clawdbot:
     emoji: "🦞"
 requires:
-  env: ["PINATA_JWT", "X1_RPC_URL"]
+  env: ["PINATA_JWT"]
   primaryEnv: "PINATA_JWT"
+  configPaths: ["x1_vault_cli/wallet.json"]
 files: ["src/*"]
 tags:
   - backup
@@ -25,6 +26,18 @@ tags:
 # X1 Vault Memory
 
 Encrypted, decentralized memory backup for OpenClaw agents — powered by IPFS and X1 blockchain.
+
+## Required Configuration
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `PINATA_JWT` | ✅ Yes | — | Your Pinata API token for IPFS uploads. Get it at https://app.pinata.cloud |
+| `X1_RPC_URL` | ❌ No | `https://rpc.mainnet.x1.xyz` | The X1 RPC endpoint. Change only if using testnet or custom endpoint |
+| `x1_vault_cli/wallet.json` | ✅ Yes | — | Your X1 wallet keypair file. Used for encryption and blockchain anchoring. |
+
+> 🔴 **SECURITY WARNING:** Use a dedicated wallet with minimal XNT. Never use your primary wallet.
+
+---
 
 ## What It Does
 
@@ -44,22 +57,33 @@ Servers die. Containers get wiped. One bad rm -rf and your agent's identity is g
 - Self-healing restore — one command to download, decrypt, and restore all agent files.
 - Negligible cost — about 0.03 USD per year for daily backups.
 
+### New in v1.1.2
+
+- ✅ Security fixes: removed "curl | sh" Solana CLI install suggestion
+- ✅ Declared environment variables clearly in skill metadata
+- ✅ Added opt-in note for heartbeat auto-restore
+- Updated package.json with required env vars in config section
+
 ### New in v1.1.0
 
 - SHA-256 integrity verification on backup and restore
 - Selective restore with --only flag to restore specific files or directories
 - List command for viewing all backups with versioned rollback support
-- Heartbeat self-healing hook for automated restore on failure detection
+
+---
 
 ## Requirements
 
-- Pinata Account — free at https://app.pinata.cloud (500 files, 1GB included)
-- Solana CLI — for wallet creation and management
-- Solana/X1 Wallet — keypair JSON file (free to create)
-- XNT Tokens — about 0.002 XNT per backup for on-chain fees
-- Node.js v18+
+- **Node.js v18+** — run all scripts without external dependencies
+- **Pinata Account** — free at https://app.pinata.cloud (500 files, 1GB included)
+- **Solana Wallet** — keypair JSON file (free to create via @solana/web3.js)
+- **XNT Tokens** — about 0.002 XNT per backup for on-chain fees
 
-Pinata is a hard requirement. You must sign up and get a JWT token before using this skill.
+✅ **No Solana CLI required** — we use `@solana/web3.js` directly.
+
+> 🔴 **SECURITY WARNING:** Use a dedicated wallet with minimal XNT. Never use your primary wallet.
+
+---
 
 ## How to Get XNT Tokens
 
@@ -73,6 +97,8 @@ XNT is the native gas token of the X1 blockchain. You need a small amount for on
 You will also need the X1 Wallet Chrome extension: https://chromewebstore.google.com/detail/x1-wallet/kcfmcpdmlchhbikbogddmgopmjbflnae
 
 Start with bridge + XDEX if you are coming from Solana. That is the smoothest path. Each backup costs approximately 0.002 XNT, so even a small amount goes a long way.
+
+---
 
 ## How to Set Up Pinata and Get Your JWT Token
 
@@ -92,35 +118,23 @@ Pinata is the IPFS pinning service that stores your encrypted backups. The free 
 
 The JWT token does not expire unless you manually revoke it in the Pinata dashboard. Free tier includes 500 files and 1GB storage. Each encrypted backup is around 10-50KB, so you can store thousands of backups without paying anything.
 
+---
+
 ## Setup
 
-### 1. Install Solana CLI
+> 🔴 **SECURITY WARNING:** Use a dedicated wallet with minimal XNT. Never use your primary wallet.
 
-```bash
-sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
-export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
-```
-
-> **Note:** `release.anza.xyz` is the official Anza/Solana installer. For more details, see https://docs.anza.xyz/cli/install
-
-Verify installation:
-```bash
-solana --version
-```
-
-### 2. Install Node dependencies
+### 1. Install Node dependencies
 
 ```bash
 cd x1-vault-memory && npm install
 ```
 
-### 3. Configure environment variables
-
-The skill requires two environment variables: PINATA_JWT and X1_RPC_URL. Choose one of the following methods to set them.
+### 2. Configure environment variables
 
 **Option A: Using a .env file (recommended for Docker and production)**
 
-Create a .env file in your project or workspace root:
+Create a `.env` file in your project or workspace root:
 
 ```
 PINATA_JWT=your_pinata_jwt_token
@@ -136,13 +150,7 @@ export PINATA_JWT="your_pinata_jwt_token"
 export X1_RPC_URL="https://rpc.mainnet.x1.xyz"
 ```
 
-Note: These values only persist for the current terminal session. To make them permanent, add the export lines to your shell profile:
-
-```bash
-echo 'export PINATA_JWT="your_pinata_jwt_token"' >> ~/.bashrc
-echo 'export X1_RPC_URL="https://rpc.mainnet.x1.xyz"' >> ~/.bashrc
-source ~/.bashrc
-```
+Note: These values only persist for the current terminal session.
 
 **Option C: Docker Compose environment block**
 
@@ -154,30 +162,36 @@ environment:
   X1_RPC_URL: https://rpc.mainnet.x1.xyz
 ```
 
-Then set PINATA_JWT in your Docker .env file as shown in Option A.
+Then set `PINATA_JWT` in your Docker `.env` file as shown in Option A.
 
-### 4. Create a wallet keypair
+### 3. Create a wallet keypair (Node.js only, no CLI)
 
-```bash
-solana-keygen new --outfile x1_vault_cli/wallet.json --no-bip39-passphrase
-```
-
-Keep wallet.json safe. This is your encryption key AND your blockchain wallet. Never commit it to GitHub.
-
-### 5. Fund the wallet
-
-Get your wallet address:
-```bash
-solana address --keypair x1_vault_cli/wallet.json
-```
-
-Send XNT tokens to the address shown. You need approximately 0.002 XNT per backup transaction.
-
-### 6. Set X1 mainnet as default
+The wallet can be created programmatically using `@solana/web3.js`. Here's a quick script:
 
 ```bash
-solana config set --url https://rpc.mainnet.x1.xyz
+node -e "
+const { Keypair } = require('@solana/web3.js');
+const fs = require('fs');
+const kp = Keypair.generate();
+fs.writeFileSync('x1_vault_cli/wallet.json', JSON.stringify([...kp.secretKey]));
+console.log('Wallet created:', kp.publicKey.toBase58());
+console.log('Save the secretKey JSON array to x1_vault_cli/wallet.json');
+"
 ```
+
+Or use the X1 Wallet Chrome extension to generate a keypair and export the secretKey.
+
+Keep `wallet.json` safe. This is your encryption key AND your blockchain wallet. Never commit it to GitHub.
+
+### 4. Fund the wallet
+
+Get your wallet address from `x1_vault_cli/wallet.json` (the public key derived from the secret key), then send XNT tokens to that address.
+
+### 5. X1 RPC URL
+
+Set `X1_RPC_URL` to your preferred endpoint. Default: `https://rpc.mainnet.x1.xyz`
+
+---
 
 ## Usage
 
@@ -186,7 +200,7 @@ solana config set --url https://rpc.mainnet.x1.xyz
 node src/backup.js
 ```
 
-Encrypts and uploads IDENTITY.md, SOUL.md, USER.md, TOOLS.md, and memory/ directory. Records CID on X1 blockchain and logs to vault-log.json.
+Encrypts and uploads `IDENTITY.md`, `SOUL.md`, `USER.md`, `TOOLS.md`, and `memory/` directory. Records CID on X1 blockchain and logs to `vault-log.json`.
 
 ### Restore
 ```bash
@@ -216,6 +230,15 @@ node src/heartbeat.js
 
 Monitors agent file integrity. If critical files are missing or corrupted, automatically triggers a restore from the latest backup.
 
+> ⚠️ **Opt-in Only** — Heartbeat auto-restore must be explicitly scheduled via cron. It is NOT automatic.
+> 
+> **Add to crontab:**
+> ```bash
+> 0 */6 * * * cd /path/to/workspace && node x1-vault-memory/src/heartbeat.js >> /var/log/vault-heartbeat.log 2>&1
+> ```
+> 
+> **Note:** Heartbeat auto-restore is disabled by default and must be explicitly enabled via cron.
+
 ### Dry Run
 ```bash
 node src/backup.js --dry-run
@@ -223,22 +246,27 @@ node src/backup.js --dry-run
 
 Shows which files would be backed up without uploading or spending tokens.
 
+---
+
 ## Error Handling
 
 - Pinata is down — backup fails with connection error. Retry later, local files are untouched.
-- X1 RPC fails — IPFS upload succeeds but on-chain anchor fails. CID is still logged locally in vault-log.json. Re-anchor when RPC recovers.
-- Invalid wallet — encryption fails before upload. Check wallet.json path and format (must be JSON array of bytes).
+- X1 RPC fails — IPFS upload succeeds but on-chain anchor fails. CID is still logged locally in `vault-log.json`. Re-anchor when RPC recovers.
+- Invalid wallet — encryption fails before upload. Check `wallet.json` path and format (must be JSON array of bytes).
 - Insufficient XNT — on-chain transaction rejected. Fund wallet with more XNT tokens.
 - CID not found on restore — check Pinata dashboard, re-pin if needed.
-- Solana CLI not found — run the install command from Step 1 and make sure PATH is set.
-- Checksum mismatch — SHA-256 verification failed. Backup may be corrupted. Try restoring from a previous version using list.js.
+- Checksum mismatch — SHA-256 verification failed. Backup may be corrupted. Try restoring from a previous version using `list.js`.
+
+---
 
 ## Where Data Is Stored
 
-- IPFS — encrypted blob on Pinata IPFS network
-- X1 Blockchain — CID recorded as on-chain transaction (permanent, verifiable)
-- vault-log.json — local log of all backup CIDs with timestamps and checksums
-- Only your wallet keypair can decrypt the data
+- **IPFS** — encrypted blob on Pinata IPFS network
+- **X1 Blockchain** — CID recorded as on-chain transaction (permanent, verifiable)
+- **vault-log.json** — local log of all backup CIDs with timestamps and checksums
+- **Only your wallet keypair can decrypt the data**
+
+---
 
 ## Security
 
@@ -247,7 +275,11 @@ Shows which files would be backed up without uploading or spending tokens.
 - Only your keypair can decrypt — even if someone finds the CID, data stays private
 - Stored on IPFS, not a single server
 - CID anchored on X1 blockchain for tamper-proof records
-- Never share your wallet.json or PINATA_JWT
+- Never share your `wallet.json` or `PINATA_JWT`
+
+> 🔴 **SECURITY WARNING:** Use a dedicated wallet with minimal XNT. Never use your primary wallet.
+
+---
 
 ## Automation
 
@@ -256,27 +288,35 @@ Weekly backup via cron:
 0 2 * * 0 cd /path/to/workspace && node x1-vault-memory/src/backup.js >> /var/log/vault-backup.log 2>&1
 ```
 
-Heartbeat check every 6 hours:
+Heartbeat check every 6 hours (opt-in):
 ```bash
 0 */6 * * * cd /path/to/workspace && node x1-vault-memory/src/heartbeat.js >> /var/log/vault-heartbeat.log 2>&1
 ```
 
+---
+
 ## Files Backed Up
 
-- IDENTITY.md — agent name, persona, vibe
-- SOUL.md — personality, instructions, expertise
-- USER.md — user profile and preferences
-- TOOLS.md — environment-specific notes
-- memory/*.md — daily memory logs
+- `IDENTITY.md` — agent name, persona, vibe
+- `SOUL.md` — personality, instructions, expertise
+- `USER.md` — user profile and preferences
+- `TOOLS.md` — environment-specific notes
+- `memory/*.md` — daily memory logs
+
+---
 
 ## Tech Stack
 
-- Encryption: AES-256-GCM (authenticated encryption)
-- Integrity: SHA-256 checksums
-- IPFS Storage: Pinata API (JWT auth)
-- Blockchain: X1 Mainnet (SVM-compatible L1)
-- Wallet: Solana CLI + @solana/web3.js
-- Runtime: Node.js v18+
+| Component | Technology |
+|-----------|-----------|
+| Encryption | AES-256-GCM (authenticated encryption) |
+| Integrity | SHA-256 checksums |
+| IPFS Storage | Pinata API (JWT auth) |
+| Blockchain | X1 Mainnet (SVM-compatible L1) |
+| Wallet | @solana/web3.js (Node.js, no CLI needed) |
+| Runtime | Node.js v18+ |
+
+---
 
 ## Links
 
@@ -287,6 +327,9 @@ Heartbeat check every 6 hours:
 - X1 Wallet: https://chromewebstore.google.com/detail/x1-wallet/kcfmcpdmlchhbikbogddmgopmjbflnae
 - Honey Badger Bot: https://t.me/HoneyBadgerCoreBot?start=ref_HEBCU2E3
 - Pinata: https://app.pinata.cloud
-- Solana CLI: https://docs.anza.xyz/cli/install
 
-Built by Lokoweb3
+Built by [Lokoweb3](https://github.com/Lokoweb3)
+
+---
+
+[GitHub Repository](https://github.com/Lokoweb3/x1-vault-memory) | [OpenClaw Docs](https://docs.openclaw.ai)

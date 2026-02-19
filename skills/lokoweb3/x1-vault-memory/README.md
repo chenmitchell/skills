@@ -4,6 +4,18 @@
 
 ---
 
+## Required Configuration
+
+| Variable | Required | Details |
+|----------|----------|---------|
+| `PINATA_JWT` | ✅ Yes | Set in container `.env` - Your Pinata API token for IPFS uploads |
+| `x1_vault_cli/wallet.json` | ✅ Yes | Dedicated wallet only, NOT your main wallet |
+| `X1_RPC_URL` | ❌ No | Defaults to `https://rpc.mainnet.x1.xyz` |
+
+> 🔴 **SECURITY WARNING:** Use a dedicated wallet with minimal XNT. Never use your primary wallet.
+
+---
+
 ## What Is This?
 
 An OpenClaw skill that backs up your AI agent's identity and memory files to IPFS with encrypted storage and on-chain CID references on the X1 blockchain.
@@ -35,9 +47,10 @@ Only your wallet keypair can decrypt. Even if someone finds the CID, your data s
 |-------------|---------|
 | **Node.js** | v18+ |
 | **Pinata Account** | Free at [app.pinata.cloud](https://app.pinata.cloud) |
-| **Solana/X1 Wallet** | Keypair JSON file |
-| **X1 Tokens** | Mainnet XN for transaction fees |
+| **XNT Tokens** | ~0.002 XNT per backup for on-chain fees |
 | **OpenClaw** | Running instance with workspace access |
+
+✅ **No Solana CLI required** — we use `@solana/web3.js` directly.
 
 ---
 
@@ -46,27 +59,28 @@ Only your wallet keypair can decrypt. Even if someone finds the CID, your data s
 ### For OpenClaw Agents
 
 1. Clone into your OpenClaw workspace:
-``````````bash
+```bash
 cd /home/node/.openclaw/workspace
 git clone https://github.com/Lokoweb3/x1-vault-memory.git
 cd x1-vault-memory
 npm install
-`````````
+```
 
-2. Add environment variables to your docker-compose.yml:
-````````yaml
+2. Add environment variables to your `.env` file:
+```bash
+echo "PINATA_JWT=your_token_here" >> ~/openclaw/.env
+echo "X1_RPC_URL=https://rpc.mainnet.x1.xyz" >> ~/openclaw/.env
+```
+
+3. Add to `docker-compose.yml` environment:
+```yaml
 environment:
   PINATA_JWT: ${PINATA_JWT}
-  X1_RPC_URL: https://rpc.mainnet.x1.xyz
-```````
-
-3. Add PINATA_JWT to your .env file:
-``````bash
-echo "PINATA_JWT=your_token_here" >> ~/openclaw/.env
-`````
+  X1_RPC_URL: ${X1_RPC_URL}
+```
 
 4. Restart the container:
-````bash
+```bash
 cd ~/openclaw
 docker compose down && docker compose up -d
 ```
@@ -78,43 +92,31 @@ docker compose down && docker compose up -d
 
 ## Setup
 
-### 0. Configure for X1 Mainnet
+### 1. Create a Wallet Keypair
 
-X1 is SVM-compatible, so it uses Solana CLI tools. Set your CLI to X1 mainnet:
+**Note:** Use Node.js only. No Solana CLI needed.
 
-````bash
-# Install Solana CLI if you dont have it
-# Note: release.anza.xyz is the official Anza/Solana installer
-# See https://docs.anza.xyz/cli/install for details
-sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
-
-# Set to X1 mainnet
-solana config set --url https://rpc.mainnet.x1.xyz
-```
-
-
-### 1. Set Environment Variables
 ```bash
-export PINATA_JWT="your_pinata_jwt_here"
-export X1_RPC_URL="https://rpc.mainnet.x1.xyz"
+node -e "
+const { Keypair } = require('@solana/web3.js');
+const fs = require('fs');
+const kp = Keypair.generate();
+fs.writeFileSync('x1_vault_cli/wallet.json', JSON.stringify([...kp.secretKey]));
+console.log('Wallet created:', kp.publicKey.toBase58());
+"
 ```
 
-### 2. Create a Wallet Keypair
-```bash
-solana-keygen new --outfile x1_vault_cli/wallet.json --no-bip39-passphrase
+**Or use X1 Wallet Chrome extension** to generate a keypair and export the secretKey JSON.
 
-# View your wallet address
-solana address --keypair x1_vault_cli/wallet.json
+Keep `wallet.json` safe. This is your encryption key. Never commit it to GitHub.
 
-# Check your balance
-solana balance --keypair x1_vault_cli/wallet.json --url https://rpc.mainnet.x1.xyz
-```
+> 🔴 **SECURITY WARNING:** Use a dedicated wallet with minimal XNT. Never use your primary wallet.
 
-> ⚠️ **Keep wallet.json safe. Never commit it to GitHub. This is your encryption key.**
+### 2. Fund Your Wallet
 
-### 3. Fund Your Wallet
+Send XNT tokens to your wallet address. You need ~0.002 XNT per backup transaction.
 
-**Mainnet:** Transfer XN tokens to your wallet address from an exchange or existing wallet.
+> 🔴 **SECURITY WARNING:** Use a dedicated wallet with minimal XNT. Never use your primary wallet.
 
 ---
 
@@ -168,7 +170,15 @@ node x1-vault-memory/src/heartbeat.js
 Self-healing check:
 - Verifies SOUL.md and memory/ exist and aren't empty
 - Auto-restores from latest backup if issues detected
-- Run this on agent startup for self-healing memory
+
+> ⚠️ **Opt-in Only** — Heartbeat auto-restore must be explicitly scheduled via cron. It is NOT automatic.
+> 
+> **Add to crontab:**
+> ```bash
+> 0 */6 * * * cd /path/to/workspace && node x1-vault-memory/src/heartbeat.js >> /var/log/vault-heartbeat.log 2>&1
+> ```
+> 
+> **Note:** Heartbeat auto-restore is disabled by default and must be explicitly enabled via cron.
 
 ### Shell Wrappers
 ```bash
@@ -195,9 +205,16 @@ CIDs are also recorded on-chain. Check your wallet's transaction history on the 
 ---
 
 ## Automation
+
+### Weekly Backup (Sundays at 2am)
 ```bash
-# Cron job - daily at 2am
-0 2 * * * cd /path/to/workspace && node x1-vault-memory/src/backup.js >> /var/log/vault-backup.log 2>&1
+0 2 * * 0 cd /path/to/workspace && node x1-vault-memory/src/backup.js >> /var/log/vault-backup.log 2>&1
+```
+
+### Heartbeat Check (Opt-in)
+```bash
+# Must be explicitly added to crontab - NOT automatic
+0 */6 * * * cd /path/to/workspace && node x1-vault-memory/src/heartbeat.js >> /var/log/vault-heartbeat.log 2>&1
 ```
 
 ---
@@ -222,6 +239,8 @@ CIDs are also recorded on-chain. Check your wallet's transaction history on the 
 - ⛓️ CID recorded on X1 blockchain via Memo Program for permanence
 - 🚫 Never share your wallet.json or PINATA_JWT
 
+> 🔴 **SECURITY WARNING:** Use a dedicated wallet with minimal XNT. Never use your primary wallet.
+
 ---
 
 ## Tech Stack
@@ -233,6 +252,7 @@ CIDs are also recorded on-chain. Check your wallet's transaction history on the 
 | Blockchain | X1 (SVM-compatible L1) |
 | Runtime | Node.js |
 | Archiving | tar (npm) |
+| Wallet | @solana/web3.js (Node.js, no CLI needed) |
 
 ---
 
@@ -254,3 +274,7 @@ MIT
 ---
 
 **Built by [Lokoweb3](https://github.com/Lokoweb3) with Loko_AI 🦞**
+
+---
+
+[**GitHub Repository**](https://github.com/Lokoweb3/x1-vault-memory) | [**Documentation**](https://docs.openclaw.ai)

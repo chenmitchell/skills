@@ -3,9 +3,15 @@
   "slug": "kakaotalk",
   "displayName": "Kakaotalk",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771471878359,
-    "commit": "https://github.com/openclaw/skills/commit/a82a3f789dc6418e400b808abfd83cb01e185d0a"
+    "version": "1.2.2",
+    "publishedAt": 1771495129137,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771471878359,
+      "commit": "https://github.com/openclaw/skills/commit/a82a3f789dc6418e400b808abfd83cb01e185d0a"
+    }
+  ]
 }

@@ -5,12 +5,26 @@ author: Community
 version: 1.0.0
 homepage: https://mineru.net/
 source: https://github.com/opendatalab/MinerU
-requirements:
-  - MINERU_TOKEN 或 MINERU_API_KEY 环境变量
-  - curl 命令行工具
-  - unzip 解压工具
-optional:
-  - jq 用于增强 JSON 解析
+env:
+  - name: MINERU_TOKEN
+    description: "MinerU API 认证令牌（主要方式）"
+    required: true
+  - name: MINERU_API_KEY
+    description: "备选 API 令牌（当 MINERU_TOKEN 未设置时使用）"
+    required: false
+  - name: MINERU_BASE_URL
+    description: "API 基础地址（可选，默认为 https://mineru.net/api/v4）"
+    required: false
+    default: "https://mineru.net/api/v4"
+tools:
+  required:
+    - name: curl
+      description: "HTTP 客户端，用于 API 请求和文件下载"
+    - name: unzip
+      description: "压缩包解压工具，用于解压结果 ZIP 文件"
+  optional:
+    - name: jq
+      description: "JSON 处理器，用于增强解析和安全性（推荐安装）"
 ---
 
 # MinerU PDF Extractor

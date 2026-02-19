@@ -5,12 +5,26 @@ author: Community
 version: 1.0.0
 homepage: https://mineru.net/
 source: https://github.com/opendatalab/MinerU
-requirements:
-  - MINERU_TOKEN or MINERU_API_KEY environment variable
-  - curl command-line tool
-  - unzip extraction tool
-optional:
-  - jq for enhanced JSON parsing
+env:
+  - name: MINERU_TOKEN
+    description: "MinerU API token for authentication (primary)"
+    required: true
+  - name: MINERU_API_KEY
+    description: "Alternative API token if MINERU_TOKEN is not set"
+    required: false
+  - name: MINERU_BASE_URL
+    description: "API base URL (optional, defaults to https://mineru.net/api/v4)"
+    required: false
+    default: "https://mineru.net/api/v4"
+tools:
+  required:
+    - name: curl
+      description: "HTTP client for API requests and file downloads"
+    - name: unzip
+      description: "Archive extraction tool for result ZIP files"
+  optional:
+    - name: jq
+      description: "JSON processor for enhanced parsing and security (recommended)"
 ---
 
 # MinerU PDF Extractor

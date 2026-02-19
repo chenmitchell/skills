@@ -1,9 +1,21 @@
 ---
 name: cacheforge-ops
-description: CacheForge operations — check balance, top up, manage upstream, API keys.
+version: 1.0.0
+description: CacheForge operations — check balance, top up, manage upstream, API keys. Pay-as-you-go with Stripe or crypto.
+author: CacheForge
 license: MIT
 homepage: https://app.anvil-ai.io
 user-invocable: true
+tags:
+  - cacheforge
+  - billing
+  - operations
+  - ai-agents
+  - token-optimization
+  - llm
+  - api-keys
+  - discord
+  - discord-v2
 metadata: {"openclaw":{"emoji":"💰","homepage":"https://app.anvil-ai.io","primaryEnv":"CACHEFORGE_API_KEY","requires":{"bins":["python3"],"env":["CACHEFORGE_API_KEY"]}}}
 ---
 

@@ -129,3 +129,21 @@ When the cron job triggers (receiving the message "Execute the openburn script..
 2.  **Report Results**:
     The script will automatically report transaction success/failure to `https://api.openburn.fun/api/burn/transaction`.
     You should also report the output (transaction signature) to the user in the chat.
+
+    > [!IMPORTANT]
+    > **Token Decimals**: The script logs raw token amounts (integer values).
+    >
+    > - For a token with 6 decimals (like USDC), `1000000` = 1 token.
+    > - For a token with 9 decimals (like SOL), `1000000000` = 1 token.
+    > - Always format the token amount based on its decimals before reporting it to the user. Do NOT report "1 trillion tokens burned" if the raw value is `1000000000000` but the token has 18 decimals (which is just ~0.000001 tokens).
+    > - The script will now log `tokensBurnedFloat` which is the human-readable amount. **Use `tokensBurnedFloat` for reporting.**
+
+3.  **Burn Only (Manual)**:
+    If the user wants to manually burn tokens already in the wallet without buying more:
+
+    ```bash
+    node --import tsx skills/burn-only.ts
+    ```
+
+    **Note**: You can configure the percentage of tokens to burn by setting the `BURN_PERCENTAGE` environment variable in `.env`. Default is 100%.
+    Example: `BURN_PERCENTAGE=50` to burn 50% of the tokens in the wallet.

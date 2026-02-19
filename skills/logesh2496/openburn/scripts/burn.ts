@@ -11,6 +11,8 @@ import {
   getAssociatedTokenAddress,
   createBurnInstruction,
   getAccount,
+  getMint,
+  TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 import PumpSdk from "@pump-fun/pump-sdk";
@@ -19,6 +21,7 @@ import BN from "bn.js";
 
 const { OnlinePumpSdk, PUMP_SDK } = PumpSdk;
 import path from "path";
+import bs58 from "bs58";
 
 // Load environment variables from the root .env file
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
@@ -137,11 +140,43 @@ async function main() {
   }
 
   let tokenMint: PublicKey;
+  let tokenProgramId: PublicKey;
   try {
     tokenMint = new PublicKey(tokenAddressString);
   } catch (e) {
       console.error("Invalid PUMP_FUN_TOKEN_ADDRESS");
       process.exit(1);
+  }
+
+  const connection = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
+
+  // Detect Token Program ID
+  try {
+    const mintInfo = await connection.getAccountInfo(tokenMint);
+    if (!mintInfo) {
+      console.error("Error: Could not fetch token mint info. Check if the address is correct.");
+      process.exit(1);
+    }
+    tokenProgramId = mintInfo.owner;
+    console.log(`Detected Token Program: ${tokenProgramId.toBase58()}`);
+    
+    // Verify it's a known token program
+    if (!tokenProgramId.equals(TOKEN_PROGRAM_ID) && !tokenProgramId.equals(TOKEN_2022_PROGRAM_ID)) {
+        console.warn("Warning: Token mint owner is not a known Token Program (Standard or Token-2022).");
+    }
+  } catch (e) {
+      console.error("Error detecting token program:", e);
+      process.exit(1);
+  }
+
+  // Fetch Token Decimals
+  let tokenDecimals = 6; // Default to 6
+  try {
+      const mintData = await getMint(connection, tokenMint, "confirmed", tokenProgramId);
+      tokenDecimals = mintData.decimals;
+      console.log(`Token Decimals: ${tokenDecimals}`);
+  } catch (e) {
+      console.warn(`Could not fetch mint data for decimals, defaulting to 6. Error: ${e}`);
   }
 
   // Decode private key
@@ -150,7 +185,8 @@ async function main() {
     if (privateKeyString.startsWith("[") && privateKeyString.endsWith("]")) {
       secretKey = Uint8Array.from(JSON.parse(privateKeyString));
     } else {
-         secretKey = Uint8Array.from(JSON.parse(privateKeyString));
+      // Try Base58 decoding
+      secretKey = bs58.decode(privateKeyString);
     }
   } catch (e) {
     const errorMsg = "Error parsing private key. Ensure it is a JSON array of numbers.";
@@ -164,7 +200,9 @@ async function main() {
   }
 
   const payer = Keypair.fromSecretKey(secretKey);
-  const connection = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
+
+  
+
 
   console.log(`Wallet Public Key: ${payer.publicKey.toBase58()}`);
   console.log(`Token Mint: ${tokenMint.toBase58()}`);
@@ -282,12 +320,17 @@ async function main() {
     const globalAccount = await sdk.fetchGlobal();
     
     // Get user's token account address
-    const userTokenAccount = await getAssociatedTokenAddress(tokenMint, payer.publicKey);
+    const userTokenAccount = await getAssociatedTokenAddress(
+      tokenMint, 
+      payer.publicKey,
+      false, 
+      tokenProgramId
+    );
     
     // Check token balance before buy
     let tokenBalanceBefore = BigInt(0);
     try {
-      const accountBefore = await getAccount(connection, userTokenAccount);
+      const accountBefore = await getAccount(connection, userTokenAccount, "confirmed", tokenProgramId);
       tokenBalanceBefore = accountBefore.amount;
     } catch (e) {
       // Token account doesn't exist yet, balance is 0
@@ -296,24 +339,24 @@ async function main() {
 
     // Fetch buy state (includes bonding curve and user token account info)
     const { bondingCurveAccountInfo, bondingCurve, associatedUserAccountInfo } = 
-        await sdk.fetchBuyState(tokenMint, payer.publicKey, TOKEN_2022_PROGRAM_ID);
+        await sdk.fetchBuyState(tokenMint, payer.publicKey, tokenProgramId);
     
     // Check if bonding curve is complete (token graduated to Raydium)
     if (bondingCurve.complete) {
         console.log("Token has graduated to Raydium. Using Jupiter DEX for swap...");
         
-        // Get user's token account address (with TOKEN_2022_PROGRAM_ID)
+        // Get user's token account address
         const userTokenAccountT22 = await getAssociatedTokenAddress(
           tokenMint,
           payer.publicKey,
           false,
-          TOKEN_2022_PROGRAM_ID
+          tokenProgramId
         );
 
         // Check token balance before buy
         let tokenBalanceBeforeJupiter = BigInt(0);
         try {
-          const accountBefore = await getAccount(connection, userTokenAccountT22, "confirmed", TOKEN_2022_PROGRAM_ID);
+          const accountBefore = await getAccount(connection, userTokenAccountT22, "confirmed", tokenProgramId);
           tokenBalanceBeforeJupiter = accountBefore.amount;
         } catch (e) {
           // Token account doesn't exist yet, balance is 0
@@ -361,7 +404,7 @@ async function main() {
         buySignature = txid;
 
         // Get token balance after buy
-        const tokenAccountAfter = await getAccount(connection, userTokenAccountT22, "confirmed", TOKEN_2022_PROGRAM_ID);
+        const tokenAccountAfter = await getAccount(connection, userTokenAccountT22, "confirmed", tokenProgramId);
         tokensBought = tokenAccountAfter.amount - tokenBalanceBeforeJupiter;
         console.log(`Tokens Bought: ${tokensBought.toString()}`);
 
@@ -372,9 +415,31 @@ async function main() {
         // Use SDK's buy method which handles bonded tokens
         const solAmountBN = new BN(solAmountToBuyLamports);
         
-        // Calculate token amount - use a large number, actual amount determined by SOL
-        const tokenAmountBN = new BN(1000000000000);
+        // Calculate token amount based on bonding curve formula
+        // k = virtualSolReserves * virtualTokenReserves
+        // newSolReserves = virtualSolReserves + solAmount
+        // newTokenReserves = k / newSolReserves
+        // tokensToBuy = virtualTokenReserves - newTokenReserves
         
+        const virtualSolReserves = new BN(bondingCurve.virtualSolReserves);
+        const virtualTokenReserves = new BN(bondingCurve.virtualTokenReserves);
+        
+        const k = virtualSolReserves.mul(virtualTokenReserves);
+        const newSolReserves = virtualSolReserves.add(solAmountBN);
+        const newTokenReserves = k.div(newSolReserves);
+        let tokensToBuy = virtualTokenReserves.sub(newTokenReserves);
+        
+        // Use 99% of the calculated tokens to allow for slippage/price movement
+        // This ensures solAmountBN covers the cost even if price moves slightly up
+        tokensToBuy = tokensToBuy.mul(new BN(99)).div(new BN(100));
+        
+        console.log(`Calculating tokens for ${solAmountToBuySol} SOL input...`);
+        console.log(`Virtual SOL Reserves: ${virtualSolReserves.toString()}`);
+        console.log(`Virtual Token Reserves: ${virtualTokenReserves.toString()}`);
+        console.log(`Expected Tokens (with 1% slippage buffer): ${tokensToBuy.toString()}`);
+
+        const tokenAmountBN = tokensToBuy;
+
         // Get buy instructions from PUMP_SDK singleton
         const buyInstructions = await PUMP_SDK.buyInstructions({
           global: globalAccount,
@@ -386,7 +451,7 @@ async function main() {
           amount: tokenAmountBN,
           solAmount: solAmountBN,
           slippage: 10, // 10% slippage tolerance
-          tokenProgram: TOKEN_2022_PROGRAM_ID
+          tokenProgram: tokenProgramId
         });
 
         console.log(`Generated ${buyInstructions.length} buy instructions`);
@@ -397,7 +462,7 @@ async function main() {
         buySignature = buySig;
 
         // Get token balance after buy
-        const tokenAccountAfter = await getAccount(connection, userTokenAccount);
+        const tokenAccountAfter = await getAccount(connection, userTokenAccount, "confirmed", tokenProgramId);
         tokensBought = tokenAccountAfter.amount - tokenBalanceBefore;
         console.log(`Tokens Bought: ${tokensBought.toString()}`);
     }
@@ -427,7 +492,7 @@ async function main() {
       tokenMint,
       payer.publicKey,
       false,
-      TOKEN_2022_PROGRAM_ID
+      tokenProgramId
     );
 
     // Burn all purchased tokens
@@ -438,7 +503,7 @@ async function main() {
         payer.publicKey,
         tokensBought,
         [],
-        TOKEN_2022_PROGRAM_ID
+        tokenProgramId
       )
     );
 
@@ -448,7 +513,9 @@ async function main() {
     console.log(`Burn successful! Transaction signature: ${burnSig}`);
 
     // Calculate metrics
-    const tokensBurnedFloat = Number(tokensBought) / 1e6; // Assuming 6 decimals
+    const tokensBurnedFloat = Number(tokensBought) / Math.pow(10, tokenDecimals);
+    console.log(`Burned ${tokensBought.toString()} raw units (${tokensBurnedFloat.toFixed(tokenDecimals)} tokens)`);
+    
     const solSpent = (solBalanceAfterFees - await connection.getBalance(payer.publicKey)) / LAMPORTS_PER_SOL;
     const buyPricePerToken = tokensBurnedFloat > 0 ? solSpent / tokensBurnedFloat : 0;
 
@@ -459,7 +526,7 @@ async function main() {
         burnSignature: burnSig,
         tokensBought: tokensBought.toString(),
         tokensBurned: tokensBought.toString(),
-        tokensBurnedFloat: tokensBurnedFloat.toFixed(6),
+        tokensBurnedFloat: tokensBurnedFloat.toFixed(tokenDecimals),
         solSpent: solSpent.toFixed(6),
         buyPricePerToken: buyPricePerToken.toFixed(10),
         tokenAddress: tokenAddressString,

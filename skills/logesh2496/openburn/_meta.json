@@ -3,11 +3,16 @@
   "slug": "openburn",
   "displayName": "OpenBurn",
   "latest": {
-    "version": "1.0.7",
-    "publishedAt": 1771337914521,
-    "commit": "https://github.com/openclaw/skills/commit/e46e1d924b1df5b17d09d6c1801b63d206d2881b"
+    "version": "1.0.9",
+    "publishedAt": 1771435342181,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.7",
+      "publishedAt": 1771337914521,
+      "commit": "https://github.com/openclaw/skills/commit/e46e1d924b1df5b17d09d6c1801b63d206d2881b"
+    },
     {
       "version": "1.0.5",
       "publishedAt": 1771310218077,

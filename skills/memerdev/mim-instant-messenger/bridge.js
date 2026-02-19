@@ -1,6 +1,9 @@
 // MOL IM Bridge - Connects MOL IM chat to OpenClaw gateway
 // Requires: GATEWAY_TOKEN env var (your OpenClaw gateway token)
 // Optional: GATEWAY_URL env var (default: ws://127.0.0.1:18789)
+//
+// Auto-reconnects to both MOL IM and OpenClaw gateway on disconnect.
+// Clean exit (code 0) only happens on QUIT command.
 
 const { io } = require('socket.io-client');
 const WebSocket = require('ws');
@@ -13,6 +16,7 @@ const GATEWAY_TOKEN = process.env.GATEWAY_TOKEN;
 const INBOX = '/tmp/mol-im-bot/inbox.jsonl';
 const OUTBOX = '/tmp/mol-im-bot/outbox.txt';
 const BATCH_DELAY_MS = 10000;
+const RECONNECT_DELAY_MS = 5000;
 
 const screenName = process.argv[2] || 'MoltBot';
 
@@ -23,6 +27,8 @@ let batchTimer = null;
 let openclawWs = null;
 let wsReady = false;
 let messageIdCounter = 1;
+let socket = null;
+let isQuitting = false;
 
 // Ensure directories exist
 fs.mkdirSync('/tmp/mol-im-bot', { recursive: true });
@@ -43,6 +49,7 @@ if (!GATEWAY_TOKEN) {
 
 function connectOpenClaw() {
   if (!GATEWAY_TOKEN) return;
+  if (isQuitting) return;
 
   openclawWs = new WebSocket(GATEWAY_URL);
 
@@ -53,7 +60,10 @@ function connectOpenClaw() {
   openclawWs.on('close', (code, reason) => {
     console.log(`BRIDGE: Gateway closed - code: ${code}, reason: ${reason?.toString() || 'none'}`);
     wsReady = false;
-    setTimeout(connectOpenClaw, 5000);
+    if (!isQuitting) {
+      console.log(`BRIDGE: Reconnecting to gateway in ${RECONNECT_DELAY_MS/1000}s...`);
+      setTimeout(connectOpenClaw, RECONNECT_DELAY_MS);
+    }
   });
 
   openclawWs.on('error', (err) => {
@@ -207,49 +217,70 @@ function sendContextToAgent(room, messages) {
 
 // ============ MOL IM Connection ============
 
-const socket = io(MOL_SERVER, { transports: ['websocket', 'polling'] });
+function connectMolIM() {
+  if (isQuitting) return;
 
-socket.on('connect', () => {
-  console.log('BRIDGE: Connected to MOL IM');
+  socket = io(MOL_SERVER, { 
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: RECONNECT_DELAY_MS,
+    reconnectionDelayMax: 30000
+  });
 
-  socket.emit('sign-on', screenName, (ok) => {
-    if (ok) {
-      console.log(`BRIDGE: Signed on as ${screenName}`);
-      appendInbox({ type: 'system', text: `Connected as ${screenName} in #${currentRoom}` });
-      fetchAndSendContext(currentRoom);
-    } else {
-      const newName = screenName + Math.floor(Math.random() * 100);
-      console.log(`BRIDGE: Name taken, trying ${newName}`);
-      socket.emit('sign-on', newName, (ok2) => {
-        if (ok2) {
-          console.log(`BRIDGE: Signed on as ${newName}`);
-          fetchAndSendContext(currentRoom);
-        }
-      });
+  socket.on('connect', () => {
+    console.log('BRIDGE: Connected to MOL IM');
+
+    socket.emit('sign-on', screenName, (ok) => {
+      if (ok) {
+        console.log(`BRIDGE: Signed on as ${screenName}`);
+        appendInbox({ type: 'system', text: `Connected as ${screenName} in #${currentRoom}` });
+        fetchAndSendContext(currentRoom);
+      } else {
+        const newName = screenName + Math.floor(Math.random() * 100);
+        console.log(`BRIDGE: Name taken, trying ${newName}`);
+        socket.emit('sign-on', newName, (ok2) => {
+          if (ok2) {
+            console.log(`BRIDGE: Signed on as ${newName}`);
+            fetchAndSendContext(currentRoom);
+          }
+        });
+      }
+    });
+  });
+
+  socket.on('message', (msg) => {
+    if (msg.screenName === screenName) return;
+
+    if (msg.type === 'message') {
+      console.log(`BRIDGE: [${msg.screenName}] ${msg.text}`);
+      appendInbox({ type: 'message', from: msg.screenName, text: msg.text, room: currentRoom });
+      addToBatch(msg);
+    } else if (msg.type === 'join') {
+      console.log(`BRIDGE: ${msg.screenName} joined`);
+      appendInbox({ type: 'join', from: msg.screenName, room: currentRoom });
     }
   });
-});
 
-socket.on('message', (msg) => {
-  if (msg.screenName === screenName) return;
+  socket.on('disconnect', (reason) => {
+    console.log(`BRIDGE: Disconnected from MOL IM: ${reason}`);
+    if (!isQuitting) {
+      console.log('BRIDGE: Socket.IO will auto-reconnect...');
+    }
+  });
 
-  if (msg.type === 'message') {
-    console.log(`BRIDGE: [${msg.screenName}] ${msg.text}`);
-    appendInbox({ type: 'message', from: msg.screenName, text: msg.text, room: currentRoom });
-    addToBatch(msg);
-  } else if (msg.type === 'join') {
-    console.log(`BRIDGE: ${msg.screenName} joined`);
-    appendInbox({ type: 'join', from: msg.screenName, room: currentRoom });
-  }
-});
+  socket.on('connect_error', (err) => {
+    console.log(`BRIDGE: MOL IM connection error: ${err.message}`);
+  });
 
-socket.on('disconnect', () => {
-  console.log('BRIDGE: Disconnected from MOL IM');
-});
+  socket.on('reconnect', (attemptNumber) => {
+    console.log(`BRIDGE: Reconnected to MOL IM (attempt ${attemptNumber})`);
+  });
 
-socket.on('connect_error', (err) => {
-  console.log(`BRIDGE: MOL IM connection error: ${err.message}`);
-});
+  socket.on('reconnect_attempt', (attemptNumber) => {
+    console.log(`BRIDGE: Reconnecting to MOL IM (attempt ${attemptNumber})...`);
+  });
+}
 
 // ============ File I/O ============
 
@@ -278,9 +309,10 @@ setInterval(() => {
             fetchAndSendContext(room);
           } else if (line === 'QUIT') {
             console.log('BRIDGE: Quitting...');
-            socket.disconnect();
+            isQuitting = true;
+            if (socket) socket.disconnect();
             if (openclawWs) openclawWs.close();
-            process.exit(0);
+            process.exit(0);  // Clean exit
           }
         }
       }
@@ -292,4 +324,6 @@ setInterval(() => {
 
 // ============ Start ============
 connectOpenClaw();
+connectMolIM();
 console.log('BRIDGE: Ready');
+console.log('BRIDGE: Stop with: echo \'QUIT\' > /tmp/mol-im-bot/outbox.txt');

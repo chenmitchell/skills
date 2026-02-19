@@ -1,310 +1,170 @@
 ---
 name: water-coach
-description: "Hydration tracking and coaching skill. Use when user wants to track water intake, get reminders to drink water, log body metrics (weight, body fat, muscle %, water %), or get analytics on hydration habits. Triggers on: water, hydration, drink more water, body metrics, weight tracking, water goal"
+description: "Hydration tracking and coaching skill. Use when user wants to track water intake, get reminders to drink water, log body metrics, or get analytics on hydration habits."
+compatibility: "Requires python3, openclaw cron feature, heartbeat feature"
+metadata: {"clawdbot":{"emoji":"💧"} 
+  author: oristides
+  version: "1.5.0"
 ---
 
-# Water Coach v1.2
+# 💧 Water Coach v1.5.0
 
-## Quick Start
 
-This skill helps track daily water intake and provides adaptive reminders based on progress.
 
-## First Run (One-Time Setup)
+## First-time Setup  [references/setup.md](references/setup.md)
 
-### Quick Start Flow
-Don't ask everything at once. Ask minimal questions:
 
-1. **First:** "What's your weight?" → Calculate goal, start tracking immediately
-2. **Later (optional):** Ask height, body metrics, preferences gradually
 
-### Config File
-Create at `memory/water_config.json`:
-```json
-{
-  "version": "1.2",
-  "units": {
-    "system": "metric",
-    "weight": "kg",
-    "height": "m",
-    "volume": "ml"
-  },
-  "user": {
-    "weight_kg": null,
-    "height_m": null,
-    "body_fat_pct": null,
-    "muscle_pct": null,
-    "water_pct": null
-  },
-  "settings": {
-    "goal_multiplier": 35,
-    "default_goal_ml": null,
-    "cutoff_hour": 22,
-    "reminder_slots": [
-      {"name": "morning", "hour": 9, "default_ml": 500},
-      {"name": "lunch", "hour": 12, "default_ml": 500},
-      {"name": "afternoon", "hour": 15, "default_ml": 500},
-      {"name": "predinner", "hour": 18, "default_ml": 500},
-      {"name": "evening", "hour": 21, "default_ml": 500}
-    ]
-  },
-  "status": {
-    "snoozed_until": null,
-    "skip_dates": []
-  },
-  "reports": {
-    "weekly_enabled": false,
-    "monthly_enabled": false
-  }
-}
+## CLI Structure
+
+```bash
+water_coach.py <namespace> <command> [options]
 ```
 
-### 2. Unit Detection & Conversion
-```python
-# Auto-detect from user input (first time)
-KG_TO_LB = 2.20462
-LB_TO_KG = 0.453592
-ML_TO_OZ = 0.033814
-OZ_TO_ML = 29.5735
-M_TO_FT = 3.28084
-FT_TO_M = 0.3048
-CM_TO_M = 0.01
+Namespaces: `water` | `body` | `analytics`
 
-# Detect weight unit
-def detect_weight(s):
-    s = s.lower().strip()
-    if 'lb' in s or 'pound' in s: return 'lb', extract_number(s)
-    if 'kg' in s or 'kilo' in s: return 'kg', extract_number(s)
-    # Number only - assume metric for now
-    return 'kg', float(s)
+---
 
-# Detect height unit  
-def detect_height(s):
-    s = s.lower().strip()
-    if "'" in s or '"' in s: return 'ft', parse_feet_inches(s)
-    if 'cm' in s: return 'cm', extract_number(s)
-    if 'm' in s: return 'm', extract_number(s)
-    return 'm', float(s)  # assume meters
+## Data Format 
 
-# Store detected system for future use
-config['units']['system'] = 'imperial' if detected == 'lb' else 'metric'
+### CSV Format
+```
+logged_at,drank_at,date,slot,ml_drank,goal_at_time,message_id
 ```
 
-### 3. Scripts (Create in memory/ or skills/water-coach/scripts/)
+| Column | Description |
+|--------|-------------|
+| logged_at | When user told you (NOW) |
+| drank_at | When user actually drank (user can specify past time) |
+| date | Derived from drank_at |
+| slot | morning/lunch/afternoon/evening/manual |
+| ml_drank | Amount in ml |
+| goal_at_time | Goal at that moment |
+| message_id | Audit trail - link to conversation |
 
-**calc_daily_goal.py** - Calculate goal from weight:
-```python
-#!/usr/bin/env python3
-import json, os
-CONFIG = 'memory/water_config.json'
-def get_goal():
-    with open(CONFIG) as f:
-        w = json.load(f)['user']['weight_kg']
-    return w * 35 if w else None
+**Key Rules:**
+- **drank_at is MANDATORY** - always required
+- If user doesn't specify drank_at → assume drank_at = logged_at
+- **Cumulative is calculated at query time** (not stored)
+- Use drank_at to determine which day counts
+
+Details at  [references/log_format.md](references/log_format.md)
+
+### Audit Trail
+
+Every water log entry captures:
+- **message_id**: Links to the conversation message where user requested the log
+- **Auto-capture**: CLI automatically gets message_id from session transcript
+- **Proof**: Use `water audit <message_id>` to get entry + conversation context
+
+```bash
+# Check proof of a water entry
+water audit msg_123
+# Returns: entry data + surrounding messages for context
 ```
 
-**log_water.py** - Log water intake to CSV:
-```python
-#!/usr/bin/env python3
-import csv, json, sys, os
-from datetime import datetime, date
-CONFIG, LOG = 'memory/water_config.json', 'memory/water_log.csv'
-# Reads config, calculates cumulative, appends to CSV
+---
+
+## Daily Commands
+
+```bash
+# Water
+water status                                      # Current progress (calculated from drank_at)
+water log 500                                    # Log intake (drank_at = now)
+water log 500 --drank-at=2026-02-18T18:00:00Z  # Log with past time
+water log 500 --drank-at=2026-02-18T18:00:00Z --message-id=msg_123
+water dynamic                                    # Check if extra notification needed
+water threshold                                  # Get expected % for current hour
+water set_body_weight 80                        # Update weight + logs to body_metrics
+water set_body_weight 80 --update-goal          # + update goal
+water audit <message_id>                        # Get entry + conversation context
+
+# Body
+body log --weight=80 --height=1.75 --body-fat=18
+body latest          # Get latest metrics
+body history 30     # Get history
+
+# Analytics
+analytics week       # Weekly briefing (Sunday 8pm)
+analytics month     # Monthly briefing (2nd day 8pm)
 ```
 
-**log_body_metrics.py** - Log body metrics:
-```python
-#!/usr/bin/env python3
-import csv, json, sys, os
-from datetime import datetime, date
-CONFIG, BODY = 'memory/water_config.json', 'memory/body_metrics.csv'
-# Updates config + logs to body_metrics.csv
+---
+
+## Rules (MUST FOLLOW)
+
+1. **ALWAYS use CLI** - never calculate manually
+2. **LLM interprets first** - "eu tomei 2 copos" → 500ml → water log 500
+3. **Threshold from CLI** - run `water threshold`, don't hardcode
+4. **GOAL is USER'S CHOICE** - weight × 35 is just a DEFAULT suggestion:
+   - At setup: Ask weight → suggest goal → **CONFIRM with user**
+   - On weight update: Ask "Want to update your goal to the new suggested amount?"
+   - User can set any goal (doctor's orders, preference, etc.)
+
+---
+
+## Config Tree
+
+```
+water-coach/
+├── SKILL.md              ← You are here
+├── scripts/
+│   ├── water_coach.py   ← Unified CLI
+│   └── water.py         ← Core functions
+├── data/
+│   ├── water_config.json (Current configs)
+│   ├── water_log.csv
+│   └── body_metrics.csv
+└── references/
+    ├── setup.md
+    ├── dynamic.md
+    └── log_format.md
 ```
 
-**weekly_report.py** / **monthly_report.py** - Analytics:
-```python
-#!/usr/bin/env python3
-import csv, json, os
-from datetime import datetime, date, timedelta
-# Reads water_log.csv, calculates stats, returns report
-```
+---
 
-## Configuration (First Run)
+## Notifications Schedule
 
-On first use, ask user for:
-
-1. **Weight** (required): 
-   - Let user type however they want ("95kg", "210 lbs", "95", etc.)
-   - **Detect unit from input:**
-     - Contains "kg" or "kilos" → metric
-     - Contains "lb", "lbs", "pounds" → imperial
-     - Number only: assume metric if user has history of metric, otherwise ask
-   - Convert to kg internally
-
-2. **Height** (optional):
-   - User may say "1.75m", "5'9"", "175cm", etc.
-   - Detect and convert to meters internally
-
-3. **Body fat %** (optional): Percentage
-4. **Muscle %** (optional): Percentage
-5. **Water %** (optional): Percentage
-
-**Auto-detect examples:**
-| User says | Detected | Stored |
-|-----------|----------|--------|
-| "95 kg" | metric | 95 kg |
-| "210 lbs" | imperial | 95.25 kg |
-| "1.75m" | metric | 1.75 m |
-| "5'9"" | imperial | 1.75 m |
-| "175cm" | metric | 1.75 m |
-
-**Remember:** Once detected, use that system for all future communications with this user.
-
-## Daily Tracking
-
-### Reminder Slots (Base Schedule)
-| Slot | Time | Default |
+| Type | When | Command |
 |------|------|---------|
-| Morning | 09:00 | 500ml |
-| Lunch | 12:00 | 500ml |
-| Afternoon | 15:00 | 500ml |
-| Pre-dinner | 18:00 | 500ml |
-| Evening | 21:00 | 500ml |
+| Base (5x) | 9am, 12pm, 3pm, 6pm, 9pm | water status |
+| Dynamic | Every ~30 min (heartbeat) | water dynamic |
+| Weekly | Sunday 8pm | analytics week |
+| Monthly | 2nd day 8pm | analytics month |
 
-### User Response Format
-- `yes 500` → drank 500ml (metric)
-- `yes 500ml` → drank 500ml
-- `yes 16oz` → drank ~473ml (imperial)
-- `yes 16` → drank based on user's preferred unit
-- `no` → didn't drink
-- `later` → remind again in 15-20 min
+---
 
-### User Input Parsing
-Parse user input to detect units:
-- Numbers only → use preferred unit from config
-- "500ml" / "500" → ml (metric)
-- "16oz" / "16 oz" → oz (imperial)
-- "2L" / "2 liters" → convert to ml
-- "8 glasses" → estimate ~500ml per glass
+## Quick Reference
 
-### Adaptive Logic
-- Behind schedule (<50%): Add extra slots
-- Ahead of schedule: Reduce triggers
-- Cutoff: No reminders after 22:00
+| Task | Command |
+|------|---------|
+| Check progress | `water_coach.py water status` |
+| Log water | `water_coach.py water log 500` |
+| Need extra? | `water_coach.py water dynamic` |
+| Body metrics | `water_coach.py body log --weight=80` |
+| Weekly report | `water_coach.py analytics week` |
+| Monthly report | `water_coach.py analytics month` |
 
-## Natural Language Intent Detection
+## Dynamic Scheduling details→ [references/dynamic.md](references/dynamic.md)
 
-Parse user messages to infer intent - don't expect exact commands.
 
-### Skip Days / Rest Day
 
-**User might say:**
-- "taking a rest day"
-- "won't track today"
-- "sick today"
-- "traveling"
-- "not drinking water today"
-- "skip today"
-- "taking a few days off"
-- "away this weekend"
+## Tests
 
-**Action:** Mark date as skipped in `status.skip_dates`. Don't count against streak.
-
-**Response:** "Got it! Rest up 💙 Skipped [date]"
-
-### Adjust Goal (Temporary or Permanent)
-
-**User might say:**
-- "feeling bloated, less water today"
-- "intense workout, need more water"
-- "lighter day, 2L is enough"
-- "can I lower my goal?"
-- "increase goal tomorrow"
-
-**Action:** 
-- If temporary: Set `status.temp_goal_ml` for specific date
-- If permanent: Update `settings.default_goal_ml`
-
-**Response:** "Got it! [date] goal adjusted to X ml"
-
-### Snooze (Pause Reminders)
-
-**User might say:**
-- "going on vacation"
-- "busy week ahead"
-- "don't disturb me"
-- "snooze for X days"
-- "pause reminders"
-
-**Action:** Set `status.snoozed_until` date. Skip all reminders until then.
-
-**Response:** "Enjoy! Reminders snoozed until [date]. Say 'I'm back' to resume."
-
-### Resume (End Snooze)
-
-**User might say:**
-- "I'm back"
-- "ready to track again"
-- "resume"
-- "stop snooze"
-- "back to normal"
-
-**Action:** Clear `status.snoozed_until`. Resume normal reminders.
-
-**Response:** "Welcome back! 💧 Starting tracking again"
-
-### Edge Cases
-- At 22:00 cutoff → auto-log 0ml for missed slots
-- Retroactive: "I drank 2L today" → log 2000ml for today
-- Past day: "yesterday I drank 2L" → log for yesterday
-
-## CSV Format
-
-**water_log.csv:**
-```
-timestamp,date,slot,answer,ml_drank,cumulative_ml,daily_goal,goal_pct
+```bash
+python3 -m pytest skills/water-coach/scripts/test/test_water.py -v
 ```
 
-**body_metrics.csv:**
+## Example
+
 ```
-date,weight_kg,height_m,bmi,body_fat_pct,muscle_pct,water_pct
+User: "eu tomei 2 copos"
+Agent: (LLM interprets: 2 copos ≈ 500ml)
+Agent: exec("water_coach.py water log 500")
+→ Python logs to CSV
 ```
 
-## Natural Language Commands
 
-No exact commands needed - infer intent from natural text:
 
-**Start tracking:**
-- "start water tracking"
-- "track my water"
-- "help me drink more water"
+Agent Evaluations → [evaluation/AGENT.md](evaluation/AGENT.md)
 
-**Log water:**
-- "drank 500ml"
-- "had 2 liters"
-- "yes 500"
-- "I drank 2L today"
-
-**Skip / Rest day:**
-- "sick today"
-- "taking a rest day"
-- "skip today"
-
-**Adjust goal:**
-- "less water today"
-- "need more water"
-- "intense workout"
-
-**Snooze:**
-- "going on vacation"
-- "don't disturb me"
-- "pause reminders"
-
-**Resume:**
-- "I'm back"
-- "resume tracking"
-- "stop snooze"
-
-**Reports:**
-- "water report"
-- "how did I do this week"
-- "monthly stats"

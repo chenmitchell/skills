@@ -3,11 +3,16 @@
   "slug": "bluepages",
   "displayName": "Bluepages",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1770826285002,
-    "commit": "https://github.com/openclaw/skills/commit/eb9ef604965e6e5dbdc4ef8dc55fe5990a9a8d17"
+    "version": "1.0.2",
+    "publishedAt": 1771409748464,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1770826285002,
+      "commit": "https://github.com/openclaw/skills/commit/eb9ef604965e6e5dbdc4ef8dc55fe5990a9a8d17"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770651597652,

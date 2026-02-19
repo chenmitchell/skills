@@ -245,6 +245,7 @@ If omitted, the gateway uses the default (oldest) active connection for that app
 | Mailgun | `mailgun` | `api.mailgun.net` |
 | ManyChat | `manychat` | `api.manychat.com` |
 | Microsoft Excel | `microsoft-excel` | `graph.microsoft.com` |
+| Microsoft Teams | `microsoft-teams` | `graph.microsoft.com` |
 | Microsoft To Do | `microsoft-to-do` | `graph.microsoft.com` |
 | Monday.com | `monday` | `api.monday.com` |
 | Motion | `motion` | `api.usemotion.com` |
@@ -357,6 +358,7 @@ See [references/](references/) for detailed routing guides per provider:
 - [Mailgun](references/mailgun.md) - Email sending, domains, routes, templates, mailing lists, suppressions
 - [ManyChat](references/manychat.md) - Subscribers, tags, flows, messaging
 - [Microsoft Excel](references/microsoft-excel.md) - Workbooks, worksheets, ranges, tables, charts
+- [Microsoft Teams](references/microsoft-teams.md) - Teams, channels, messages, members, chats
 - [Microsoft To Do](references/microsoft-to-do.md) - Task lists, tasks, checklist items, linked resources
 - [Monday.com](references/monday.md) - Boards, items, columns, groups (GraphQL)
 - [Motion](references/motion.md) - Tasks, projects, workspaces, schedules

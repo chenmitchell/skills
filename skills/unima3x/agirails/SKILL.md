@@ -10,10 +10,12 @@ license: MIT
 metadata:
   clawdbot:
     requires:
-      env: []
+      env:
+        - ACTP_KEY_PASSWORD
       bins:
         - node
         - npm
+    primaryEnv: ACTP_KEY_PASSWORD
     emoji: "💸"
     install:
       - kind: node
@@ -22,6 +24,8 @@ metadata:
 ---
 
 > **How to activate**: Tell your agent: *"Read SKILL.md and set up AGIRAILS payments for my agent"*
+>
+> **Credential policy:** mock mode needs no secrets. Testnet/mainnet require wallet credentials.
 
 # AGIRAILS — Trustless Payments for AI Agents
 
@@ -1451,10 +1455,15 @@ requiredBinaries:
   - npm
 requiredEnvVars:
   - none for mock mode
+  - one wallet credential path for testnet/mainnet:
+    - ACTP_KEY_PASSWORD (with .actp/keystore.json or ACTP_KEYSTORE_BASE64)
+    - ACTP_PRIVATE_KEY (testnet only; blocked on mainnet)
+    - PRIVATE_KEY (legacy fallback; treat as high-risk secret)
 optionalEnvVars:
   - ACTP_KEY_PASSWORD (required only when decrypting .actp/keystore.json or ACTP_KEYSTORE_BASE64 for testnet/mainnet)
   - ACTP_PRIVATE_KEY (raw private key — testnet only, blocked on mainnet by SDK fail-closed policy)
   - ACTP_KEYSTORE_BASE64 (base64-encoded keystore — for Docker/Railway/serverless deployments)
+  - PRIVATE_KEY (legacy raw private key fallback used by some tooling; not recommended)
   - BASE_SEPOLIA_RPC (custom testnet RPC endpoint — defaults to public Base Sepolia)
   - BASE_MAINNET_RPC (custom mainnet RPC endpoint — defaults to public Base Mainnet)
   - PROVIDER_ADDRESS (target provider wallet address — used in example scripts only)
@@ -1470,6 +1479,7 @@ credentials:
   - ACTP_KEY_PASSWORD (conditional — required only with encrypted keystore/.actp/keystore.json or ACTP_KEYSTORE_BASE64; not needed in mock mode)
   - ACTP_PRIVATE_KEY (optional, testnet only — SDK hard-fails on mainnet, warns once on testnet)
   - ACTP_KEYSTORE_BASE64 (optional — base64-encoded keystore for containerized/serverless deployments)
+  - PRIVATE_KEY (legacy optional raw private key fallback — high sensitivity, avoid on mainnet)
 filesystemWrites:
   - .actp/keystore.json (encrypted wallet — AES-128-CTR, chmod 600, auto-gitignored)
   - .actp/config.json (SDK configuration — mode, network, contract addresses)

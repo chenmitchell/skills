@@ -3,11 +3,16 @@
   "slug": "agirails",
   "displayName": "AGIRAILS Escrow Payments",
   "latest": {
-    "version": "3.0.9",
-    "publishedAt": 1771445015659,
-    "commit": "https://github.com/openclaw/skills/commit/d6147a398bfac6cf7973c0dc550259e763a272b7"
+    "version": "3.0.12",
+    "publishedAt": 1771463289200,
+    "commit": null
   },
   "history": [
+    {
+      "version": "3.0.9",
+      "publishedAt": 1771445015659,
+      "commit": "https://github.com/openclaw/skills/commit/d6147a398bfac6cf7973c0dc550259e763a272b7"
+    },
     {
       "version": "3.0.6",
       "publishedAt": 1771170967447,

@@ -62,7 +62,7 @@ Three commands. Mock mode. No keys, no gas, no config.
    pip install agirails        # Python
    ```
 
-2. **Wallet setup** (needed for testnet/mainnet only; mock mode needs no secrets. SDK auto-detects: keystore → `ACTP_KEYSTORE_BASE64` → `ACTP_PRIVATE_KEY`):
+2. **Wallet setup** (needed for testnet/mainnet only; mock mode needs no secrets. SDK auto-detects: keystore → `ACTP_KEYSTORE_BASE64` → `ACTP_PRIVATE_KEY` → `PRIVATE_KEY`):
    ```bash
    # Option A: Encrypted keystore (recommended)
    npx actp init -m testnet
@@ -72,7 +72,7 @@ Three commands. Mock mode. No keys, no gas, no config.
    export ACTP_KEYSTORE_BASE64="$(base64 < .actp/keystore.json)"
    export ACTP_KEY_PASSWORD="your-keystore-password"
    ```
-   > **Note:** `ACTP_PRIVATE_KEY` is blocked on mainnet. Use encrypted keystores.
+   > **Note:** raw keys (`ACTP_PRIVATE_KEY` / `PRIVATE_KEY`) are high-risk; mainnet policy paths require encrypted keystores.
 
 ## Networks
 

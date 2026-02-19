@@ -3,11 +3,16 @@
   "slug": "agentic-browser",
   "displayName": "Agent Browser",
   "latest": {
-    "version": "0.1.2",
-    "publishedAt": 1770656814708,
-    "commit": "https://github.com/openclaw/skills/commit/7e40ab2ba244141adb290c37eb26b8b5cebf126f"
+    "version": "0.1.5",
+    "publishedAt": 1771402922253,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.2",
+      "publishedAt": 1770656814708,
+      "commit": "https://github.com/openclaw/skills/commit/7e40ab2ba244141adb290c37eb26b8b5cebf126f"
+    },
     {
       "version": "0.1.1",
       "publishedAt": 1770362949965,

@@ -1,20 +1,14 @@
 ---
 name: agent-browser
-description: |
-  Browser automation for AI agents via inference.sh.
-  Navigate web pages, interact with elements using @e refs, take screenshots, record video.
-  Capabilities: web scraping, form filling, clicking, typing, drag-drop, file upload, JavaScript execution.
-  Use for: web automation, data extraction, testing, agent browsing, research.
-  Triggers: browser, web automation, scrape, navigate, click, fill form, screenshot,
-  browse web, playwright, headless browser, web agent, surf internet, record video
+description: "Browser automation for AI agents via inference.sh. Navigate web pages, interact with elements using @e refs, take screenshots, record video. Capabilities: web scraping, form filling, clicking, typing, drag-drop, file upload, JavaScript execution. Use for: web automation, data extraction, testing, agent browsing, research. Triggers: browser, web automation, scrape, navigate, click, fill form, screenshot, browse web, playwright, headless browser, web agent, surf internet, record video"
 allowed-tools: Bash(infsh *)
 ---
 
 # Agentic Browser
 
-![Agentic Browser](https://cloud.inference.sh/app/files/u/4mg21r6ta37mpaz6ktzwtt8krr/01kgjw8atdxgkrsr8a2t5peq7b.jpeg)
-
 Browser automation for AI agents via [inference.sh](https://inference.sh). Uses Playwright under the hood with a simple `@e` ref system for element interaction.
+
+![Agentic Browser](https://cloud.inference.sh/app/files/u/4mg21r6ta37mpaz6ktzwtt8krr/01kgjw8atdxgkrsr8a2t5peq7b.jpeg)
 
 ## Quick Start
 
@@ -25,6 +19,8 @@ curl -fsSL https://cli.inference.sh | sh && infsh login
 # Open a page and get interactive elements
 infsh app run agent-browser --function open --input '{"url": "https://example.com"}' --session new
 ```
+
+> **Install note:** The [install script](https://cli.inference.sh) only detects your OS/architecture, downloads the matching binary from `dist.inference.sh`, and verifies its SHA-256 checksum. No elevated permissions or background processes. [Manual install & verification](https://dist.inference.sh/cli/checksums.txt) available.
 
 ## Core Workflow
 
@@ -276,10 +272,10 @@ Browser state persists within a session. Always:
 
 ```bash
 # Web search (for research + browse)
-npx skills add inferencesh/skills@web-search
+npx skills add inference-sh/skills@web-search
 
 # LLM models (analyze extracted content)
-npx skills add inferencesh/skills@llm-models
+npx skills add inference-sh/skills@llm-models
 ```
 
 ## Documentation

@@ -1,0 +1,11 @@
+{
+  "owner": "aghareza",
+  "slug": "taskwarrior",
+  "displayName": "taskwarrior",
+  "latest": {
+    "version": "0.1.3",
+    "publishedAt": 1771471836240,
+    "commit": null
+  },
+  "history": []
+}

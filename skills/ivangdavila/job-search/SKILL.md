@@ -1,7 +1,8 @@
 ---
 name: Job Search
 slug: job-search
-version: 1.0.0
+version: 1.0.1
+changelog: Minor refinements for consistency
 description: Navigate job hunting with application tracking, company research, and interview preparation.
 metadata: {"clawdbot":{"emoji":"💼","requires":{"bins":[]},"os":["linux","darwin","win32"]}}
 ---

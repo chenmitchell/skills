@@ -3,11 +3,16 @@
   "slug": "interclaw",
   "displayName": "InterClaw",
   "latest": {
-    "version": "0.1.8",
-    "publishedAt": 1771536405397,
-    "commit": "https://github.com/openclaw/skills/commit/73decfd6ff66287289bf2e76b3c342ff70082102"
+    "version": "0.1.9",
+    "publishedAt": 1771536567438,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.8",
+      "publishedAt": 1771536405397,
+      "commit": "https://github.com/openclaw/skills/commit/73decfd6ff66287289bf2e76b3c342ff70082102"
+    },
     {
       "version": "0.1.7",
       "publishedAt": 1771383068755,

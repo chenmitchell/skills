@@ -3,9 +3,15 @@
   "slug": "dropbox-business",
   "displayName": "Dropbox Business",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771148821099,
-    "commit": "https://github.com/openclaw/skills/commit/865ff7768d2d808e1b1914ff818ca67700b28c9f"
+    "version": "1.0.2",
+    "publishedAt": 1771501733500,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771148821099,
+      "commit": "https://github.com/openclaw/skills/commit/865ff7768d2d808e1b1914ff818ca67700b28c9f"
+    }
+  ]
 }

@@ -1,5 +1,5 @@
 ---
-name: dropboxbusiness
+name: dropbox-business
 description: |
   Dropbox Business API integration with managed OAuth. Manage team members, groups, team folders, devices, and audit logs for Dropbox Business teams.
   Use this skill when users want to administer Dropbox Business teams, manage members, create groups, handle team folders, or access audit logs.
@@ -10,7 +10,7 @@ metadata:
   version: "1.0"
   clawdbot:
     emoji: 🧠
-    homepage: "https://maton.ai" 
+    homepage: "https://maton.ai"
     requires:
       env:
         - MATON_API_KEY

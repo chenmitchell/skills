@@ -1,0 +1,11 @@
+{
+  "owner": "jiafar",
+  "slug": "vercel-to-cloudflare",
+  "displayName": "Vercel to Cloudflare Worker Migration",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771552566526,
+    "commit": null
+  },
+  "history": []
+}

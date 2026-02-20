@@ -1,0 +1,11 @@
+{
+  "owner": "guoway",
+  "slug": "redmine-issue",
+  "displayName": "Redmine Issue",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771592241399,
+    "commit": null
+  },
+  "history": []
+}

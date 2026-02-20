@@ -1,6 +1,6 @@
 {
   "name": "brave-search-skill",
-  "version": "2.0.0",
+  "version": "2.1.1",
   "description": "Real-time web search and AI-powered answers using the Brave Search API. Requires BRAVE_SEARCH_API_KEY and BRAVE_ANSWERS_API_KEY environment variables.",
   "author": "Broedkrummen",
   "requiredEnv": [

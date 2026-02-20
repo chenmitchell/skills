@@ -4,7 +4,7 @@ description: Real-time web search and AI-powered answers using the official Brav
 license: MIT
 metadata:
   author: Broedkrummen
-  version: 2.0.0
+  version: 2.1.1
 ---
 
 # Brave API Search
@@ -15,12 +15,15 @@ Real-time web search and AI-powered answers using the official Brave Search API.
 
 ## Setup
 
-Set your Brave API keys as environment variables:
+Set your Brave API keys in a local `.env` file (recommended):
 
 ```bash
-export BRAVE_SEARCH_API_KEY=your_key_here
-export BRAVE_ANSWERS_API_KEY=your_key_here
+# .env (do not commit)
+BRAVE_SEARCH_API_KEY=your_key_here
+BRAVE_ANSWERS_API_KEY=your_key_here
 ```
+
+Or export them in your shell session if needed.
 
 Get your keys at: https://api-dashboard.search.brave.com
 
@@ -87,13 +90,26 @@ brave_answers(query="Latest Python release notes", enable_citations=true)
 
 **Returns:** AI answer with cited sources extracted from the response, plus token usage.
 
-## Rate Limits
+## Pricing & Limits
 
-| Plan | QPS | Monthly |
-|------|-----|---------|
-| Free Search | 1 | 2,000 |
-| Paid Search | 20 | Pay-per-use ($5/1k) |
-| Paid Answers | 2 | $4/1k searches |
+Brave pricing is credit-based and can change. Do **not** assume a fixed free request count.
+
+Current public guidance (verify in Brave dashboard/docs before production use):
+- Monthly trial credits may be offered (e.g. `$5 in monthly credits`)
+- Search and Answers consume credits differently
+- Answers may also include token-based costs
+- QPS limits depend on your plan tier
+
+Always check your live limits and usage in:
+- https://api-dashboard.search.brave.com
+- https://brave.com/search/api/
+
+## Security & Packaging Notes
+
+- This skill only calls Brave official endpoints under `https://api.search.brave.com/res/v1`.
+- It requires exactly two env vars: `BRAVE_SEARCH_API_KEY` and `BRAVE_ANSWERS_API_KEY` (keep them in `.env`, not inline in commands/chats).
+- It does not request persistent/system privileges and does not modify system config.
+- It is source-file based (two local Node scripts), with no external install/download step.
 
 ## API vs Web Scraping
 

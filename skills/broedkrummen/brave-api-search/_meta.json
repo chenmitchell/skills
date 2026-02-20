@@ -3,11 +3,16 @@
   "slug": "brave-api-search",
   "displayName": "Brave API Search",
   "latest": {
-    "version": "2.0.0",
-    "publishedAt": 1771515065697,
-    "commit": "https://github.com/openclaw/skills/commit/98e60156da9f236216b1b779bf53611949d8544f"
+    "version": "2.1.1",
+    "publishedAt": 1771516007126,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.0.0",
+      "publishedAt": 1771515065697,
+      "commit": "https://github.com/openclaw/skills/commit/98e60156da9f236216b1b779bf53611949d8544f"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770974181710,

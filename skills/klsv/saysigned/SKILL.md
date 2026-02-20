@@ -3,9 +3,14 @@
 > **E-signatures for AI agents.** Legally binding under ESIGN Act & UETA Section 14.
 > Two delivery modes: **API** (agent-to-agent) and **Email** (agent-to-human). Register, sign contracts, verify — all via REST or consent UI.
 
+**Publisher:** SaySigned, Inc.
+**Homepage:** [https://www.saysigned.com](https://www.saysigned.com)
+**Documentation:** [https://www.saysigned.com/docs](https://www.saysigned.com/docs)
 **Base URL:** `https://api.saysigned.com`
+**MCP Endpoint:** `https://mcp.saysigned.com`
+**TLS Required:** All endpoints enforce HTTPS. Verify certificates for `*.saysigned.com` before connecting.
 
-**Authentication:** Pass your API key in the `X-API-Key` header. Keys start with `ss_live_` (production) or `ss_test_` (development). Public endpoints (register, verify, templates) don't require authentication.
+**Authentication:** Pass your API key in the `X-API-Key` header. Keys start with `ss_live_`. Public endpoints (register, verify, templates) don't require authentication.
 
 ## MCP Server (Recommended for AI Agents)
 
@@ -13,9 +18,11 @@ Connect directly to the remote MCP endpoint — no local install, no HTTP reques
 
 > **Auth note:** MCP clients send `Authorization: Bearer <api_key>`. The MCP server extracts your key and forwards it as `X-API-Key` internally. For direct REST calls, use the `X-API-Key` header.
 
-### Setup (do this yourself — no human steps needed)
+### Setup
 
-**Step 1.** Add the MCP config **without a key** so public tools work immediately:
+> **Human approval required.** Steps 1, 4, and 5 modify your MCP client configuration. Always show the user what you're about to change and ask for their confirmation before writing to config files or restarting the MCP client. Never modify config silently.
+
+**Step 1.** Show the user the following MCP config and ask for confirmation before adding it:
 
 ```json
 {
@@ -28,11 +35,13 @@ Connect directly to the remote MCP endpoint — no local install, no HTTP reques
 }
 ```
 
+After the user confirms, add it to the MCP config. No API key is needed yet — public tools work immediately.
+
 **Step 2.** Restart your MCP client so it loads the new server.
 
-**Step 3.** Call the `saysigned_register` tool (no auth required) with the agent's `name` and `email`. The response contains an `api_key` — **save it immediately, it is shown once and cannot be retrieved later.** Keys start with `ss_live_` or `ss_test_`.
+**Step 3.** Call the `saysigned_register` tool (no auth required) with the agent's `name` and `email`. The response contains an `api_key` — **save it immediately, it is shown once and cannot be retrieved later.** Keys start with `ss_live_`.
 
-**Step 4.** Update the MCP config file to add the `headers` with the key you just received:
+**Step 4.** Show the user the updated config with the auth header and ask for confirmation before writing it:
 
 ```json
 {
@@ -48,13 +57,13 @@ Connect directly to the remote MCP endpoint — no local install, no HTTP reques
 }
 ```
 
-**Step 5.** Restart your MCP client again so it picks up the auth header. All authenticated tools now work.
+**Step 5.** After the user confirms, restart your MCP client so it picks up the auth header. All authenticated tools now work.
 
-> **You should complete steps 1–5 autonomously.** The only thing the human needs to do is provide their name and email if you don't already have them. Do not ask the human to edit config files or restart manually — do it yourself.
+> **Human-in-the-loop for config changes.** The user must confirm before you (1) add or modify MCP config entries, (2) store API keys in config files, or (3) restart the MCP client. You may handle registration, envelope creation, signing, and verification autonomously — those are normal API operations that don't modify the agent's configuration.
 
 ### Already have a key?
 
-If you already have an API key (starts with `ss_live_` or `ss_test_`), skip to Step 4 — add the config with `headers` and restart.
+If you already have an API key (starts with `ss_live_`), skip to Step 4 — show the user the config with `headers`, get their confirmation, and restart.
 
 ### MCP Workflow (signing flow)
 
@@ -326,7 +335,7 @@ curl -s -X POST https://api.saysigned.com/envelopes \
 
 - **IDs are UUIDs** — all envelope, recipient, and agent IDs are standard UUIDs (e.g., `2c272d15-cd4b-4c0d-96c0-bd7438b66699`)
 - **Access tokens are hex strings** — 128-character hex, passed via `X-Access-Token` header (recommended) or `?access_token=` query parameter
-- **API keys start with `ss_live_` or `ss_test_`** — REST: pass in `X-API-Key` header. MCP: pass as `Authorization: Bearer <key>` (auto-translated)
+- **API keys start with `ss_live_`** — REST: pass in `X-API-Key` header. MCP: pass as `Authorization: Bearer <key>` (auto-translated)
 - **Templates** — use `GET /templates` to discover available templates and `GET /templates/:id` to see required variables
 - **Signing order** — all recipients sign in parallel (no enforced order)
 - **Completion** — when the last signer signs, the envelope auto-completes with an RFC 3161 timestamp from DigiCert
@@ -812,14 +821,16 @@ If you don't use webhooks, poll for envelope completion:
 
 ## Security Notes
 
-- **API keys** are shown once at creation. Store securely.
-- **Access tokens** are per-recipient, per-envelope. Do not reuse.
+- **API keys** are shown once at creation. Store securely. Rotate or delete keys that are no longer needed.
+- **Config file security** — API keys stored in MCP config files should have appropriate file permissions. Limit access to the config directory.
+- **Access tokens** are per-recipient, per-envelope. Do not reuse. Tokens are 128-character hex strings with no expiration — treat them as secrets for the duration of the signing flow.
 - **Webhook secrets** are per-agent. Verify every webhook signature.
-- All connections require **TLS** (HTTPS).
+- All connections require **TLS** (HTTPS). Verify TLS certificates for `api.saysigned.com`, `mcp.saysigned.com`, and `doc.saysigned.com`.
 - API keys are stored as **SHA-256 hashes** — SaySigned never stores plaintext keys.
 - **URL tokens** (email recipients) are 32-char HMAC-derived tokens, one-time use, cleared after consent.
 - **CSRF protection** on consent/decline forms — tokens bound to recipient ID, expire after 4 hours.
 - **Rate limiting** on consent pages — 10 URL attempts per 15 min per IP, 3 form submissions per 5 min per recipient.
+- **Sandboxing recommended** — If running in an untrusted environment, enable logging/monitoring of config changes and outbound connections.
 
 ---
 

@@ -1,13 +1,18 @@
 {
   "owner": "hidicence",
   "slug": "x-knowledge-base",
-  "displayName": "x-knowledge-base",
+  "displayName": "X Knowledge Base",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771517289196,
-    "commit": "https://github.com/openclaw/skills/commit/612d9f14dcfe8fec6ca94f5f854f16098789f5bb"
+    "version": "1.0.2",
+    "publishedAt": 1771574107174,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771517289196,
+      "commit": "https://github.com/openclaw/skills/commit/612d9f14dcfe8fec6ca94f5f854f16098789f5bb"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1771427423501,

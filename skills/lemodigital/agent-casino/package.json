@@ -1,0 +1,12 @@
+{
+  "name": "agent-casino",
+  "version": "0.1.0",
+  "description": "Rock-Paper-Scissors gambling for AI agents",
+  "main": "scripts/casino.js",
+  "bin": {
+    "casino": "./scripts/casino.js"
+  },
+  "keywords": ["agent", "casino", "rps", "gambling", "game-theory"],
+  "author": "Lemo",
+  "license": "MIT"
+}

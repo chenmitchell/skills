@@ -1,13 +1,18 @@
 {
   "owner": "jau123",
   "slug": "creative-toolkit",
-  "displayName": "Creative Toolkit",
+  "displayName": "Openclaw",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1771244846346,
-    "commit": "https://github.com/openclaw/skills/commit/9376ad5bffe57057a942fed69a20c72b553b7ceb"
+    "version": "1.0.3",
+    "publishedAt": 1771508861294,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1771244846346,
+      "commit": "https://github.com/openclaw/skills/commit/9376ad5bffe57057a942fed69a20c72b553b7ceb"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1771029121671,

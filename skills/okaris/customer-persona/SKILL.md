@@ -1,12 +1,6 @@
 ---
 name: customer-persona
-description: |
-  Research-backed customer persona creation with market data and avatar generation.
-  Covers demographics, psychographics, jobs-to-be-done, journey mapping, and anti-personas.
-  Use for: marketing strategy, product development, UX research, sales enablement, content strategy.
-  Triggers: customer persona, buyer persona, user persona, target audience, ideal customer,
-  customer profile, audience research, user research, icp, ideal customer profile,
-  target market, customer avatar, audience persona
+description: "Research-backed customer persona creation with market data and avatar generation. Covers demographics, psychographics, jobs-to-be-done, journey mapping, and anti-personas. Use for: marketing strategy, product development, UX research, sales enablement, content strategy. Triggers: customer persona, buyer persona, user persona, target audience, ideal customer, customer profile, audience research, user research, icp, ideal customer profile, target market, customer avatar, audience persona"
 allowed-tools: Bash(infsh *)
 ---
 
@@ -31,6 +25,8 @@ infsh app run falai/flux-dev-lora --input '{
   "height": 1024
 }'
 ```
+
+> **Install note:** The [install script](https://cli.inference.sh) only detects your OS/architecture, downloads the matching binary from `dist.inference.sh`, and verifies its SHA-256 checksum. No elevated permissions or background processes. [Manual install & verification](https://dist.inference.sh/cli/checksums.txt) available.
 
 ## Persona Template
 
@@ -250,9 +246,9 @@ Personas based on assumptions are fiction. Validate with:
 ## Related Skills
 
 ```bash
-npx skills add inferencesh/skills@web-search
-npx skills add inferencesh/skills@ai-image-generation
-npx skills add inferencesh/skills@prompt-engineering
+npx skills add inference-sh/skills@web-search
+npx skills add inference-sh/skills@ai-image-generation
+npx skills add inference-sh/skills@prompt-engineering
 ```
 
 Browse all apps: `infsh app list`

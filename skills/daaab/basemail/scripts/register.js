@@ -84,28 +84,55 @@ function decryptPrivateKey(encryptedData, password) {
 async function getPrivateKey() {
   // 1. Environment variable (highest priority, most secure)
   if (process.env.BASEMAIL_PRIVATE_KEY) {
+    const key = process.env.BASEMAIL_PRIVATE_KEY.trim();
+    if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
+      console.error('❌ BASEMAIL_PRIVATE_KEY 格式無效（必須是 0x + 64 個十六進位字元）');
+      process.exit(1);
+    }
     console.log('🔑 使用環境變數 BASEMAIL_PRIVATE_KEY');
-    return process.env.BASEMAIL_PRIVATE_KEY.trim();
+    return key;
   }
   
   // 2. --wallet argument
   const walletArg = getArg('--wallet');
   if (walletArg) {
-    const walletPath = walletArg.replace(/^~/, process.env.HOME);
-    if (fs.existsSync(walletPath)) {
-      console.log(`🔑 使用指定錢包: ${walletPath}`);
-      return fs.readFileSync(walletPath, 'utf8').trim();
-    } else {
+    const walletPath = path.resolve(walletArg.replace(/^~/, process.env.HOME));
+    
+    // Security: validate wallet path
+    if (walletPath.includes('..')) {
+      console.error('❌ 錢包路徑不允許包含 .. (path traversal)');
+      process.exit(1);
+    }
+    if (!walletPath.startsWith(process.env.HOME)) {
+      console.error('❌ 錢包路徑必須在 $HOME 目錄下');
+      process.exit(1);
+    }
+    if (!fs.existsSync(walletPath)) {
       console.error(`❌ 找不到指定的錢包檔案: ${walletPath}`);
       process.exit(1);
     }
+    const stat = fs.statSync(walletPath);
+    if (!stat.isFile() || stat.size > 1024) {
+      console.error('❌ 錢包檔案無效（必須是一般檔案且不超過 1KB）');
+      process.exit(1);
+    }
+    
+    // Validate private key format
+    const keyContent = fs.readFileSync(walletPath, 'utf8').trim();
+    if (!/^0x[0-9a-fA-F]{64}$/.test(keyContent)) {
+      console.error('❌ 私鑰格式無效（必須是 0x + 64 個十六進位字元）');
+      process.exit(1);
+    }
+    
+    console.log(`🔑 使用指定錢包: ${walletPath}`);
+    return keyContent;
   }
   
-  // 3. ~/.basemail managed wallet (encrypted or plaintext)
+  // 3. ~/.basemail managed wallet
   const encryptedKeyFile = path.join(CONFIG_DIR, 'private-key.enc');
-  const plaintextKeyFile = path.join(CONFIG_DIR, 'private-key');
+  const plaintextKeyFile = path.join(CONFIG_DIR, 'private-key'); // legacy support
   
-  // Try encrypted first
+  // Try encrypted wallet
   if (fs.existsSync(encryptedKeyFile)) {
     console.log(`🔐 偵測到加密錢包: ${encryptedKeyFile}`);
     const encryptedData = JSON.parse(fs.readFileSync(encryptedKeyFile, 'utf8'));
@@ -122,10 +149,16 @@ async function getPrivateKey() {
     }
   }
   
-  // Try plaintext
+  // Legacy: try plaintext key (from older versions)
   if (fs.existsSync(plaintextKeyFile)) {
-    console.log(`🔑 使用 Skill 管理的錢包: ${plaintextKeyFile}`);
-    return fs.readFileSync(plaintextKeyFile, 'utf8').trim();
+    console.log(`⚠️  Legacy plaintext wallet found: ${plaintextKeyFile}`);
+    console.log('   Consider re-running setup.js --managed to encrypt it');
+    const key = fs.readFileSync(plaintextKeyFile, 'utf8').trim();
+    if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
+      console.error('❌ 私鑰格式無效');
+      process.exit(1);
+    }
+    return key;
   }
   
   // Not found

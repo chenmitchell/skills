@@ -5,8 +5,7 @@
  * 
  * Usage: 
  *   node setup.js              # Show help
- *   node setup.js --managed    # Generate wallet (encrypted by default ✅)
- *   node setup.js --managed --no-encrypt  # Generate without encryption (⚠️ less secure)
+ *   node setup.js --managed    # Generate wallet (always encrypted ✅)
  * 
  * ⚠️ SECURITY: This is optional! Recommended to use existing wallet via
  *    environment variable BASEMAIL_PRIVATE_KEY instead.
@@ -39,8 +38,37 @@ function prompt(question) {
 }
 
 function promptPassword(question) {
-  // Note: In production, use a proper password input that hides characters
-  return prompt(question);
+  return new Promise((resolve) => {
+    process.stdout.write(question);
+    const stdin = process.stdin;
+    const wasRaw = stdin.isRaw;
+    if (stdin.isTTY) {
+      stdin.setRawMode(true);
+    }
+    stdin.resume();
+    stdin.setEncoding('utf8');
+    let password = '';
+    const onData = (ch) => {
+      if (ch === '\n' || ch === '\r' || ch === '\u0004') {
+        stdin.removeListener('data', onData);
+        if (stdin.isTTY) stdin.setRawMode(wasRaw);
+        stdin.pause();
+        process.stdout.write('\n');
+        resolve(password.trim());
+      } else if (ch === '\u0003') {
+        process.exit();
+      } else if (ch === '\u007F' || ch === '\b') {
+        if (password.length > 0) {
+          password = password.slice(0, -1);
+          process.stdout.write('\b \b');
+        }
+      } else {
+        password += ch;
+        process.stdout.write('*');
+      }
+    };
+    stdin.on('data', onData);
+  });
 }
 
 function logAudit(action, details = {}) {
@@ -94,16 +122,12 @@ function showHelp() {
   console.log('   預設使用密碼加密，私鑰存於 ~/.basemail/private-key.enc');
   console.log('   僅建議對錢包不熟悉的用戶使用\n');
   
-  console.log('📌 不加密選項（⚠️ 較不安全）：\n');
-  console.log('   node setup.js --managed --no-encrypt\n');
-  console.log('   私鑰將以明文儲存，僅限受信任的環境使用\n');
+  console.log('   Private key is always encrypted with AES-256-GCM\n');
 }
 
 async function main() {
   const args = process.argv.slice(2);
   const isManaged = args.includes('--managed');
-  const noEncrypt = args.includes('--no-encrypt');
-  const isEncrypt = !noEncrypt; // Default to encrypted
 
   // No --managed flag: show help and exit
   if (!isManaged) {
@@ -115,14 +139,8 @@ async function main() {
   console.log('=======================================\n');
 
   // Warning
-  console.log('⚠️  警告：即將生成新錢包');
-  if (isEncrypt) {
-    console.log('   私鑰將以密碼加密後存於 ~/.basemail/\n');
-  } else {
-    console.log('   ⚠️ 私鑰將以明文存於 ~/.basemail/');
-    console.log('   請確保這台機器只有你有權限存取');
-    console.log('   建議使用預設加密模式（移除 --no-encrypt）\n');
-  }
+  console.log('⚠️  Warning: About to generate a new wallet');
+  console.log('   Private key will be encrypted and stored in ~/.basemail/\n');
 
   // Check if wallet already exists
   if (fs.existsSync(KEY_FILE) || fs.existsSync(KEY_FILE_ENCRYPTED)) {
@@ -161,37 +179,42 @@ async function main() {
   // ❌ 不輸出私鑰到終端！
   // ❌ 不輸出 mnemonic 到終端！
   
-  // Save based on encryption choice
-  if (isEncrypt) {
-    const password = await promptPassword('\n請設定加密密碼: ');
-    const confirmPwd = await promptPassword('再次輸入密碼確認: ');
-    
-    if (password !== confirmPwd) {
-      console.error('❌ 密碼不一致，已取消');
-      process.exit(1);
-    }
-    
-    if (password.length < 8) {
-      console.error('❌ 密碼至少需要 8 個字元');
-      process.exit(1);
-    }
-    
-    const encryptedData = encryptPrivateKey(wallet.privateKey, password);
-    fs.writeFileSync(KEY_FILE_ENCRYPTED, JSON.stringify(encryptedData, null, 2), { mode: 0o600 });
-    console.log(`\n🔐 加密私鑰已存於: ${KEY_FILE_ENCRYPTED}`);
-    
-    // Remove plaintext key if exists
-    if (fs.existsSync(KEY_FILE)) {
-      fs.unlinkSync(KEY_FILE);
-    }
-  } else {
-    fs.writeFileSync(KEY_FILE, wallet.privateKey, { mode: 0o600 });
-    console.log(`\n🔑 私鑰已存於: ${KEY_FILE}`);
-    
-    // Remove encrypted key if exists
-    if (fs.existsSync(KEY_FILE_ENCRYPTED)) {
-      fs.unlinkSync(KEY_FILE_ENCRYPTED);
-    }
+  // Always encrypt
+  const password = await promptPassword('\nSet encryption password (min 8 chars, letter + number): ');
+  const confirmPwd = await promptPassword('Confirm password: ');
+  
+  if (password !== confirmPwd) {
+    console.error('❌ Passwords do not match');
+    process.exit(1);
+  }
+  
+  if (password.length < 8) {
+    console.error('❌ Password must be at least 8 characters');
+    process.exit(1);
+  }
+  
+  if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+    console.error('❌ Password must contain at least one letter and one number');
+    process.exit(1);
+  }
+  
+  const encryptedData = encryptPrivateKey(wallet.privateKey, password);
+  fs.writeFileSync(KEY_FILE_ENCRYPTED, JSON.stringify(encryptedData, null, 2), { mode: 0o600 });
+  console.log(`\n🔐 Encrypted private key saved to: ${KEY_FILE_ENCRYPTED}`);
+  
+  // Remove legacy plaintext key if exists
+  if (fs.existsSync(KEY_FILE)) {
+    // Overwrite before deleting for security
+    fs.writeFileSync(KEY_FILE, crypto.randomBytes(64).toString('hex'), { mode: 0o600 });
+    fs.unlinkSync(KEY_FILE);
+    console.log('🗑️  Legacy plaintext key securely removed');
+  }
+  
+  // Remove legacy mnemonic file if exists
+  if (fs.existsSync(MNEMONIC_FILE)) {
+    fs.writeFileSync(MNEMONIC_FILE, crypto.randomBytes(64).toString('hex'), { mode: 0o600 });
+    fs.unlinkSync(MNEMONIC_FILE);
+    console.log('🗑️  Legacy mnemonic file securely removed');
   }
 
   // Display mnemonic for manual backup (NOT saved to file automatically)
@@ -204,15 +227,7 @@ async function main() {
   console.log('⚠️  遺失助記詞將無法恢復錢包');
   console.log('═'.repeat(50));
   
-  // Ask if user wants to save mnemonic to file
-  const saveMnemonic = await prompt('\n是否儲存助記詞到檔案？(yes/no，預設 no): ');
-  if (saveMnemonic.toLowerCase() === 'yes') {
-    fs.writeFileSync(MNEMONIC_FILE, wallet.mnemonic.phrase, { mode: 0o400 });
-    console.log(`📝 Mnemonic 已存於: ${MNEMONIC_FILE} (唯讀)`);
-    console.log('⚠️  建議備份後刪除此檔案');
-  } else {
-    console.log('📝 Mnemonic 未儲存到檔案，請確保已自行備份');
-  }
+  console.log('📝 Mnemonic will NOT be saved to disk. Please back it up manually now.');
   
   // Save wallet info (public only)
   const walletInfo = {

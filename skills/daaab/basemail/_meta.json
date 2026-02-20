@@ -1,13 +1,18 @@
 {
   "owner": "daaab",
   "slug": "basemail",
-  "displayName": "Basemail",
+  "displayName": "BaseMail - Onchain Email for AI Agents on Base",
   "latest": {
-    "version": "1.6.0",
-    "publishedAt": 1770546269452,
-    "commit": "https://github.com/openclaw/skills/commit/83a2deab85206fb0beb365a4ca841c1578991d66"
+    "version": "1.8.0",
+    "publishedAt": 1771346222136,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.6.0",
+      "publishedAt": 1770546269452,
+      "commit": "https://github.com/openclaw/skills/commit/83a2deab85206fb0beb365a4ca841c1578991d66"
+    },
     {
       "version": "1.5.1",
       "publishedAt": 1770525525589,

@@ -68,11 +68,15 @@ function validatePassword(password) {
   const errors = [];
   
   if (!password || password.length < 8) {
-    errors.push('密碼至少需要 8 個字元');
+    errors.push('Password must be at least 8 characters');
   }
   
   if (password && password.length > 128) {
-    errors.push('密碼不能超過 128 個字元');
+    errors.push('Password must not exceed 128 characters');
+  }
+  
+  if (password && (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password))) {
+    errors.push('Password must contain at least one letter and one number');
   }
   
   return {

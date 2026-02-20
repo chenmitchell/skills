@@ -3,11 +3,16 @@
   "slug": "warren-nft-mainnet",
   "displayName": "Warren NFT Deploy(mainnet)",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771073087435,
-    "commit": "https://github.com/openclaw/skills/commit/a431eb98f7ea52148f08f5af6ca5bd6fac13d0b4"
+    "version": "1.0.6",
+    "publishedAt": 1771553616726,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771073087435,
+      "commit": "https://github.com/openclaw/skills/commit/a431eb98f7ea52148f08f5af6ca5bd6fac13d0b4"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770559003230,

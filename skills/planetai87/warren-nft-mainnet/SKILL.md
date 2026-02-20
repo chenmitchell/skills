@@ -1,7 +1,7 @@
 ---
 name: warren-nft
 description: Deploy NFT collections permanently on MegaETH mainnet. Images are stored on-chain via SSTORE2, then published through WarrenContainer and WarrenLaunchedNFT.
-metadata: {"openclaw":{"emoji":"🖼️","homepage":"https://thewarren.app","requires":{"anyBins":["node"]}}}
+metadata: {"openclaw":{"emoji":"🖼️","homepage":"https://thewarren.app","source":"https://github.com/planetai87/onchain-loader","requires":{"anyBins":["node"],"env":["PRIVATE_KEY"]},"primaryEnv":"PRIVATE_KEY"}}
 user-invocable: true
 ---
 
@@ -63,9 +63,25 @@ If you override or unset it, mint a human key:
 |----------|---------|
 | Genesis Key NFT (0xRabbitNeo) | `0x0d7BB250fc06f0073F0882E3Bf56728A948C5a88` |
 | 0xRabbit.agent Key NFT | `0x3f0CAbd6AB0a318f67aAA7af5F774750ec2461f2` |
-| WarrenContainer | `0xF70B6082d0309E93Cc4C83eeA562Fa1E985Ea21f` |
-| WarrenContainerRenderer | `0x9b1f966491F1dBf734DECadaAA2aaA65cdF8B923` |
+| WarrenContainer | `0x65179A9473865b55af0274348d39E87c1D3d5964` |
+| WarrenContainerRenderer | `0xdC0c76832a6fF9F9db64686C7f04D7c0669366BB` |
 | Treasury/Relayer | `0xcea9d92ddb052e914ab665c6aaf1ff598d18c550` |
+
+## Environment Variables
+
+| Variable | Required | Default | Purpose |
+|----------|----------|---------|---------|
+| `PRIVATE_KEY` | **Yes** | — | Wallet private key for signing transactions |
+| `RPC_URL` | No | `https://mainnet.megaeth.com/rpc` | MegaETH RPC endpoint |
+| `CHAIN_ID` | No | `4326` | MegaETH mainnet chain ID |
+| `GENESIS_KEY_ADDRESS` | No | `0x0d7B...5a88` | Genesis Key NFT contract |
+| `RABBIT_AGENT_ADDRESS` | No | `0x3f0C...61f2` | 0xRabbit.agent NFT contract |
+| `CONTAINER_ADDRESS` | No | `0x6517...5964` | WarrenContainer contract |
+| `RENDERER_ADDRESS` | No | `0xdC0c...6BB` | WarrenContainerRenderer contract |
+| `TREASURY_ADDRESS` | No | `0xcea9...8c550` | Treasury/relayer address |
+| `REGISTER_API` | No | `https://thewarren.app/api/container-nfts` | Collection registration endpoint (see Security) |
+| `CHUNK_SIZE` | No | `15000` | Bytes per chunk (15KB) |
+| `GROUP_SIZE` | No | `500` | Max addresses per tree node |
 
 ## Deploy NFT Collection
 
@@ -191,3 +207,12 @@ PRIVATE_KEY=0x... node deploy-nft.js --generate-svg 100 --name "Century" --symbo
 
 - Mainnet content is permanent and immutable.
 - You pay gas from your own wallet.
+
+## Security & Privacy
+
+- **No data exfiltration**: Images are sent only as blockchain transactions to the configured RPC endpoint.
+- **PRIVATE_KEY handling**: Used solely to sign transactions. Never logged, stored on disk, or transmitted to third parties.
+- **Network endpoints**: Only the configured `RPC_URL` (default: `mainnet.megaeth.com/rpc`) and `REGISTER_API`.
+- **REGISTER_API**: After on-chain deployment is complete, the script POSTs collection metadata (name, symbol, maxSupply, prices, NFT contract address, container ID) to `thewarren.app/api/container-nfts` for management page registration. This is **optional and non-critical** — the on-chain collection works without it. No images or private keys are sent. Override with `REGISTER_API` env var or set to empty to disable.
+- **File access**: Reads only files in the specified `--images-folder`. No access outside that directory.
+- **No telemetry**: No analytics, tracking, or usage reporting.

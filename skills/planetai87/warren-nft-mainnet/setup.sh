@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # Warren NFT Deploy - Quick Setup
 cd "$(dirname "$0")"
 npm init -y > /dev/null 2>&1

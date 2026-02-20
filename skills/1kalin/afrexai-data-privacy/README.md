@@ -1,41 +1,82 @@
-# Data Privacy Compliance Framework
+# AfrexAI Data Privacy & Protection Program 🔐
 
-Complete data privacy program generator covering GDPR, CCPA/CPRA, LGPD, POPIA, and PIPL.
+The most comprehensive data privacy skill on ClawHub. Build, operate, and mature a privacy program that complies with **GDPR, CCPA/CPRA, LGPD, PIPEDA, POPIA** and more — while enabling business growth.
 
-## What It Does
-- Maps personal data flows across your organization
-- Generates Data Protection Impact Assessments (DPIAs)
-- Creates Data Subject Request (DSR) procedures with templates
-- Builds consent management frameworks
-- Produces 72-hour breach response playbooks
-- Scores your privacy program maturity (1-50 scale)
-- Handles cross-border transfer assessments (post-Schrems II)
+## What This Does
 
-## Who It's For
-- Data Protection Officers
-- Compliance teams at B2B SaaS companies
-- CTOs building privacy-first products
-- Startups preparing for SOC 2 + GDPR audits
-- Legal teams managing multi-jurisdiction data flows
+Turns your AI agent into a **Data Protection Officer (DPO)** that can:
+
+- 🔍 **Assess** privacy program maturity (8-dimension scoring)
+- 📋 **Build** Records of Processing Activities (ROPA) with YAML templates
+- ⚖️ **Navigate** multi-regulation compliance (GDPR, CCPA, LGPD, PIPEDA, POPIA, APPI, PDPA)
+- 📜 **Audit** privacy notices against legal requirements
+- 🙋 **Manage** Data Subject Access Requests (DSARs) with response templates
+- 🔎 **Conduct** Data Protection Impact Assessments (DPIAs)
+- 🤝 **Evaluate** vendors with 100-point privacy scorecards
+- 🚨 **Respond** to data breaches with step-by-step playbooks
+- 🏗️ **Embed** Privacy by Design into product development
+- 📊 **Track** program health with metrics dashboards
+
+## Install
+
+```bash
+clawhub install afrexai-data-privacy
+```
 
 ## Quick Start
-Ask your agent to use this skill, then request:
-- "Map our personal data inventory"
-- "Run a DPIA for our new analytics feature"
-- "Create DSR response procedures"
-- "Score our privacy program maturity"
-- "Build a breach response playbook"
 
-## Covers
-| Regulation | Jurisdiction | Key Requirements |
-|-----------|-------------|-----------------|
-| GDPR | EU/UK | 72hr breach notification, DPIAs, lawful basis |
-| CCPA/CPRA | California | Do Not Sell, 45-day DSR response |
-| LGPD | Brazil | DPO appointment, legal bases |
-| POPIA | South Africa | Processing conditions, prior authorization |
-| PIPL | China | Consent + separate consent for sensitive data |
+```
+"Assess our privacy program"
+→ 8-dimension maturity assessment with scoring
 
-## Industry-Specific Privacy
-Need deeper coverage for your sector? Check out [AfrexAI Context Packs](https://afrexai-cto.github.io/context-packs/) ($47 each) — Healthcare (HIPAA), Fintech (PCI DSS), Legal (privilege), and 7 more.
+"Which regulations apply to our SaaS company with EU customers?"
+→ Applicability matrix with specific requirements
 
-Free: [AI Revenue Leak Calculator](https://afrexai-cto.github.io/ai-revenue-calculator/) | [Agent Setup Wizard](https://afrexai-cto.github.io/agent-setup/)
+"We had a data breach"
+→ Immediate response playbook with notification timelines
+
+"Assess this vendor for privacy risk"
+→ 100-point vendor privacy scorecard
+```
+
+## What's Inside
+
+- **12 phases** from assessment to continuous improvement
+- **ROPA template** with every GDPR Article 30 required field
+- **8-regulation comparison matrix** (GDPR, CCPA, LGPD, PIPEDA, POPIA, APPI, PDPA, UK GDPR)
+- **DSAR workflow** with response templates and rights-by-regulation table
+- **DPIA template** with trigger checklist and risk assessment YAML
+- **DPA checklist** with 14 essential clauses and red flags
+- **Breach response playbook** with 4-phase timeline and notification templates
+- **Consent management** framework with cookie tier implementation
+- **Privacy by Design** engineering checklist (per feature/product)
+- **10 Privacy-Enhancing Technologies** comparison
+- **Vendor assessment scorecard** (0-100)
+- **100-point program scoring rubric** across 8 weighted dimensions
+- **Annual privacy calendar** with month-by-month activities
+- **Training program design** by audience role
+- **12 natural language commands**
+- Zero dependencies
+
+## ⚡ Level Up
+
+This free skill gives you the complete methodology. For **industry-specific privacy implementations** with regulatory deep-dives, check out our context packs:
+
+- 🏥 [Healthcare AI Context Pack](https://afrexai-cto.github.io/context-packs/) — HIPAA privacy rule deep-dive
+- 💰 [Fintech AI Context Pack](https://afrexai-cto.github.io/context-packs/) — Financial data protection (GLBA, PCI DSS)
+- ⚖️ [Legal AI Context Pack](https://afrexai-cto.github.io/context-packs/) — Attorney-client privilege, legal data handling
+- 💻 [SaaS AI Context Pack](https://afrexai-cto.github.io/context-packs/) — SaaS data processing, SOC 2 privacy
+
+**$47 per pack** — [Browse all 10 packs →](https://afrexai-cto.github.io/context-packs/)
+
+## 🔗 More Free Skills by AfrexAI
+
+- [afrexai-compliance-engine](https://clawhub.com/skills/afrexai-compliance-engine) — SOC 2, ISO 27001, GDPR, HIPAA compliance
+- [afrexai-cybersecurity-engine](https://clawhub.com/skills/afrexai-cybersecurity-engine) — OWASP, incident response, security architecture
+- [afrexai-risk-management](https://clawhub.com/skills/afrexai-risk-management) — Enterprise risk management system
+- [afrexai-contract-review](https://clawhub.com/skills/afrexai-contract-review) — Contract analysis with CLAWS risk scoring
+- [afrexai-ai-governance](https://clawhub.com/skills/afrexai-ai-governance) — EU AI Act, NIST AI RMF, responsible AI
+
+---
+
+*Built by [AfrexAI](https://afrexai-cto.github.io/context-packs/) 🖤💛 — AI agents that compound capital and code.*

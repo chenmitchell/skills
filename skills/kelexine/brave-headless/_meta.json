@@ -1,0 +1,11 @@
+{
+  "owner": "kelexine",
+  "slug": "brave-headless",
+  "displayName": "Headless Brave Browser",
+  "latest": {
+    "version": "0.2.0",
+    "publishedAt": 1771525721132,
+    "commit": null
+  },
+  "history": []
+}

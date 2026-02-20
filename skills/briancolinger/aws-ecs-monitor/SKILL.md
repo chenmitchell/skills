@@ -1,6 +1,12 @@
 ---
 name: aws-ecs-monitor
+version: 1.0.1
 description: AWS ECS production health monitoring with CloudWatch log analysis — monitors ECS service health, ALB targets, SSL certificates, and provides deep CloudWatch log analysis for error categorization, restart detection, and production alerts.
+metadata:
+  openclaw:
+    requires:
+      bins: ["aws", "curl", "python3"]
+      anyBins: ["openssl"]
 ---
 
 # AWS ECS Monitor
@@ -37,6 +43,11 @@ All configuration is via environment variables:
 | `ECS_HEALTH_OUTDIR` | No | `./data/` | Output directory for logs and alerts |
 | `ECS_LOG_PATTERN` | No | `/ecs/{service}` | CloudWatch log group pattern (`{service}` is replaced) |
 | `ECS_HTTP_ENDPOINTS` | No | — | Comma-separated `name=url` pairs for HTTP probes |
+
+## Directories Written
+
+- **`ECS_HEALTH_STATE`** (default: `./data/ecs-health.json`) — Health state JSON file
+- **`ECS_HEALTH_OUTDIR`** (default: `./data/`) — Output directory for logs, alerts, and analysis reports
 
 ## Scripts
 

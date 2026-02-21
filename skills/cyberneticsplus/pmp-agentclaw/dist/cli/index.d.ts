@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * PMP-Agent CLI Main Entry
- * Usage: pmp-agent <command> [args...]
+ * PMP-Agentclaw CLI Main Entry
+ * Usage: pmp-agentclaw <command> [args...]
  */
 declare const commands: Record<string, string>;
 declare function showHelp(): void;

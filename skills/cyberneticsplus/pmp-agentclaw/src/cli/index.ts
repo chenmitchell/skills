@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * PMP-Agent CLI Main Entry
- * Usage: pmp-agent <command> [args...]
+ * PMP-Agentclaw CLI Main Entry
+ * Usage: pmp-agentclaw <command> [args...]
  */
 
 const commands: Record<string, string> = {
@@ -17,9 +17,10 @@ const commands: Record<string, string> = {
 
 function showHelp() {
   console.log(`
-PMP-Agentclaw — PMBOK Project Management CLI
+PMP-Agentclaw — Project Management CLI
 
-Usage: pmp-agent <command> [options]
+Usage: pmp-agentclaw <command> [options]
+   or: pm-evm, pm-risk, pm-velocity, pm-health (direct aliases)
 
 Commands:
   calc-evm <BAC> <PV> <EV> <AC>     Calculate earned value metrics
@@ -34,10 +35,16 @@ Options:
   --forecast <points>            Forecast remaining work (velocity only)
 
 Examples:
-  pmp-agent calc-evm 10000 5000 4500 4800 --markdown
-  pmp-agent score-risks 3 4
-  pmp-agent calc-velocity 34 28 42 --forecast 200
-  pmp-agent health-check ./my-project
+  pmp-agentclaw calc-evm 10000 5000 4500 4800 --markdown
+  pmp-agentclaw score-risks 3 4
+  pmp-agentclaw calc-velocity 34 28 42 --forecast 200
+  pmp-agentclaw health-check ./my-project
+
+  # Direct command aliases (faster):
+  pm-evm 10000 5000 4500 4800
+  pm-risk 3 4
+  pm-velocity 34 28 42 --forecast 200
+  pm-health ./my-project
 `);
 }
 
@@ -58,7 +65,8 @@ function main() {
   
   // Re-execute with the specific script
   // In actual compiled code, this would require the specific module
-  console.log(`Run: npx ${script.replace('./', 'pm-')} ${args.join(' ')}`);
+  const alias = script.replace('./', 'pm-').replace('-check', '');
+  console.log(`Run: ${alias} ${args.join(' ')}`);
 }
 
 main();

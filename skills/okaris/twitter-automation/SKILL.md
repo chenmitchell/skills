@@ -1,19 +1,14 @@
 ---
 name: twitter-automation
-description: |
-  Automate Twitter/X with posting, engagement, and user management via inference.sh CLI.
-  Apps: x/post-tweet, x/post-create (with media), x/post-like, x/post-retweet, x/dm-send, x/user-follow.
-  Capabilities: post tweets, schedule content, like posts, retweet, send DMs, follow users, get profiles.
-  Use for: social media automation, content scheduling, engagement bots, audience growth, X API.
-  Triggers: twitter api, x api, tweet automation, post to twitter, twitter bot,
-  social media automation, x automation, tweet scheduler, twitter integration,
-  post tweet, twitter post, x post, send tweet
+description: "Automate Twitter/X with posting, engagement, and user management via inference.sh CLI. Apps: x/post-tweet, x/post-create (with media), x/post-like, x/post-retweet, x/dm-send, x/user-follow. Capabilities: post tweets, schedule content, like posts, retweet, send DMs, follow users, get profiles. Use for: social media automation, content scheduling, engagement bots, audience growth, X API. Triggers: twitter api, x api, tweet automation, post to twitter, twitter bot, social media automation, x automation, tweet scheduler, twitter integration, post tweet, twitter post, x post, send tweet"
 allowed-tools: Bash(infsh *)
 ---
 
 # Twitter/X Automation
 
 Automate Twitter/X via [inference.sh](https://inference.sh) CLI.
+
+![Twitter/X Automation](https://cloud.inference.sh/app/files/u/4mg21r6ta37mpaz6ktzwtt8krr/01kgad3pxsh3z3hnfpjyjpx4x4.jpeg)
 
 ## Quick Start
 
@@ -24,6 +19,8 @@ curl -fsSL https://cli.inference.sh | sh && infsh login
 # Post a tweet
 infsh app run x/post-tweet --input '{"text": "Hello from inference.sh!"}'
 ```
+
+> **Install note:** The [install script](https://cli.inference.sh) only detects your OS/architecture, downloads the matching binary from `dist.inference.sh`, and verifies its SHA-256 checksum. No elevated permissions or background processes. [Manual install & verification](https://dist.inference.sh/cli/checksums.txt) available.
 
 ## Available Apps
 
@@ -136,16 +133,16 @@ infsh app run x/post-create --input '{
 
 ```bash
 # Full platform skill (all 150+ apps)
-npx skills add inference-sh/agent-skills@inference-sh
+npx skills add inference-sh/skills@inference-sh
 
 # Image generation (create images to post)
-npx skills add inference-sh/agent-skills@ai-image-generation
+npx skills add inference-sh/skills@ai-image-generation
 
 # Video generation (create videos to post)
-npx skills add inference-sh/agent-skills@ai-video-generation
+npx skills add inference-sh/skills@ai-video-generation
 
 # AI avatars (create presenter videos)
-npx skills add inference-sh/agent-skills@ai-avatar-video
+npx skills add inference-sh/skills@ai-avatar-video
 ```
 
 Browse all apps: `infsh app list`

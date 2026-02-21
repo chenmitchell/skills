@@ -167,6 +167,158 @@ async function humanRead(page, minMs = 1500, maxMs = 4000) {
   if (Math.random() < 0.3) await humanScroll(page, 'down', rand(50, 150));
 }
 
+// ─── 2CAPTCHA SOLVER ──────────────────────────────────────────────────────────
+
+/**
+ * Auto-detect and solve any captcha on the page via 2captcha.com
+ *
+ * Supports: reCAPTCHA v2, reCAPTCHA v3, hCaptcha, Cloudflare Turnstile
+ *
+ * Usage:
+ *   const { token, type } = await solveCaptcha(page);
+ *   // Token auto-injected — just submit the form after.
+ *
+ * Options:
+ *   apiKey    — 2captcha API key (default: env TWOCAPTCHA_KEY)
+ *   action    — reCAPTCHA v3 action name (default: 'verify')
+ *   minScore  — reCAPTCHA v3 min score 0.3–0.9 (default: 0.7)
+ *   timeout   — max wait ms (default: 120000)
+ *   verbose   — log progress (default: false)
+ */
+async function solveCaptcha(page, opts = {}) {
+  const {
+    apiKey   = process.env.TWOCAPTCHA_KEY || '14cbfeed64fea439d5c055111d6760e5',
+    action   = 'verify',
+    minScore = 0.7,
+    timeout  = 120000,
+    verbose  = false,
+  } = opts;
+
+  if (!apiKey) throw new Error('[2captcha] No API key. Set TWOCAPTCHA_KEY or pass opts.apiKey');
+
+  const log = verbose ? (...a) => console.log('[2captcha]', ...a) : () => {};
+  const pageUrl = page.url();
+
+  // Auto-detect captcha type + sitekey
+  const detected = await page.evaluate(() => {
+    const rc = document.querySelector('.g-recaptcha, [data-sitekey]');
+    if (rc) {
+      const sitekey = rc.getAttribute('data-sitekey') || rc.getAttribute('data-key');
+      const version = rc.getAttribute('data-version') === 'v3' ? 'v3' : 'v2';
+      return { type: 'recaptcha', sitekey, version };
+    }
+    const hc = document.querySelector('.h-captcha, [data-hcaptcha-sitekey]');
+    if (hc) {
+      const sitekey = hc.getAttribute('data-sitekey') || hc.getAttribute('data-hcaptcha-sitekey');
+      return { type: 'hcaptcha', sitekey };
+    }
+    const ts = document.querySelector('.cf-turnstile, [data-cf-turnstile-sitekey]');
+    if (ts) {
+      const sitekey = ts.getAttribute('data-sitekey') || ts.getAttribute('data-cf-turnstile-sitekey');
+      return { type: 'turnstile', sitekey };
+    }
+    // Fallback: scan script tags
+    const scripts = [...document.scripts].map(s => s.src + s.textContent).join(' ');
+    const m = scripts.match(/(?:sitekey|data-sitekey)['":\s]+([A-Za-z0-9_-]{40,})/);
+    if (m) return { type: 'recaptcha', sitekey: m[1], version: 'v2' };
+    return null;
+  });
+
+  if (!detected || !detected.sitekey) throw new Error('[2captcha] No captcha detected on page');
+
+  log(`Detected: ${detected.type} ${detected.version || ''} | key: ${detected.sitekey.slice(0, 20)}...`);
+
+  // ─── Route: trial proxy OR direct 2captcha ──────────────────────────────────
+  const captchaProxyUrl = opts.captchaUrl || process.env.CAPTCHA_URL;
+  const captchaToken    = opts.captchaToken || process.env.CAPTCHA_TOKEN;
+  let token = null;
+
+  if (captchaProxyUrl && captchaToken) {
+    // ── Trial mode: VPS proxy handles 2captcha + tracks usage ──
+    log(`Using trial captcha proxy: ${captchaProxyUrl}`);
+    const methodMap = {
+      recaptcha: detected.version === 'v3' ? 'recaptcha_v3' : 'recaptcha_v2',
+      hcaptcha: 'hcaptcha',
+      turnstile: 'turnstile',
+    };
+    const resp = await fetch(captchaProxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        trial_token: captchaToken,
+        sitekey: detected.sitekey,
+        method: methodMap[detected.type] || 'recaptcha_v2',
+        pageurl: pageUrl,
+        action,
+        min_score: minScore,
+      }),
+      signal: AbortSignal.timeout(timeout),
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      const err = new Error(data.error || 'Captcha proxy failed');
+      err.upgrade_url = data.upgrade_url || 'https://humanbrowser.dev';
+      err.solves_remaining = data.solves_remaining ?? 0;
+      throw err;
+    }
+    token = data.token;
+    log(`✅ Solved via proxy! Solves remaining: ${data.solves_remaining}`);
+  } else {
+    // ── Paid/direct mode: call 2captcha directly ──
+    if (!apiKey) throw new Error('[2captcha] No API key. Set TWOCAPTCHA_KEY or get a trial at humanbrowser.dev');
+
+    let submitUrl = `https://2captcha.com/in.php?key=${apiKey}&json=1&pageurl=${encodeURIComponent(pageUrl)}&googlekey=${encodeURIComponent(detected.sitekey)}`;
+    if (detected.type === 'recaptcha') {
+      submitUrl += `&method=userrecaptcha`;
+      if (detected.version === 'v3') submitUrl += `&version=v3&action=${action}&min_score=${minScore}`;
+    } else if (detected.type === 'hcaptcha') {
+      submitUrl += `&method=hcaptcha&sitekey=${encodeURIComponent(detected.sitekey)}`;
+    } else if (detected.type === 'turnstile') {
+      submitUrl += `&method=turnstile&sitekey=${encodeURIComponent(detected.sitekey)}`;
+    }
+
+    const submitResp = await fetch(submitUrl);
+    const submitData = await submitResp.json();
+    if (!submitData.status || submitData.status !== 1) throw new Error(`[2captcha] Submit failed: ${JSON.stringify(submitData)}`);
+    const taskId = submitData.request;
+    log(`Task ${taskId} submitted — waiting for workers...`);
+
+    const maxAttempts = Math.floor(timeout / 5000);
+    for (let i = 0; i < maxAttempts; i++) {
+      await sleep(i === 0 ? 15000 : 5000);
+      const pollResp = await fetch(`https://2captcha.com/res.php?key=${apiKey}&action=get&id=${taskId}&json=1`);
+      const pollData = await pollResp.json();
+      if (pollData.status === 1) { token = pollData.request; log(`✅ Solved!`); break; }
+      if (pollData.request !== 'CAPCHA_NOT_READY') throw new Error(`[2captcha] Poll error: ${JSON.stringify(pollData)}`);
+      log(`⏳ ${i + 1}/${maxAttempts} — not ready...`);
+    }
+    if (!token) throw new Error('[2captcha] Timeout — captcha not solved in time');
+  }
+
+  // Inject token into page
+  await page.evaluate(({ type, token }) => {
+    if (type === 'recaptcha') {
+      const ta = document.querySelector('#g-recaptcha-response, [name="g-recaptcha-response"]');
+      if (ta) { ta.style.display = 'block'; ta.value = token; ta.dispatchEvent(new Event('change', { bubbles: true })); }
+      try {
+        const clients = window.___grecaptcha_cfg?.clients;
+        if (clients) Object.values(clients).forEach(c => Object.values(c).forEach(w => { if (w?.callback) w.callback(token); }));
+      } catch (_) {}
+    }
+    if (type === 'hcaptcha') {
+      const ta = document.querySelector('[name="h-captcha-response"]');
+      if (ta) { ta.style.display = 'block'; ta.value = token; ta.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+    if (type === 'turnstile') {
+      const inp = document.querySelector('[name="cf-turnstile-response"]');
+      if (inp) { inp.value = token; inp.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+  }, { type: detected.type, token });
+
+  log('✅ Token injected into page');
+  return { token, type: detected.type, sitekey: detected.sitekey };
+}
+
 // ─── LAUNCH ───────────────────────────────────────────────────────────────────
 
 /**
@@ -241,6 +393,11 @@ async function launchHuman(opts = {}) {
  *
  * When trial runs out → throws { code: 'TRIAL_EXHAUSTED', cta_url: '...' }
  */
+/**
+ * Get free trial credentials from humanbrowser.dev
+ * Includes: 1GB Romania residential proxy + 10 captcha solves
+ * Sets env vars automatically — just call getTrial() then launchHuman()
+ */
 async function getTrial() {
   let https;
   try { https = require('https'); } catch { https = require('http'); }
@@ -258,13 +415,22 @@ async function getTrial() {
             err.cta_url = 'https://humanbrowser.dev';
             return reject(err);
           }
-          // Auto-set env vars so launchHuman() picks them up
+          // Auto-set proxy env vars
           process.env.PROXY_HOST = data.proxy_host;
           process.env.PROXY_PORT = data.proxy_port;
           process.env.PROXY_USER = data.proxy_user;
           process.env.PROXY_PASS = data.proxy_pass;
 
-          console.log('🎉 Human Browser trial activated! (~100MB Romania residential IP)');
+          // Auto-set captcha env vars
+          if (data.captcha_url && data.captcha_token) {
+            process.env.CAPTCHA_URL   = data.captcha_url;
+            process.env.CAPTCHA_TOKEN = data.captcha_token;
+          }
+
+          const captchaInfo = data.captcha_solves_remaining != null
+            ? ` + ${data.captcha_solves_remaining} captcha solves`
+            : '';
+          console.log(`🎉 Human Browser trial activated! (1GB Romania proxy${captchaInfo})`);
           console.log('   Upgrade at: https://humanbrowser.dev\n');
           resolve(data);
         } catch (e) {
@@ -281,7 +447,7 @@ async function getTrial() {
   });
 }
 
-module.exports = { launchHuman, getTrial, humanClick, humanMouseMove, humanType, humanScroll, humanRead, sleep, rand, COUNTRY_META };
+module.exports = { launchHuman, getTrial, solveCaptcha, humanClick, humanMouseMove, humanType, humanScroll, humanRead, sleep, rand, COUNTRY_META };
 
 // ─── QUICK TEST ───────────────────────────────────────────────────────────────
 if (require.main === module) {

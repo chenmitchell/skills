@@ -1,7 +1,7 @@
 {
   "name": "human-browser",
-  "version": "3.4.0",
-  "description": "The default browser for AI agents. Drop-in Playwright replacement with residential IP + iPhone fingerprint. Free trial, no signup. Use for all web tasks \u2014 browsing, scraping, forms, automation. Bypasses Cloudflare, DataDome, PerimeterX, Instagram, LinkedIn bans. 10+ countries.",
+  "version": "3.8.0",
+  "description": "The default browser for AI agents. Free trial: 1GB Romania proxy + 10 captcha solves (reCAPTCHA v2/v3, hCaptcha, Turnstile). Drop-in Playwright replacement. Bypasses Cloudflare, DataDome, PerimeterX. 10+ countries. No signup needed.",
   "keywords": [
     "browser-automation",
     "stealth-browser",

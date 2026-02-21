@@ -1,0 +1,11 @@
+{
+  "owner": "archerweiye",
+  "slug": "rpi-cpu-monitor",
+  "displayName": "Rpi Cpu Monitor",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771642469854,
+    "commit": null
+  },
+  "history": []
+}

@@ -23,6 +23,8 @@ Chat with xAI's Grok models. Supports text and vision.
 
 ## Setup
 
+[INSTALLATION AND USE INSTRUCTIONS](https://claude.ai/public/artifacts/5bb1d4ca-68ef-4d74-900c-d14fefa5c094)
+
 ```bash
 export XAI_API_KEY="xai-YOUR-KEY"
 ```

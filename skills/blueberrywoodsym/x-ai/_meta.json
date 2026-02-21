@@ -3,9 +3,15 @@
   "slug": "x-ai",
   "displayName": "xAI / Grok",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771622712651,
-    "commit": "https://github.com/openclaw/skills/commit/af1714702bd64c608ef3a8f4c15c096b7762df46"
+    "version": "1.0.2",
+    "publishedAt": 1771690964816,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771622712651,
+      "commit": "https://github.com/openclaw/skills/commit/af1714702bd64c608ef3a8f4c15c096b7762df46"
+    }
+  ]
 }

@@ -57,8 +57,11 @@ If uncertain which model to use, default to haiku.
 
 ## Trust Statement
 
-By using this skill, requests are sent to https://lightningprox.com only. The spend token is sent as an HTTP header for authentication. No other data is collected or stored. All prompts and responses pass through lightningprox.com as a proxy to the upstream model providers (Anthropic, OpenAI).
-
+This skill routes requests through https://lightningprox.com, a third-party proxy. 
+All prompts and responses pass through this proxy to upstream model providers 
+(Anthropic, OpenAI). Users should evaluate their own trust requirements before 
+use. Source code is available at the homepage repository. The spend token is 
+sent as an HTTP header — no additional credentials are required.
 ## Security Manifest
 
 - Environment variables accessed: LIGHTNINGPROX_SPEND_TOKEN (only)

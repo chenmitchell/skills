@@ -3,11 +3,16 @@
   "slug": "shell-security-ultimate",
   "displayName": "Shell Security Ultimate",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1771020574636,
-    "commit": "https://github.com/openclaw/skills/commit/7f9dce2b10657fa1085127b241575c41c85d5505"
+    "version": "2.2.0",
+    "publishedAt": 1771657505745,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1771020574636,
+      "commit": "https://github.com/openclaw/skills/commit/7f9dce2b10657fa1085127b241575c41c85d5505"
+    },
     {
       "version": "1.0.2",
       "publishedAt": 1770816021861,

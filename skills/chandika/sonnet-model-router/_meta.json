@@ -1,11 +1,17 @@
 {
   "owner": "chandika",
   "slug": "sonnet-model-router",
-  "displayName": "Sonnet Model Router",
+  "displayName": "Openclaw Model Router",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1771393239263,
-    "commit": "https://github.com/openclaw/skills/commit/636dcd8b8c9fa59c2f0f523cc647627b5b0d3715"
+    "version": "2.2.0",
+    "publishedAt": 1771441466205,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1771393239263,
+      "commit": "https://github.com/openclaw/skills/commit/636dcd8b8c9fa59c2f0f523cc647627b5b0d3715"
+    }
+  ]
 }

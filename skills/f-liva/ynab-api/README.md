@@ -1,134 +1,101 @@
 # YNAB Budget Management Skill
 
-A comprehensive skill for managing YNAB (You Need A Budget) budgets via API, including transaction categorization best practices, consistency checks, and common financial workflows.
+Complete automation toolkit for YNAB (You Need A Budget) with goal tracking, spending analysis, and daily budget reports.
 
 ## Features
 
-- ✅ **Smart Categorization**: Automatically checks past transactions to maintain category consistency
-- ✅ **Duplicate Detection**: Prevents duplicate entries by checking for pending transactions
-- ✅ **Monthly Reports**: Calculate true discretionary spending with proper exclusions
-- ✅ **Split Transaction Handling**: Properly expands split transactions to subcategories
-- ✅ **Best Practices**: Learned patterns for accurate financial tracking
+- 📊 **Goal Progress Tracking** with visual bars
+- 📅 **Scheduled Transaction Alerts** (never miss bills)
+- 💰 **Age of Money Monitoring** (financial health)
+- 📈 **Month-over-Month Comparison** (spot trends)
+- ⚠️ **Overspending Alerts** (stay on budget)
+- 🔄 **Automated Daily Check** (morning WhatsApp summary)
+- 🎯 **Smart Categorization** (learn from history)
+- 💸 **Real Transfer Support** (properly linked)
 
-## Installation
+## Quick Start
 
-### Via ClawHub
-
+1. Install the skill:
 ```bash
-clawhub install ynab
+clawhub install ynab-api
 ```
 
-### Manual Installation
+2. Get your YNAB API token: https://app.ynab.com/settings/developer
 
-```bash
-git clone <repo-url> ~/.openclaw/skills/ynab
-```
-
-## Configuration
-
-Create a config file at `~/.config/ynab/config.json`:
-
+3. Create config file `~/.config/ynab/config.json`:
 ```json
 {
-  "api_key": "YOUR_YNAB_PERSONAL_ACCESS_TOKEN",
-  "budget_id": "YOUR_BUDGET_UUID",
-  "default_account_id": "YOUR_PRIMARY_ACCOUNT_UUID"
+  "api_key": "YOUR_TOKEN_HERE",
+  "budget_id": "YOUR_BUDGET_ID"
 }
 ```
 
-### Getting Your YNAB Credentials
-
-1. **API Key**: Go to https://app.ynab.com/settings/developer → Generate New Token
-2. **Budget ID**: Open your budget in YNAB web app, copy UUID from URL: `https://app.ynab.com/{BUDGET_ID}/...`
-3. **Account ID**: Use the helper script: `./scripts/ynab-helper.sh list-categories`
-
-Set secure permissions:
+4. Test it:
 ```bash
-chmod 600 ~/.config/ynab/config.json
+/home/node/clawd/skills/ynab-api/scripts/goals-progress.sh
 ```
 
-## Usage
-
-### With Claude/OpenClaw
-
-The skill activates automatically when you:
-- Ask about budget transactions
-- Need to categorize expenses
-- Want monthly spending reports
-- Query financial data
-
-Examples:
-- "Add a €25 coffee shop transaction to my budget"
-- "What did I spend on groceries this month?"
-- "Categorize this expense based on past transactions"
-
-### Command-Line Helper Script
-
+5. Set up automated reports (recommended):
 ```bash
-# Search past transactions by merchant
-./scripts/ynab-helper.sh search-payee "Coffee"
+# One-command setup - creates all recommended cron jobs
+/home/node/clawd/skills/ynab-api/scripts/setup-automation.sh
 
-# List all categories with IDs
-./scripts/ynab-helper.sh list-categories
-
-# Get spending for current month
-./scripts/ynab-helper.sh month-spending
-
-# Get spending for specific month
-./scripts/ynab-helper.sh month-spending 2026-01
-
-# Add transaction interactively
-./scripts/ynab-helper.sh add-transaction
+# Preview first (dry run)
+/home/node/clawd/skills/ynab-api/scripts/setup-automation.sh --dry-run
 ```
 
-## Best Practices Included
+This creates:
+- Daily Budget Check (7:15 AM)
+- Weekly Spending Review (Monday 8 AM)
+- Mid-Month Goal Check (15th, 9 AM)
+- Upcoming Bills Alert (10 AM daily)
 
-1. **Always categorize immediately** - Never leave transactions uncategorized
-2. **Check transaction history** - Maintain consistency with past categorizations
-3. **Detect duplicates** - Check for pending transactions before adding new ones
-4. **Use milliunits** - Remember YNAB uses milliunits (€10 = 10000)
-5. **Exclude non-discretionary** - Proper monthly spending calculation excludes taxes, advances, etc.
-6. **Handle splits** - Expand split transactions to show actual subcategories
+## Available Scripts
 
-## Category Reference
+All scripts in `scripts/` directory:
 
-The skill includes a reference guide with category examples and best practices. See `references/category-examples.md` for:
-- Common category structures
-- Merchant-to-category mapping guidelines
-- Split transaction examples
-- Exclusion strategies for budget calculations
+- `goals-progress.sh` - Show goal progress with visual bars
+- `scheduled-upcoming.sh` - List upcoming scheduled transactions
+- `month-comparison.sh` - Compare spending month-over-month
+- `transfer.sh` - Create proper account transfers
+- `daily-budget-check.sh` - Comprehensive morning report
 
-## Security
+## Full Documentation
 
-- ⚠️ **Never commit** your API key to version control
-- 🔒 Store credentials in `~/.config/ynab/config.json` with 600 permissions
-- 🚫 The skill **never logs** or displays full API keys
+See `SKILL.md` for:
+- Complete API best practices
+- Transfer transaction guide (critical!)
+- Automation setup examples
+- Troubleshooting
+- Security tips
 
-## API Rate Limits
+## Example Daily Report
 
-YNAB API limit: ~200 requests/hour per IP.
+```
+☀️ BUDGET CHECK MATTUTINO
 
-The skill caches category lookups and minimizes API calls where possible.
+💰 Age of Money: 141 giorni ✅
 
-## Troubleshooting
+📅 Prossime uscite (7gg)
+• Domani: Netflix €12.99
 
-**401 Unauthorized**: Check your API key in config file
-**404 Not Found**: Verify budget_id and account_id are correct
-**Transaction not appearing**: Check if it's pending approval (unapproved)
+⚠️ Alert Budget Superato
+• Eating Out: €178 / €150 (+€28)
 
-## Contributing
-
-Improvements welcome! Common additions:
-- Additional category mappings for different locales
-- Budget goal tracking
-- Scheduled transaction management
-- Multi-currency support
+🎯 Obiettivi in ritardo
+• Gym: 8% (€22/€270)
+```
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License - Free to use and modify
 
-## Resources
+## Support
 
 - YNAB API Docs: https://api.ynab.com
-- YNAB Help: https://support.ynab.com
+- ClawHub: https://clawhub.com
+- Issues: Open on GitHub
+
+---
+
+Made with ❤️ for the OpenClaw community

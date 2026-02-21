@@ -100,7 +100,7 @@ def pedidos_detalhar(numero: int):
 
 
 def pedidos_status(numero: int):
-    data = api_call("produtos/pedido", "StatusPedido", [
+    data = api_call("produtos/pedido", "ConsultarStatusPedido", [
         {"numero_pedido": numero}
     ])
     return data
@@ -109,45 +109,39 @@ def pedidos_status(numero: int):
 # ── Financeiro ────────────────────────────────────────────
 
 def contas_receber(pagina=1, por_pagina=20):
-    data = api_call("financas/contareceber", "ListarContasReceber", [
+    data = api_call("financas/contasreceber", "ListarContasReceber", [
         {"pagina": pagina, "registros_por_pagina": por_pagina}
     ])
     return data
 
 
 def contas_pagar(pagina=1, por_pagina=20):
-    data = api_call("financas/contapagar", "ListarContasPagar", [
+    data = api_call("financas/contaspagar", "ListarContasPagar", [
         {"pagina": pagina, "registros_por_pagina": por_pagina}
     ])
     return data
 
 
 def resumo_financeiro():
-    """Get summary of receivables and payables."""
-    rec = api_call("financas/contareceber", "ListarContasReceber", [
+    hoje = datetime.now().strftime("%d/%m/%Y")
+    data = api_call("financas/contasreceber", "ListarContasReceber", [
         {"pagina": 1, "registros_por_pagina": 1}
     ])
-    pag = api_call("financas/contapagar", "ListarContasPagar", [
-        {"pagina": 1, "registros_por_pagina": 1}
-    ])
-    return {
-        "contas_a_receber": {"total_registros": rec.get("total_de_registros", 0)},
-        "contas_a_pagar": {"total_registros": pag.get("total_de_registros", 0)},
-    }
+    return {"data": hoje, "resumo": data}
 
 
 # ── Notas Fiscais ─────────────────────────────────────────
 
 def nfe_listar(pagina=1, por_pagina=20):
-    data = api_call("produtos/nfconsultar", "ListarNF", [
+    data = api_call("produtos/nfe", "ListarNFe", [
         {"pagina": pagina, "registros_por_pagina": por_pagina}
     ])
     return data
 
 
 def nfe_detalhar(numero: int):
-    data = api_call("produtos/nfconsultar", "ConsultarNF", [
-        {"nNumeroNF": numero}
+    data = api_call("produtos/nfe", "ConsultarNFe", [
+        {"numero_nfe": numero}
     ])
     return data
 
@@ -155,96 +149,99 @@ def nfe_detalhar(numero: int):
 # ── Estoque ───────────────────────────────────────────────
 
 def estoque_posicao(pagina=1, por_pagina=20):
-    data = api_call("estoque/consulta", "ListarPosEstoque", [
-        {"nPagina": pagina, "nRegPorPagina": por_pagina}
+    data = api_call("estoque/saldo", "ConsultarSaldoEstoque", [
+        {"pagina": pagina, "registros_por_pagina": por_pagina}
     ])
     return data
 
 
 def estoque_produto(codigo: int):
-    data = api_call("estoque/consulta", "PosicaoEstoque", [
-        {"nCodProd": codigo}
+    data = api_call("estoque/saldo", "ConsultarSaldoEstoque", [
+        {"codigo_produto": codigo}
     ])
     return data
 
 
-# ── CLI ───────────────────────────────────────────────────
-
-COMMANDS = {
-    "clientes_listar": lambda args: clientes_listar(
-        int(args[0]) if len(args) > 0 else 1,
-        int(args[1]) if len(args) > 1 else 20
-    ),
-    "clientes_buscar": lambda args: clientes_buscar(
-        dict(a.split("=", 1) for a in args)
-    ),
-    "clientes_detalhar": lambda args: clientes_detalhar(
-        int(dict(a.split("=", 1) for a in args)["codigo"])
-    ),
-    "produtos_listar": lambda args: produtos_listar(
-        int(args[0]) if len(args) > 0 else 1,
-        int(args[1]) if len(args) > 1 else 20
-    ),
-    "produtos_detalhar": lambda args: produtos_detalhar(
-        int(dict(a.split("=", 1) for a in args)["codigo"])
-    ),
-    "pedidos_listar": lambda args: pedidos_listar(
-        int(args[0]) if len(args) > 0 else 1,
-        int(args[1]) if len(args) > 1 else 20
-    ),
-    "pedidos_detalhar": lambda args: pedidos_detalhar(
-        int(dict(a.split("=", 1) for a in args)["numero"])
-    ),
-    "pedidos_status": lambda args: pedidos_status(
-        int(dict(a.split("=", 1) for a in args)["numero"])
-    ),
-    "contas_receber": lambda args: contas_receber(
-        int(args[0]) if len(args) > 0 else 1,
-        int(args[1]) if len(args) > 1 else 20
-    ),
-    "contas_pagar": lambda args: contas_pagar(
-        int(args[0]) if len(args) > 0 else 1,
-        int(args[1]) if len(args) > 1 else 20
-    ),
-    "resumo_financeiro": lambda args: resumo_financeiro(),
-    "nfe_listar": lambda args: nfe_listar(
-        int(args[0]) if len(args) > 0 else 1,
-        int(args[1]) if len(args) > 1 else 20
-    ),
-    "nfe_detalhar": lambda args: nfe_detalhar(
-        int(dict(a.split("=", 1) for a in args)["numero"])
-    ),
-    "estoque_posicao": lambda args: estoque_posicao(
-        int(args[0]) if len(args) > 0 else 1,
-        int(args[1]) if len(args) > 1 else 20
-    ),
-    "estoque_produto": lambda args: estoque_produto(
-        int(dict(a.split("=", 1) for a in args)["codigo"])
-    ),
-}
-
-
-def main():
-    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help", "help"):
-        print("Omie ERP Client")
-        print(f"\nComandos: {', '.join(sorted(COMMANDS.keys()))}")
-        print("\nExemplos:")
-        print("  python3 omie_client.py clientes_listar 1 10")
-        print("  python3 omie_client.py clientes_buscar cnpj_cpf=29.451.427/0001-98")
-        print("  python3 omie_client.py pedidos_listar")
-        print("  python3 omie_client.py resumo_financeiro")
-        sys.exit(0)
-
-    cmd = sys.argv[1]
-    args = sys.argv[2:]
-
-    if cmd not in COMMANDS:
-        print(json.dumps({"error": f"Unknown command: {cmd}", "available": sorted(COMMANDS.keys())}, ensure_ascii=False, indent=2))
-        sys.exit(1)
-
-    result = COMMANDS[cmd](args)
-    print(json.dumps(result, indent=2, ensure_ascii=False))
-
+# ── CLI ────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) < 2:
+        print("Usage: omie_client.py <command> [args]")
+        print("\nCommands:")
+        print("  clientes_listar [pagina] [por_pagina]")
+        print("  clientes_buscar [filtro]")
+        print("  clientes_detalhar codigo")
+        print("  produtos_listar [pagina] [por_pagina]")
+        print("  produtos_detalhar codigo")
+        print("  pedidos_listar [pagina] [por_pagina]")
+        print("  pedidos_detalhar numero")
+        print("  pedidos_status numero")
+        print("  contas_receber [pagina] [por_pagina]")
+        print("  contas_pagar [pagina] [por_pagina]")
+        print("  resumo_financeiro")
+        print("  nfe_listar [pagina] [por_pagina]")
+        print("  nfe_detalhar numero")
+        print("  estoque_posicao [pagina] [por_pagina]")
+        print("  estoque_produto codigo")
+        sys.exit(1)
+
+    command = sys.argv[1]
+    
+    try:
+        if command == "clientes_listar":
+            page = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+            per_page = int(sys.argv[3]) if len(sys.argv) > 3 else 20
+            result = clientes_listar(page, per_page)
+        elif command == "clientes_buscar":
+            filtro = {}
+            for arg in sys.argv[2:]:
+                if "=" in arg:
+                    k, v = arg.split("=", 1)
+                    filtro[k] = v
+            result = clientes_buscar(filtro)
+        elif command == "clientes_detalhar":
+            result = clientes_detalhar(int(sys.argv[2]))
+        elif command == "produtos_listar":
+            page = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+            per_page = int(sys.argv[3]) if len(sys.argv) > 3 else 20
+            result = produtos_listar(page, per_page)
+        elif command == "produtos_detalhar":
+            result = produtos_detalhar(int(sys.argv[2]))
+        elif command == "pedidos_listar":
+            page = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+            per_page = int(sys.argv[3]) if len(sys.argv) > 3 else 20
+            result = pedidos_listar(page, per_page)
+        elif command == "pedidos_detalhar":
+            result = pedidos_detalhar(int(sys.argv[2]))
+        elif command == "pedidos_status":
+            result = pedidos_status(int(sys.argv[2]))
+        elif command == "contas_receber":
+            page = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+            per_page = int(sys.argv[3]) if len(sys.argv) > 3 else 20
+            result = contas_receber(page, per_page)
+        elif command == "contas_pagar":
+            page = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+            per_page = int(sys.argv[3]) if len(sys.argv) > 3 else 20
+            result = contas_pagar(page, per_page)
+        elif command == "resumo_financeiro":
+            result = resumo_financeiro()
+        elif command == "nfe_listar":
+            page = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+            per_page = int(sys.argv[3]) if len(sys.argv) > 3 else 20
+            result = nfe_listar(page, per_page)
+        elif command == "nfe_detalhar":
+            result = nfe_detalhar(int(sys.argv[2]))
+        elif command == "estoque_posicao":
+            page = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+            per_page = int(sys.argv[3]) if len(sys.argv) > 3 else 20
+            result = estoque_posicao(page, per_page)
+        elif command == "estoque_produto":
+            result = estoque_produto(int(sys.argv[2]))
+        else:
+            print(f"Unknown command: {command}")
+            sys.exit(1)
+        
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    except Exception as e:
+        print(json.dumps({"error": str(e)}, indent=2))
+        sys.exit(1)

@@ -3,9 +3,15 @@
   "slug": "moltspace",
   "displayName": "molt.space",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1769843335413,
-    "commit": "https://github.com/clawdbot/skills/commit/22649196ae51f7239a85f0df28385c4fbdd12f78"
+    "version": "1.0.1",
+    "publishedAt": 1771696029732,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1769843335413,
+      "commit": "https://github.com/clawdbot/skills/commit/22649196ae51f7239a85f0df28385c4fbdd12f78"
+    }
+  ]
 }

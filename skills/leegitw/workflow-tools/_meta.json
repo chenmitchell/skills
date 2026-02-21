@@ -3,11 +3,16 @@
   "slug": "workflow-tools",
   "displayName": "Workflow Tools",
   "latest": {
-    "version": "1.2.0",
-    "publishedAt": 1771540504873,
-    "commit": "https://github.com/openclaw/skills/commit/e10a934e8c6dd1e08415e985ca27a0af18eae3fe"
+    "version": "1.4.0",
+    "publishedAt": 1771617977579,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.0",
+      "publishedAt": 1771540504873,
+      "commit": "https://github.com/openclaw/skills/commit/e10a934e8c6dd1e08415e985ca27a0af18eae3fe"
+    },
     {
       "version": "1.1.0",
       "publishedAt": 1771469822343,

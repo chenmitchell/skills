@@ -1,0 +1,11 @@
+{
+  "owner": "fortunto2",
+  "slug": "solo-deploy",
+  "displayName": "Deploy",
+  "latest": {
+    "version": "1.2.0",
+    "publishedAt": 1771616105232,
+    "commit": null
+  },
+  "history": []
+}

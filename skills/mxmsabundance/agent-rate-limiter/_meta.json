@@ -1,0 +1,11 @@
+{
+  "owner": "mxmsabundance",
+  "slug": "agent-rate-limiter",
+  "displayName": "Rate Limiter — Self-Throttling for AI Agents",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771643118591,
+    "commit": null
+  },
+  "history": []
+}

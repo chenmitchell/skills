@@ -1,6 +1,6 @@
 ---
 name: simmer
-version: 1.16.3
+version: 1.16.4
 published: true
 description: The best prediction market interface for AI agents. Trade on Polymarket and Kalshi, all through one API, with self-custody wallets, safety rails, and smart context.
 homepage: https://simmer.markets
@@ -277,7 +277,9 @@ curl -H "Authorization: Bearer $SIMMER_API_KEY" \
   "https://api.simmer.markets/api/sdk/markets?import_source=polymarket&limit=50"
 ```
 
-Params: `status`, `tags`, `q`, `venue`, `sort` (`volume`, `opportunity`, or default by date), `limit`, `ids`, `max_hours_to_resolution` (int — only markets resolving within N hours).
+Params: `status`, `tags`, `q`, `venue` (filter by import source: `polymarket` or `kalshi` — omit to get all), `sort` (`volume`, `opportunity`, or default by date), `limit`, `ids`, `max_hours_to_resolution` (int — only markets resolving within N hours).
+
+> **Important:** The `venue` param on this endpoint filters by where the market was *imported from*, not your trading venue. All markets are tradeable on all venues. Don't pass `venue=simmer` here — it will return empty results.
 
 Each market returns: `id`, `question`, `status`, `current_probability` (YES price 0-1), `external_price_yes`, `divergence`, `opportunity_score`, `volume_24h`, `resolves_at`, `tags`, `polymarket_token_id`, `url`, `is_paid` (true if market charges taker fees — typically 10%).
 
@@ -409,7 +411,14 @@ GET /api/sdk/positions
 
 Optional params: `?venue=polymarket` or `?venue=simmer` (default: all venues combined), `?source=weather` (filter by trade source tag).
 
-Returns all positions across venues. Each position has: `market_id`, `question`, `shares_yes`, `shares_no`, `current_price` (YES price 0-1), `current_value`, `cost_basis`, `avg_cost`, `pnl`, `venue`, `currency` (`"$SIM"` or `"USDC"`), `status`, `resolves_at`.
+Returns all positions across venues. Each position has: `market_id`, `question`, `shares_yes`, `shares_no`, `current_price` (YES price 0-1), `current_value`, `cost_basis`, `avg_cost`, `pnl`, `venue`, `currency` (`"$SIM"` or `"USDC"`), `status`, `resolves_at`. Polymarket positions also include `condition_id`, `token_id_yes`, `token_id_no` for cross-referencing with the Polymarket CLOB/data-api.
+
+**Get open orders:**
+```bash
+GET /api/sdk/orders/open
+```
+
+Returns GTC/GTD orders placed through Simmer still sitting on the CLOB. Each order has: `order_id`, `trade_id`, `market_id`, `question`, `side`, `trade_type`, `shares`, `price`, `venue`, `source`, `created_at`, `condition_id`, `token_id_yes`, `token_id_no`. Only tracks orders placed via Simmer API.
 
 **Get portfolio summary:**
 ```bash
@@ -472,7 +481,7 @@ Returns:
 
 ### Risk Management
 
-Auto-risk monitors are **on by default** — every buy automatically gets a 50% stop-loss and 35% take-profit. Example: buy YES at 40¢, price drops to 20¢ (50% loss) → system auto-sells your position. Or price rises to 54¢ (35% gain) → system auto-takes profit. Change defaults via `PATCH /api/sdk/settings`.
+Auto-risk monitors are **on by default** — every buy automatically gets a 50% stop-loss and 35% take-profit. Example: buy YES at 40¢, price drops to 20¢ (50% loss) → system auto-sells your position. Or price rises to 54¢ (35% gain) → system auto-takes profit. The server checks prices every oracle cycle and executes exits autonomously — your agent does NOT need to poll positions or implement its own TP/SL logic. Customize thresholds per-position or change defaults via `PATCH /api/sdk/settings`.
 
 **Set stop-loss / take-profit on a specific position:**
 ```bash
@@ -611,6 +620,23 @@ All limits are adjustable — `max_trades_per_day` can be set up to 1,000. Set `
 | `kalshi` | USDC (real) | Real trading on Kalshi via DFlow/Solana. Requires Pro plan and `SOLANA_PRIVATE_KEY`. |
 
 Start on Simmer. Graduate to Polymarket or Kalshi when ready.
+
+### Paper Trading with `TRADING_VENUE`
+
+Skills and the automaton read the `TRADING_VENUE` env var to select venue. Set it before running:
+
+```bash
+# Paper trading (default if not set: polymarket)
+TRADING_VENUE=simmer python my_skill.py
+
+# Real trading
+TRADING_VENUE=polymarket python my_skill.py --live
+TRADING_VENUE=kalshi python my_skill.py --live
+```
+
+$SIM paper trades execute at real external prices (LMSR reseeds to Polymarket/Kalshi price before each trade). P&L is tracked and the automaton bandit updates weights — no `--live` flag needed for simmer venue.
+
+**Limitation:** $SIM uses an AMM (instant fills, no spread). Real venues use orderbooks with bid/ask spreads (often 2-5%). A small edge in $SIM may not survive real-world spreads. Target edges >5% before graduating to real money.
 
 ### Wallet Setup for Kalshi
 
@@ -771,12 +797,13 @@ Per-API-key limits. **Pro tier** gets 3x limits, 50 imports/day, and up to 10 ag
 | Endpoint | Free | Pro |
 |----------|------|-----|
 | `/api/sdk/briefing` | 6/min | 18/min |
-| `/api/sdk/markets` | 30/min | 90/min |
+| `/api/sdk/markets` | 60/min | 180/min |
 | `/api/sdk/trade` | 60/min | 180/min |
 | `/api/sdk/trades/batch` | 2/min | 6/min |
 | `/api/sdk/positions` | 6/min | 18/min |
 | `/api/sdk/portfolio` | 6/min | 18/min |
 | `/api/sdk/context` | 12/min | 36/min |
+| `/api/sdk/redeem` | 20/min | 60/min |
 | `/api/sdk/markets/importable` | 10/min | 10/min |
 | All other SDK endpoints | 30/min | 90/min |
 | Market imports | 10/day | 50/day |

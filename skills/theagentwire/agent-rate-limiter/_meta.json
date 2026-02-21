@@ -1,0 +1,11 @@
+{
+  "owner": "theagentwire",
+  "slug": "agent-rate-limiter",
+  "displayName": "Rate Limiter",
+  "latest": {
+    "version": "1.1.0",
+    "publishedAt": 1771644983734,
+    "commit": null
+  },
+  "history": []
+}

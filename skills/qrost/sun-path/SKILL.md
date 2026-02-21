@@ -1,6 +1,6 @@
 ---
 name: sun-path
-version: 1.3.0
+version: 1.4.1
 description: Generates a sun path diagram, calculates solar position, performs building shadow analysis, and analyzes thermal comfort.
 author: qrost
 permissions:
@@ -21,6 +21,16 @@ This skill requires Python and the following libraries:
 - `shapely` (geometry calculations for shadows)
 - `numpy` (math)
 - `rasterio` (for terrain/DEM shadow; optional for DEM features)
+
+**Setup:** OpenClaw does not install Python packages automatically. After installing this skill (e.g. via `clawhub install sun-path`), run once from the skill folder or with the path to it: `pip install -r requirements.txt`. If a script fails with `ModuleNotFoundError`, install the missing package from the list above or from `requirements.txt`.
+
+## Sending images to Telegram
+
+Used from the OpenClaw Telegram conversation. Scripts that produce images (`plot_sunpath.py`, `shadow_calc.py`, `comfort_calc.py`, `annual_sun_hours.py --output`, `terrain_shadow.py --plot`) write PNG/JPG to the path you pass. Run the script with an `--output` (or `--plot` and use the script’s default image path), then **send that image file** to the user via the OpenClaw message/media tool so they see it in chat.
+
+**OpenClaw allowed paths:** The message tool only sends files from allowed dirs (`~/.openclaw/media/`, `~/.openclaw/agents/`, or `/tmp`). Always pass an output path under one of these (e.g. `--output ~/.openclaw/media/sunpath.png` or `/tmp/shadow.png`); do not use the skill install directory or sending will fail.
+
+**Agent behavior:** When the user asks for sun position, sun path diagram, shadow, annual sun hours chart, comfort chart, or terrain shadow, **run the corresponding script directly** with `exec` and pass an image output path under an allowed dir; then send the generated PNG/JPG to the user. Do not ask for confirmation; execute and return the image and a short summary.
 
 ## Usage
 

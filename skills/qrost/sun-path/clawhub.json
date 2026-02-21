@@ -4,9 +4,9 @@
   "description": "Architectural and environmental analysis: sun position (altitude/azimuth), polar sun path diagrams, 2D building shadow, annual sun/shadow hours at a point, terrain shadow from DEM, and psychrometric comfort chart. For architects and designers.",
   "category": "utility",
   "tags": ["sun", "solar", "shadow", "architecture", "dem", "psychrometric"],
-  "version": "1.3.0",
+  "version": "1.4.1",
   "license": "MIT",
   "pricing": "free",
-  "support_url": "https://github.com/yourname/MyAssistant/issues",
-  "homepage": "https://github.com/yourname/MyAssistant"
+  "support_url": "https://github.com/QROST",
+  "homepage": "https://github.com/QROST"
 }

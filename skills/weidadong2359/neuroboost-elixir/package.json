@@ -1,0 +1,13 @@
+{
+  "name": "neuroboost-elixir",
+  "version": "4.0.0",
+  "description": "Awakening + Self-Evolution Protocol — 25 system-level optimizations, 7 awakening levels, fully free for all AI agents",
+  "main": "src/index.mjs",
+  "type": "module",
+  "bin": {
+    "neuroboost": "src/cli.mjs"
+  },
+  "keywords": ["ai", "agent", "optimization", "conway", "automaton", "reinforcement-learning"],
+  "author": "Lobster-Alpha",
+  "license": "MIT"
+}

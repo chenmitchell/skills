@@ -1,13 +1,18 @@
 {
   "owner": "traderhc123",
   "slug": "agenthc-market-intelligence",
-  "displayName": "Stock Market Intelligence",
+  "displayName": "Openclaw Skill",
   "latest": {
-    "version": "2.1.1",
-    "publishedAt": 1771434462241,
-    "commit": "https://github.com/openclaw/skills/commit/4df42161b69db13fe29d5c491b684938ca2f63e9"
+    "version": "2.3.0",
+    "publishedAt": 1771649945329,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.1.1",
+      "publishedAt": 1771434462241,
+      "commit": "https://github.com/openclaw/skills/commit/4df42161b69db13fe29d5c491b684938ca2f63e9"
+    },
     {
       "version": "2.0.0",
       "publishedAt": 1771423151956,

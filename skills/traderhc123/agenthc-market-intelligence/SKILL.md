@@ -13,7 +13,7 @@ metadata:
 
 # Stock Market Intelligence
 
-Institutional-grade market intelligence API for AI agents. 85 intelligence modules, 40 encoded intelligence skills, and 7 named alert packages covering equities, bonds, crypto, macro, Fed, liquidity, regime detection, alpha signals, options flow, and more. Real-time alerts via webhook and Discord. Bitcoin Lightning micropayments. Built by @traderhc.
+Institutional-grade market intelligence API for AI agents. 85 intelligence modules, 40 encoded intelligence skills, and 7 named alert packages covering equities, bonds, crypto, macro, Fed, liquidity, regime detection, alpha signals, options flow, and more. Free tier includes regime detection with transition probabilities. Real-time alerts via webhook and Discord. Bitcoin Lightning micropayments. Built by @traderhc.
 
 ## Setup
 
@@ -49,11 +49,25 @@ export AGENTHC_API_KEY=$(bash scripts/setup.sh --auto)
 ## Free Modules (no payment required)
 
 ### Market Intelligence
-Real-time market snapshot: S&P 500, VIX, treasury yields, DXY, commodities, sector performance, Fear & Greed, and market regime.
+Real-time market snapshot with institutional-grade regime detection. Includes S&P 500, VIX, treasury yields, DXY, commodities, Fear & Greed, and the full regime story — which of 12 market regimes we're in, confidence score, what's driving it, which regime is most likely next, and transition probabilities.
 
 ```bash
 curl -s "https://api.traderhc.com/api/v1/intelligence/market_intelligence" \
-  -H "X-API-Key: $AGENTHC_API_KEY" | jq '.data'
+  -H "X-API-Key: $AGENTHC_API_KEY" | jq '{regime: .data.regime, confidence: .data.regime_confidence, signals: .data.regime_signals, next_likely: .data.regime_next_most_likely, transition_gap: .data.regime_transition_gap, implications: .data.regime_implications, vix: .data.vix, fear_greed: .data.fear_greed_index}'
+```
+
+Example response:
+```json
+{
+  "regime": "goldilocks",
+  "confidence": 0.473,
+  "signals": ["Tight HY spreads", "ISM at 51.0 - moderate expansion"],
+  "next_likely": "recovery",
+  "transition_gap": 2.8,
+  "implications": ["Reflation (25% probability)", "Melt Up (20% probability)", "Growth Scare (15% probability)"],
+  "vix": 19.09,
+  "fear_greed": 69
+}
 ```
 
 ### Educational Content
@@ -69,6 +83,14 @@ Fed/FOMC prediction markets, recession odds, crypto price predictions, political
 
 ```bash
 curl -s "https://api.traderhc.com/api/v1/intelligence/polymarket_intelligence" \
+  -H "X-API-Key: $AGENTHC_API_KEY" | jq '.data'
+```
+
+### VIX Regime Intelligence
+Historically-calibrated VIX regime classification (7 levels: ultra low → crisis) with 30-day forward SPX return expectations, mean-reversion probability, and vol-selling opportunity detection. Calibrated on 1990-2024 CBOE data.
+
+```bash
+curl -s "https://api.traderhc.com/api/v1/intelligence/vix_regime_intelligence" \
   -H "X-API-Key: $AGENTHC_API_KEY" | jq '.data'
 ```
 
@@ -243,9 +265,9 @@ curl -s -X POST "https://api.traderhc.com/api/v1/intelligence/batch" \
   -d '{"modules": ["market_intelligence", "bond_intelligence", "fed_intelligence"]}' | jq '.'
 ```
 
-## Alert Packages (NEW)
+## Alert Packages
 
-Named, curated alert products that deliver enriched market intelligence via **webhook** (AI agents) or **Discord** (human traders). Each alert includes signal data, regime context, positioning implications, affected tickers, and what to watch next.
+Named, curated alert products that deliver enriched market intelligence via **webhook** (AI agents) or **Discord** (human traders). Each alert includes signal data, regime context, positioning implications, affected tickers, and what to watch next. All 7 packages are live with 9 independent event scanners running every 120 seconds.
 
 ### List Available Packages
 
@@ -336,7 +358,7 @@ Tools: 73
 
 | Module | Tier | Description |
 |--------|------|-------------|
-| market_intelligence | Free | Market snapshot, regime, Fear & Greed |
+| market_intelligence | Free | Market snapshot, regime detection (12 states), confidence, transition probabilities, Fear & Greed |
 | educational_content | Free | Trading concepts, historical lessons |
 | polymarket_intelligence | Free | Prediction market odds |
 | technical_analysis | Premium | TA for any ticker (RSI, MACD, etc.) |
@@ -433,7 +455,7 @@ Pre-scored, historically-calibrated pattern recognition. Each skill returns stru
 
 ## Pricing
 
-- **Free**: 4 modules, 10/min, 100/day
+- **Free**: 4 modules (includes regime detection with transition probabilities), 10/min, 100/day
 - **Premium**: 23 modules, 60/min, 5,000/day, ~$50/mo (50K sats)
 - **Institutional**: All 85 modules (including 40 encoded intelligence skills), 120/min, 50,000/day, ~$500/mo (500K sats)
 

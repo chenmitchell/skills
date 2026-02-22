@@ -1,0 +1,11 @@
+{
+  "owner": "romain-grosos",
+  "slug": "nextcloud-files",
+  "displayName": "Nextcloud Files",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1771797483679,
+    "commit": null
+  },
+  "history": []
+}

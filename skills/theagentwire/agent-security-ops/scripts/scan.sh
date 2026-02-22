@@ -79,6 +79,10 @@ fi
 
 cd "$REPO"
 
+if ! command -v jq >/dev/null 2>&1; then
+  warn "jq not found — JSON output may be malformed on unusual content. Install: https://jqlang.github.io/jq/"
+fi
+
 trufflehog_count=0
 trufflehog_verified=0
 fs_count=0

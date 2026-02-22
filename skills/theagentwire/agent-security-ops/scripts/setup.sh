@@ -100,7 +100,7 @@ else
   CHECKSUMS_URL="https://github.com/trufflesecurity/trufflehog/releases/download/v${VERSION}/trufflehog_${VERSION}_checksums.txt"
 
   info "Downloading $URL"
-  if ! curl -sL "$URL" -o "$TMP/$TARBALL"; then
+  if ! curl -sfL "$URL" -o "$TMP/$TARBALL"; then
     rm -rf "$TMP"
     err "Failed to download TruffleHog tarball"
     exit 1
@@ -108,7 +108,7 @@ else
 
   # [C1] Checksum verification
   info "Verifying SHA256 checksum..."
-  if ! curl -sL "$CHECKSUMS_URL" -o "$TMP/checksums.txt"; then
+  if ! curl -sfL "$CHECKSUMS_URL" -o "$TMP/checksums.txt"; then
     rm -rf "$TMP"
     err "Failed to download checksums file"
     exit 1
@@ -196,8 +196,6 @@ fi
 echo "✓ No secrets found." >&2'
 
 if [ -f "$HOOK" ] && grep -q "$HOOK_MARKER" "$HOOK" 2>/dev/null; then
-  # Check if the hook is exclusively ours (first non-comment, non-blank line has our marker)
-  first_content=$(grep -v '^#!' "$HOOK" | grep -v '^#' | grep -v '^$' | head -1 || true)
   if grep -q '# --- agent-security-ops appended hook ---' "$HOOK" 2>/dev/null; then
     # Appended mode — replace only our section
     HOOK_TMP=$(mktemp)

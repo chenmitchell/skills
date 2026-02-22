@@ -3,9 +3,15 @@
   "slug": "solo-index-youtube",
   "displayName": "Index Youtube",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1771616118768,
-    "commit": "https://github.com/openclaw/skills/commit/19c8c9b0d95f4630cad308dd9f17ea976924d41f"
+    "version": "2.0.0",
+    "publishedAt": 1771698768559,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1771616118768,
+      "commit": "https://github.com/openclaw/skills/commit/19c8c9b0d95f4630cad308dd9f17ea976924d41f"
+    }
+  ]
 }

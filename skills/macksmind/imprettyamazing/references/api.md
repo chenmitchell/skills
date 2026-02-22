@@ -49,7 +49,33 @@ Canonical expiry tracking: derive `Access Token Expires At (UTC)` from the `acce
 `PUBLIC`, `PRIVATE`
 
 ### Win Object Fields
-`id`, `userId`, `content`, `type`, `visibility`, `status`, `imageUrl`, `tags`, `sourceApp`, `sourceAppId`, `summary`, `createdAt`, `updatedAt`, `likeCount`, `commentCount`, `isLiked`
+`id`, `userId`, `content`, `type`, `visibility`, `status`, `imageUrl`, `tags`, `starFormat`, `sourceApp`, `sourceAppId`, `summary`, `createdAt`, `updatedAt`, `likeCount`, `commentCount`, `isLiked`
+
+### STAR Format (optional)
+
+Wins can include a `starFormat` object for structured accomplishment tracking (Situation, Task, Action, Result).
+
+**Create:** Include `starFormat` in `POST /wins` body. All four fields (`situation`, `task`, `action`, `result`) are **required** when `starFormat` is provided.
+
+**Update:** Include `starFormat` in `PATCH /wins/:id` body. Can add STAR format to an existing win or update an existing one.
+
+**STAR Format Object Fields:**
+`id`, `winId`, `situation` (string, required), `task` (string, required), `action` (string, required), `result` (string, required), `createdAt`, `updatedAt`
+
+Example payload:
+```json
+{
+  "content": "Shipped the feature",
+  "type": "PROFESSIONAL",
+  "visibility": "PUBLIC",
+  "starFormat": {
+    "situation": "Legacy system couldn't handle load",
+    "task": "Re-architect the data pipeline",
+    "action": "Redesigned with event-driven processing",
+    "result": "100x throughput improvement"
+  }
+}
+```
 
 ## Comments
 

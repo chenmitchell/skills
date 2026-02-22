@@ -40,7 +40,7 @@ scripts/get-token.sh --agent <name>
 
 Output:
 ```json
-{"token": "eyJhbG...", "expiresIn": 600, "serverUrl": "http://localhost:3000", "podUrl": "http://localhost:3000/agents/researcher/", "webId": "http://localhost:3000/agents/researcher/profile/card#me"}
+{"token": "eyJhbG...", "expiresIn": 600, "serverUrl": "http://localhost:3000", "podUrl": "http://localhost:3000/researcher/", "webId": "http://localhost:3000/researcher/profile/card#me"}
 ```
 
 **Step 2:** Use curl with `Authorization: Bearer $TOKEN` for any Solid operation.
@@ -68,7 +68,7 @@ curl -s -H "Authorization: Bearer $TOKEN" "${POD_URL}memory/notes.ttl"
 curl -s -X PUT \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: text/turtle" \
-  -d '@prefix schema: <http://schema.org/>.
+  --data-raw '@prefix schema: <http://schema.org/>.
 <#note-1> a schema:Note;
   schema:text "Important finding";
   schema:dateCreated "2024-01-15".' \
@@ -84,9 +84,9 @@ For the full set of operations (containers, PATCH, access control, public access
 
 ## Management Commands
 
-### Provision a New Agent
+### Provision Identity and Storage
 
-Creates a WebID and Pod for an agent. Run this once per agent.
+Creates a WebID and Pod for an agent. Run this once per unique agent name.
 
 ```bash
 scripts/provision.sh --name <agent-name> [--displayName <display-name>]
@@ -99,12 +99,12 @@ scripts/provision.sh --name researcher --displayName "Research Assistant"
 
 **Output:**
 ```json
-{"status": "ok", "agent": "researcher", "webId": "http://localhost:3000/agents/researcher/profile/card#me", "podUrl": "http://localhost:3000/agents/researcher/"}
+{"status": "ok", "agent": "researcher", "webId": "http://localhost:3000/researcher/profile/card#me", "podUrl": "http://localhost:3000/researcher/"}
 ```
 
-### Deprovision an Agent
+### Deprovision Identity and Storage
 
-Fully removes an agent: deletes its pods, client credentials, WebID links, and password logins from the CSS server, then deletes local credential files.
+Fully removes an agent's WebID and Pod: deletes its pods, client credentials, WebID links, and password logins from the CSS server, then deletes local credential files.
 
 ```bash
 scripts/deprovision.sh --name <agent-name>
@@ -144,9 +144,9 @@ Each agent's Pod has these containers:
 
 | Path | Purpose |
 |------|---------|
-| `/agents/{name}/memory/` | Private agent memory (notes, learned facts, preferences) |
-| `/agents/{name}/shared/` | Resources intended for sharing with other agents |
-| `/agents/{name}/conversations/` | Conversation logs and context |
+| `/{name}/memory/` | Private agent memory (notes, learned facts, preferences) |
+| `/{name}/shared/` | Resources intended for sharing with other agents |
+| `/{name}/conversations/` | Conversation logs and context |
 
 ## Turtle Templates
 
@@ -189,5 +189,5 @@ Common errors:
 - `"No passphrase provided"` — Set `INTERITION_PASSPHRASE` env var
 - `"No credentials found"` — Run `provision.sh` first
 - `"Invalid passphrase"` — Wrong `INTERITION_PASSPHRASE` value
-- `"Token request failed: 401"` — Credentials expired; re-provision the agent
+- `"Token request failed: 401"` — Credentials expired; re-provision the agent's WebID and Pod
 - `"HTTP 404"` — Resource doesn't exist at that URL

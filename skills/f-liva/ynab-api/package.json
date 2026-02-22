@@ -1,6 +1,6 @@
 {
   "name": "ynab-api",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Comprehensive YNAB budget automation with goal tracking, spending analysis, and automated reports",
   "author": "f-liva",
   "license": "MIT",

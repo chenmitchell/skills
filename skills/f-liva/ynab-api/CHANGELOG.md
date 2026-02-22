@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.1.1] - 2026-02-22
+
+### 🐛 Fixed
+
+- **CRITICAL**: `daily-budget-check.sh` error handling
+  - Removed `set -e` that caused script crash on API errors
+  - Added retry logic with exponential backoff (3 attempts, 2s → 4s → 8s)
+  - Graceful degradation when API unavailable
+  - HTTP error code handling (429, 500, 502, 503 trigger retry)
+  - Always exits with code 0 (prevents cron job failure marking)
+  - User-friendly error message displayed when API unreachable
+  - Ensures morning report always completes successfully
+
+**Impact**: Prevents silent failures of morning budget reports. Previously, a temporary API glitch would mark the cron job as failed and prevent report delivery. Now the script retries intelligently and degrades gracefully.
+
 ## [2.1.0] - 2026-02-21
 
 ### ✨ Added

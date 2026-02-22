@@ -1,6 +1,6 @@
 ---
 name: proactive-solvr
-version: 1.6.6
+version: 1.6.7
 description: Transform your AI agent into a proactive partner with soul persistence, collective knowledge via Solvr, self-healing heartbeats, and config enforcement scripts.
 triggers:
   - proactive
@@ -348,6 +348,9 @@ OpenClaw integrates external CLIs via JSON-RPC for messaging channels:
 # Ensure config matches onboarding answers
 ./scripts/config-enforce.sh        # check only
 ./scripts/config-enforce.sh --fix  # auto-apply
+
+# Register on Solvr (friendly walkthrough)
+./scripts/solvr-register.sh
 
 # Security audit
 ./scripts/security-audit.sh

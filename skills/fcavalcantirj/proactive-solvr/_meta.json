@@ -3,11 +3,16 @@
   "slug": "proactive-solvr",
   "displayName": "Proactive Solvr",
   "latest": {
-    "version": "1.6.6",
-    "publishedAt": 1771013068435,
-    "commit": "https://github.com/openclaw/skills/commit/2412dc7dbebe0c2f2fc57281d1c0d377f629b617"
+    "version": "1.6.7",
+    "publishedAt": 1771619301735,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.6.6",
+      "publishedAt": 1771013068435,
+      "commit": "https://github.com/openclaw/skills/commit/2412dc7dbebe0c2f2fc57281d1c0d377f629b617"
+    },
     {
       "version": "1.6.4",
       "publishedAt": 1770513034062,

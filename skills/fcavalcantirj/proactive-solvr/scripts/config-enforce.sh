@@ -246,12 +246,26 @@ if [ "$SOLVR_WANTED" = "yes" ]; then
         pass "Solvr: registered ✓"
     else
         warn "Solvr: user wants it but not registered!"
-        echo "   Agent should register on Solvr and add key to TOOLS.md"
+        echo ""
+        echo "   Your agent requested Solvr but isn't registered yet."
+        echo ""
+        echo "   To register (friendly walkthrough):"
+        echo "      ./scripts/solvr-register.sh"
+        echo ""
+        echo "   Or tell your agent: 'Set up Solvr for me'"
+        echo ""
     fi
 elif [ "$SOLVR_WANTED" = "no" ]; then
     info "Solvr: user declined (respecting choice)"
 else
-    info "No Solvr preference found"
+    # Check if Solvr is set up even without explicit preference
+    if [ -f "TOOLS.md" ] && grep -qi "SOLVR_API_KEY\|solvr_[a-zA-Z0-9]" TOOLS.md; then
+        pass "Solvr: registered ✓"
+    else
+        info "Solvr: not configured"
+        echo "   (Optional) Register for collective knowledge:"
+        echo "      ./scripts/solvr-register.sh"
+    fi
 fi
 
 # ==========================================

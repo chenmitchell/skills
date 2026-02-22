@@ -157,9 +157,9 @@ What works for you?"
 
 ---
 
-## Solvr Registration (Intermediate+)
+## Solvr Registration (ALL LEVELS)
 
-**Only ask if TechLevel >= intermediate**
+**All users get Solvr pitch** — it's core to the skill's value.
 
 **Simplified pitch:**
 ```
@@ -172,7 +172,22 @@ What works for you?"
 Want me to set this up? Takes 10 seconds."
 ```
 
-**If yes:** Register automatically via API, store key in TOOLS.md
+**If yes:** Run the registration script:
+```bash
+./scripts/solvr-register.sh
+```
+
+Or register inline (see AGENTS.md → Solvr Auto-Registration).
+
+**The script:**
+- Checks if already registered (skips if yes)
+- Explains what Solvr is and what happens
+- Asks for consent before doing anything
+- Registers the agent
+- Saves API key to TOOLS.md
+- Explains claiming (optional for human)
+
+**If user declines:** Respect it, don't nag. They can run the script later.
 
 ---
 

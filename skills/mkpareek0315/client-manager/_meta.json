@@ -3,11 +3,16 @@
   "slug": "client-manager",
   "displayName": "Client Manager",
   "latest": {
-    "version": "1.0.4",
-    "publishedAt": 1771676599073,
-    "commit": "https://github.com/openclaw/skills/commit/786787cacbe5a159414908d73d460ed2b093fd8e"
+    "version": "2.1.0",
+    "publishedAt": 1771761917370,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.4",
+      "publishedAt": 1771676599073,
+      "commit": "https://github.com/openclaw/skills/commit/786787cacbe5a159414908d73d460ed2b093fd8e"
+    },
     {
       "version": "1.0.2",
       "publishedAt": 1771491467633,

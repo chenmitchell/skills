@@ -1,7 +1,11 @@
 ---
 name: expense-tracker
-description: "Chat-based personal expense tracker. Log expenses in plain language, track budgets, generate spending reports, and manage categories. Use when user wants to log an expense, check budget, view spending summary, set budget limits, or ask about spending. Triggers: I spent, log expense, how much have I spent, budget, expense report, add purchase."
+description: "Just say what you spent — your AI logs it, categorizes it, and tracks it against your budget. No apps, no forms, no friction. Supports natural language like 'spent $45 at Costco' or 'split a $90 dinner with Jake'. 16 auto-categories, monthly budget alerts, weekly and monthly reports. Runs entirely local — your spending data stays on your machine."
+version: "1.0.2"
+category: finance
+tags: [expenses, budget, finance, spending, personal-finance, tracking, reports, money, frugal, budgeting, natural-language, local]
 ---
+
 # Expense Tracker Skill
 
 Track, categorize, and budget personal expenses through natural conversation. Users text expenses in plain language and the AI logs them, tracks budgets, and generates reports.
@@ -130,7 +134,7 @@ bash skills/expense-tracker/scripts/budget-check.sh [YYYY-MM]
 - "how's my budget looking?" → run budget check
 
 **Also supports adjusting budgets:**
-- "set my dining budget to $400" → update `references/budgets.json`
+- "set my dining budget to $400" → update `references/budgets.json` using `jq --arg` (never interpolate user values into jq code directly)
 - "what's my grocery budget?" → read from budgets.json
 
 ### `/categories` — View/Manage Categories
@@ -268,7 +272,7 @@ Include: full category breakdown, top expenses, weekly breakdown, month-over-mon
 
 ### Corrections
 - "Actually that Costco trip was $52, not $45" → Find the recent Costco entry, update amount
-- "Delete expense #12" → Remove from ledger (use jq to filter out by ID)
+- "Delete expense #12" → Remove from ledger using `jq --argjson id 12 'map(select(.id != $id))'` — always use --arg/--argjson, never interpolate IDs into filter strings
 - "Move #12 to Dining" → Update category field
 
 ### Zero-Expense Days

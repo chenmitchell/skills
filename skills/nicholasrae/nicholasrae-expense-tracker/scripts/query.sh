@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # query.sh — Query the expense ledger with filters
 # Usage: query.sh [--from DATE] [--to DATE] [--category CAT] [--vendor VENDOR] [--format summary|detail|json]
+#
+# SECURITY: All user input is passed via jq --arg (data, never code).
+# No string interpolation into jq filters — prevents jq injection.
 
 set -euo pipefail
 
@@ -24,14 +27,22 @@ FORMAT="summary"
 # --- Parse args ---
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --from)   FROM_DATE="$2"; shift 2 ;;
-    --to)     TO_DATE="$2"; shift 2 ;;
-    --category) CATEGORY="$2"; shift 2 ;;
-    --vendor) VENDOR="$2"; shift 2 ;;
-    --format) FORMAT="$2"; shift 2 ;;
+    --from)     FROM_DATE="$2"; shift 2 ;;
+    --to)       TO_DATE="$2";   shift 2 ;;
+    --category) CATEGORY="$2";  shift 2 ;;
+    --vendor)   VENDOR="$2";    shift 2 ;;
+    --format)   FORMAT="$2";    shift 2 ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
+
+# --- Input validation (dates must match YYYY-MM-DD) ---
+if [[ -n "$FROM_DATE" ]] && ! echo "$FROM_DATE" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+  echo "Error: --from must be YYYY-MM-DD, got '$FROM_DATE'" >&2; exit 1
+fi
+if [[ -n "$TO_DATE" ]] && ! echo "$TO_DATE" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+  echo "Error: --to must be YYYY-MM-DD, got '$TO_DATE'" >&2; exit 1
+fi
 
 # --- Check ledger exists ---
 if [[ ! -f "$LEDGER" ]]; then
@@ -39,27 +50,19 @@ if [[ ! -f "$LEDGER" ]]; then
   exit 0
 fi
 
-# --- Build jq filter ---
-FILTER="."
+# --- Safe query: all user values passed as --arg (never interpolated into filter code) ---
+RESULTS=$(jq \
+  --arg from     "$FROM_DATE" \
+  --arg to       "$TO_DATE" \
+  --arg cat      "$CATEGORY" \
+  --arg vendor   "$VENDOR" \
+  'map(select(
+    ($from   == "" or .date >= $from) and
+    ($to     == "" or .date <= $to) and
+    ($cat    == "" or (.category | ascii_downcase) == ($cat | ascii_downcase)) and
+    ($vendor == "" or (.vendor   | ascii_downcase | contains($vendor | ascii_downcase)))
+  ))' "$LEDGER")
 
-if [[ -n "$FROM_DATE" ]]; then
-  FILTER="$FILTER | map(select(.date >= \"$FROM_DATE\"))"
-fi
-
-if [[ -n "$TO_DATE" ]]; then
-  FILTER="$FILTER | map(select(.date <= \"$TO_DATE\"))"
-fi
-
-if [[ -n "$CATEGORY" ]]; then
-  FILTER="$FILTER | map(select(.category == \"$CATEGORY\" or (.category | ascii_downcase) == (\"$CATEGORY\" | ascii_downcase)))"
-fi
-
-if [[ -n "$VENDOR" ]]; then
-  FILTER="$FILTER | map(select(.vendor | ascii_downcase | contains(\"$VENDOR\" | ascii_downcase)))"
-fi
-
-# --- Execute query ---
-RESULTS=$(jq "$FILTER" "$LEDGER")
 COUNT=$(echo "$RESULTS" | jq 'length')
 
 if [[ "$COUNT" -eq 0 ]]; then
@@ -75,35 +78,32 @@ case "$FORMAT" in
     TOTAL=$(echo "$RESULTS" | jq '[.[].amount] | add')
     echo "=== Expense Detail ==="
     echo ""
-    echo "$RESULTS" | jq -r '.[] | "  #\(.id | tostring | . + " " * (4 - length))  \(.date)  \(if .amount < 0 then "-$\(.amount * -1 | tostring | if contains(".") then . else . + ".00" end)" else " $\(.amount | tostring | if contains(".") then . else . + ".00" end)" end | .[0:12] | . + " " * (12 - length))  \(.category | .[0:16] | . + " " * (16 - length))  \(.vendor)\(if .notes != "" then " (\(.notes))" else "" end)"'
+    echo "$RESULTS" | jq -r '.[] |
+      "  #\(.id | tostring | . + " " * (4 - length))  \(.date)  \(
+        if .amount < 0
+        then "-$\(.amount * -1 | tostring | if contains(".") then . else . + ".00" end)"
+        else " $\(.amount      | tostring | if contains(".") then . else . + ".00" end)"
+        end | .[0:12] | . + " " * (12 - length))  \(
+        .category | .[0:16] | . + " " * (16 - length))  \(.vendor)\(
+        if .notes != "" then " (\(.notes))" else "" end)"'
     echo ""
-    printf "  Total: $%.2f (%d items)\n" "$TOTAL" "$COUNT"
+    printf "  Total: \$%.2f (%d items)\n" "$TOTAL" "$COUNT"
     ;;
   summary|*)
     echo "=== Spending Summary ==="
-    if [[ -n "$FROM_DATE" || -n "$TO_DATE" ]]; then
-      echo "  Period: ${FROM_DATE:-earliest} to ${TO_DATE:-latest}"
-    fi
-    if [[ -n "$CATEGORY" ]]; then
-      echo "  Category: $CATEGORY"
-    fi
-    if [[ -n "$VENDOR" ]]; then
-      echo "  Vendor: $VENDOR"
-    fi
+    [[ -n "$FROM_DATE" || -n "$TO_DATE" ]] && echo "  Period: ${FROM_DATE:-earliest} to ${TO_DATE:-latest}"
+    [[ -n "$CATEGORY" ]] && echo "  Category: $CATEGORY"
+    [[ -n "$VENDOR"   ]] && echo "  Vendor: $VENDOR"
     echo ""
     echo "$RESULTS" | jq -r '
       group_by(.category) |
-      map({
-        category: .[0].category,
-        total: (map(.amount) | add),
-        count: length
-      }) |
-      sort_by(-.total) |
-      .[] |
-      "  \(.category): $\(.total | tostring | if contains(".") then (split(".") | .[0] + "." + (.[1] + "00")[0:2]) else . + ".00" end) (\(.count) \(if .count == 1 then "item" else "items" end))"
-    '
+      map({category: .[0].category, total: (map(.amount) | add), count: length}) |
+      sort_by(-.total) | .[] |
+      "  \(.category): $\(.total | tostring |
+        if contains(".") then (split(".") | .[0] + "." + (.[1] + "00")[0:2])
+        else . + ".00" end) (\(.count) \(if .count == 1 then "item" else "items" end))"'
     TOTAL=$(echo "$RESULTS" | jq '[.[].amount] | add')
     echo ""
-    printf "  TOTAL: $%.2f (%d items)\n" "$TOTAL" "$COUNT"
+    printf "  TOTAL: \$%.2f (%d items)\n" "$TOTAL" "$COUNT"
     ;;
 esac

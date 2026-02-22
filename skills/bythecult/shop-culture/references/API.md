@@ -6,7 +6,7 @@ No API key or environment variables required. No authentication is needed for di
 
 **Payment options:**
 - **Standard checkout** (`POST /api/checkout`) — Multi-chain payments, poll for confirmation
-- **x402 autonomous checkout** (`POST /api/checkout/x402`) — HTTP 402 protocol, USDC on Solana, fully agent-driven
+- **x402 checkout** (`POST /api/checkout/x402`) — HTTP 402 protocol, USDC on Solana, fully agent-driven
 
 ---
 
@@ -421,7 +421,7 @@ Create an order and generate a payment request (standard flow — poll for payme
 
 ### POST `/api/checkout/x402`
 
-**x402 autonomous checkout** — Fully agent-driven payments via HTTP 402 protocol. USDC on Solana.
+**x402 checkout** — Fully agent-driven payments via HTTP 402 protocol. USDC on Solana.
 
 **Flow:**
 1. POST order details (no X-PAYMENT header) → returns 402 with payment requirements

@@ -1,14 +1,16 @@
 ---
 name: amber-voice-assistant
-description: "Deploy a phone-capable voice assistant for OpenClaw: includes a production-ready Twilio + OpenAI Realtime SIP bridge (runtime/), plus setup guidance, env templates, validation scripts, guardrail patterns, and troubleshooting runbooks."
-metadata: {"openclaw":{"emoji":"☎️","requires":{"env":["TWILIO_ACCOUNT_SID","TWILIO_AUTH_TOKEN","TWILIO_PHONE_NUMBER","OPENAI_API_KEY"],"anyBins":["node"]},"primaryEnv":"OPENAI_API_KEY"}}
+title: "Amber — Phone-Capable Voice Agent"
+description: "The most complete phone skill for OpenClaw. Production-ready, low-latency AI calls — inbound & outbound, multilingual, live dashboard, brain-in-the-loop."
+homepage: https://github.com/batthis/amber-openclaw-voice-agent
+metadata: {"openclaw":{"emoji":"☎️","requires":{"env":["TWILIO_ACCOUNT_SID","TWILIO_AUTH_TOKEN","TWILIO_CALLER_ID","OPENAI_API_KEY","OPENAI_PROJECT_ID","OPENAI_WEBHOOK_SECRET","PUBLIC_BASE_URL"],"optionalEnv":["OPENCLAW_GATEWAY_URL","OPENCLAW_GATEWAY_TOKEN","BRIDGE_API_TOKEN","TWILIO_WEBHOOK_STRICT","VOICE_PROVIDER","VOICE_WEBHOOK_SECRET"],"anyBins":["node","ical-query"]},"primaryEnv":"OPENAI_API_KEY"}}
 ---
 
-# Amber Voice Assistant
+# Amber — Phone-Capable Voice Agent
 
 ## Overview
 
-Amber Voice Assistant gives any OpenClaw deployment a phone-capable voice assistant. It ships with a **production-ready Twilio + OpenAI Realtime SIP bridge** (`runtime/`) that handles inbound call screening, outbound calls, appointment booking, and live OpenClaw knowledge lookups — all via natural voice conversation.
+Amber gives any OpenClaw deployment a phone-capable voice assistant. It ships with a **production-ready Twilio + OpenAI Realtime SIP bridge** (`runtime/`) that handles inbound call screening, outbound calls, appointment booking, and live OpenClaw knowledge lookups — all via natural voice conversation.
 
 **✨ New:** Interactive setup wizard (`npm run setup`) validates credentials in real-time and generates a working `.env` file — no manual configuration needed!
 
@@ -16,16 +18,27 @@ Amber Voice Assistant gives any OpenClaw deployment a phone-capable voice assist
 
 ![Setup Wizard Demo](demo/demo.gif)
 
-**[▶️ Watch the interactive demo on asciinema.org](https://asciinema.org/a/hWk2QxmuhOS9rWXy)** (copyable text, adjustable speed)
+**[▶️ Watch the interactive demo on asciinema.org](https://asciinema.org/a/l1nOHktunybwAheQ)** (copyable text, adjustable speed)
 
 *The interactive wizard validates credentials, detects ngrok, and generates a complete `.env` file in minutes.*
 
 ### What's included
 
 - **Runtime bridge** (`runtime/`) — a complete Node.js server that connects Twilio phone calls to OpenAI Realtime with OpenClaw brain-in-the-loop
+- **Call log dashboard** (`dashboard/`) — browse call history, transcripts, and captured messages; includes **manual Sync button** to pull new calls on demand
 - **Setup & validation scripts** — preflight checks, env templates, quickstart runner
 - **Architecture docs & troubleshooting** — call flow diagrams, common failure runbooks
 - **Safety guardrails** — approval patterns for outbound calls, payment escalation, consent boundaries
+
+### Call log dashboard
+
+```bash
+cd dashboard && node scripts/serve.js   # → http://localhost:8787
+```
+
+- **⬇ Sync button** (green) — immediately pulls new calls from `runtime/logs/` and refreshes the dashboard. Use this right after a call ends rather than waiting for the background watcher.
+- **↻ Refresh button** (blue) — reloads existing data from disk without re-processing logs.
+- Background watcher (`node scripts/watch.js`) auto-syncs every 30 seconds when running.
 
 ## Why Amber
 
@@ -82,7 +95,7 @@ The easiest way to get started:
 ### Option C: Validation-only (existing setup)
 
 1. Copy `references/env.example` to your own `.env` and replace placeholders.
-2. Export required variables (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `OPENAI_API_KEY`).
+2. Export required variables (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_CALLER_ID`, `OPENAI_API_KEY`, `OPENAI_PROJECT_ID`, `OPENAI_WEBHOOK_SECRET`, `PUBLIC_BASE_URL`).
 3. Run quick setup:
    `scripts/setup_quickstart.sh`
 4. If preflight passes, run one inbound and one outbound smoke test.

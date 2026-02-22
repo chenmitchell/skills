@@ -2,9 +2,13 @@
 
 This directory contains demo recordings of the interactive setup wizard.
 
+## Live Demo
+
+**🎬 [Watch on asciinema.org](https://asciinema.org/a/l1nOHktunybwAheQ)** - Interactive player with copyable text and adjustable playback speed.
+
 ## Files
 
-### `demo.gif` (156 KB)
+### `demo.gif` (167 KB)
 Animated GIF showing the complete setup wizard flow. Use this for:
 - GitHub README embeds
 - Documentation
@@ -33,8 +37,10 @@ asciinema play demo.cast
 
 **Upload to asciinema.org:**
 ```bash
-asciinema upload demo.cast
+asciinema upload --server-url https://asciinema.org demo.cast
 ```
+
+Note: The `--server-url` flag is required on this system even though authentication exists.
 
 ## What the Demo Shows
 
@@ -47,7 +53,7 @@ The wizard guides users through:
 
 2. **OpenAI Configuration**
    - API key validation via OpenAI API
-   - Optional project ID and webhook secret
+   - Project ID and webhook secret (required for OpenAI Realtime)
    - Voice selection (alloy/echo/fable/onyx/nova/shimmer)
 
 3. **Server Setup**
@@ -70,7 +76,9 @@ The wizard guides users through:
 The demo uses these example values (not real credentials):
 - **Twilio SID:** AC1234567890abcdef1234567890abcd
 - **Phone:** +15551234567
-- **OpenAI Key:** sk-proj-demo...
+- **OpenAI Key:** sk-proj-demo1234567890abcdefghijklmnopqrstuvwxyz
+- **OpenAI Project ID:** proj_demo1234567890abcdef
+- **OpenAI Webhook Secret:** whsec_demo9876543210fedcba
 - **Assistant:** Amber
 - **Operator:** John Smith
 - **Organization:** Acme Corp
@@ -83,13 +91,38 @@ To record your own demo:
 # Install dependencies
 brew install asciinema agg expect
 
-# Record with expect script
-asciinema rec your-demo.cast --command "expect demo.exp"
+# 1. CRITICAL: Copy demo-wizard.js to /tmp/amber-wizard-test/ first!
+cp demo-wizard.js /tmp/amber-wizard-test/
 
-# Convert to GIF
-agg --font-size 14 --speed 2 --cols 80 --rows 30 your-demo.cast your-demo.gif
+# 2. Record with asciinema wrapping expect (NOT running expect directly!)
+asciinema rec demo.cast --command "expect demo.exp" --overwrite --title "Amber Phone-Capable Voice Agent - Setup Wizard"
+
+# 3. Convert to GIF
+agg --font-size 14 --speed 2 --cols 80 --rows 30 demo.cast demo.gif
+
+# 4. Upload to asciinema.org
+asciinema upload --server-url https://asciinema.org demo.cast
 ```
+
+### ⚠️ CRITICAL RECORDING NOTES
+
+**MUST DO:**
+1. **Always copy demo-wizard.js to /tmp/amber-wizard-test/ BEFORE recording** - The expect script runs the file from /tmp, not from the skill directory
+2. **Use `asciinema rec --command "expect demo.exp"`** - This actually records the session
+3. **Include `--overwrite` flag** - Prevents creating multiple demo.cast files
+4. **Use `--title` flag** - Sets the recording title in metadata (can't be changed easily after upload)
+
+**NEVER DO:**
+1. ❌ Run `expect demo.exp` directly - This executes the wizard but doesn't record it
+2. ❌ Edit demo-wizard.js without copying to /tmp - Recording will use the old version
+3. ❌ Upload without verifying demo.cast timestamp - Ensure the file was actually regenerated
+
+**Verification checklist:**
+- [ ] demo-wizard.js copied to /tmp/amber-wizard-test/
+- [ ] demo.cast timestamp is current (check with `ls -la demo.cast`)
+- [ ] Banner alignment looks correct in the .cast file
+- [ ] Title is set correctly (visible on asciinema.org after upload)
 
 ---
 
-*Demo created on 2026-02-20 using asciinema 3.1.0 and agg 1.7.0*
+*Demo last updated on 2026-02-21 using asciinema 3.1.0 and agg 1.7.0*

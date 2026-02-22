@@ -92,6 +92,7 @@ async function validateOpenAI(key) {
 }
 
 function detectNgrok() {
+  // Security: hardcoded command, no user input involved
   try { execSync('which ngrok', { stdio: 'pipe' }); return true; } catch { return false; }
 }
 
@@ -107,6 +108,7 @@ async function getActiveNgrokTunnel() {
 
 async function startNgrok(port) {
   info('Starting ngrok…');
+  // Security: 'ngrok' is a hardcoded binary name; port is coerced to string from a numeric config value
   const proc = spawn('ngrok', ['http', String(port)], { stdio: 'ignore', detached: true });
   proc.unref();
   // wait up to 5s for tunnel
@@ -165,14 +167,28 @@ ${c.bold}${c.cyan}╔═══════════════════�
     if (!(await yesNo('Try again?'))) break;
   }
 
-  cfg.OPENAI_PROJECT_ID = await ask('Project ID (optional, starts with proj_)', '');
-  if (cfg.OPENAI_PROJECT_ID && !cfg.OPENAI_PROJECT_ID.startsWith('proj_')) {
-    warn('Project ID usually starts with "proj_" — using as-is');
+  while (true) {
+    cfg.OPENAI_PROJECT_ID = await ask('Project ID (starts with proj_)');
+    if (!cfg.OPENAI_PROJECT_ID) {
+      warn('Project ID is required');
+      continue;
+    }
+    if (!cfg.OPENAI_PROJECT_ID.startsWith('proj_')) {
+      warn('Project ID usually starts with "proj_" — using as-is');
+    }
+    break;
   }
 
-  cfg.OPENAI_WEBHOOK_SECRET = await ask('Webhook Secret (optional, starts with whsec_)', '');
-  if (cfg.OPENAI_WEBHOOK_SECRET && !cfg.OPENAI_WEBHOOK_SECRET.startsWith('whsec_')) {
-    warn('Webhook secret usually starts with "whsec_" — using as-is');
+  while (true) {
+    cfg.OPENAI_WEBHOOK_SECRET = await ask('Webhook Secret (starts with whsec_)');
+    if (!cfg.OPENAI_WEBHOOK_SECRET) {
+      warn('Webhook Secret is required');
+      continue;
+    }
+    if (!cfg.OPENAI_WEBHOOK_SECRET.startsWith('whsec_')) {
+      warn('Webhook secret usually starts with "whsec_" — using as-is');
+    }
+    break;
   }
 
   while (true) {
@@ -301,6 +317,7 @@ ${c.bold}${c.cyan}╔═══════════════════�
   if (await yesNo('Run npm install?')) {
     const s = spinner('Installing dependencies…');
     try {
+      // Security: hardcoded npm command, cwd scoped to this script's own directory
       execSync('npm install', { cwd: __dirname, stdio: 'pipe' });
       s.stop(); ok('Dependencies installed');
     } catch (e) {
@@ -311,6 +328,7 @@ ${c.bold}${c.cyan}╔═══════════════════�
   if (await yesNo('Run npm run build?')) {
     const s = spinner('Building…');
     try {
+      // Security: hardcoded npm command, cwd scoped to this script's own directory
       execSync('npm run build', { cwd: __dirname, stdio: 'pipe' });
       s.stop(); ok('Build succeeded');
     } catch (e) {

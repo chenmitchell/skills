@@ -44,7 +44,7 @@ async function main() {
 
   console.log(`
 ${c.bold}${c.cyan}╔══════════════════════════════════════════════╗
-║   ☎️  Amber Voice Assistant — Setup Wizard    ║
+║   ☎️  Amber Voice Assistant — Setup Wizard   ║
 ╚══════════════════════════════════════════════╝${c.reset}
 `);
   info('This wizard will walk you through configuration and generate a .env file.');
@@ -73,8 +73,12 @@ ${c.bold}${c.cyan}╔═══════════════════�
   await spinner('Validating OpenAI API key…');
   ok('OpenAI API key valid');
 
-  cfg.OPENAI_PROJECT_ID = await ask('Project ID (optional, starts with proj_)', '');
-  cfg.OPENAI_WEBHOOK_SECRET = await ask('Webhook Secret (optional, starts with whsec_)', '');
+  cfg.OPENAI_PROJECT_ID = await ask('Project ID (starts with proj_)');
+  ok('Project ID format valid');
+  
+  cfg.OPENAI_WEBHOOK_SECRET = await ask('Webhook Secret (starts with whsec_)');
+  ok('Webhook Secret format valid');
+  
   cfg.OPENAI_VOICE = await ask('Voice', 'alloy');
   ok(`Voice: ${cfg.OPENAI_VOICE}`);
 

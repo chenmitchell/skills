@@ -32,21 +32,26 @@ python3 scripts/check_update.py --format json
 }
 ```
 
-## What It Does
+## How It Works
 
-- Runs `openclaw --version` to get the installed version
-- Runs `npm show openclaw versions --json` to get available versions
-- Compares them and reports the result
-- Generates a changelog URL for the latest release
+1. **Reads the installed version** from the local `package.json` file at known npm global install paths (`/usr/lib/node_modules/openclaw/package.json` or `/usr/local/lib/node_modules/openclaw/package.json`)
+2. **Queries the npm registry** via an HTTPS GET request to `https://registry.npmjs.org/openclaw` using Python's `urllib.request` (stdlib)
+3. **Compares versions** and reports the result
 
 ## What It Does NOT Do
 
-- Does not install or update anything
+- Does not install or update any packages
 - Does not write to any files
 - Does not restart any services
-- Does not open network connections (delegates to `npm` CLI)
+- Does not execute any subprocesses or shell commands
+
+## System Access
+
+- **File reads:** `/usr/lib/node_modules/openclaw/package.json` and `/usr/local/lib/node_modules/openclaw/package.json` (read-only, to determine installed version)
+- **Network:** Single HTTPS GET to `https://registry.npmjs.org/openclaw` (read-only, no authentication, to fetch available versions)
 
 ## Requirements
 
-- `openclaw` and `npm` available in PATH
-- No API keys or external services needed
+- Python 3.10+ (uses `str | None` type union syntax)
+- OpenClaw installed globally via npm
+- Outbound HTTPS access to `registry.npmjs.org`

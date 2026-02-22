@@ -3,11 +3,16 @@
   "slug": "openclaw-update-checker",
   "displayName": "OpenClaw Update Checker",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1771696804642,
-    "commit": "https://github.com/openclaw/skills/commit/3dfee43ecbb2faa11835c8fd21290e02edda392b"
+    "version": "1.1.1",
+    "publishedAt": 1771697468458,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1771696804642,
+      "commit": "https://github.com/openclaw/skills/commit/3dfee43ecbb2faa11835c8fd21290e02edda392b"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1771696203008,

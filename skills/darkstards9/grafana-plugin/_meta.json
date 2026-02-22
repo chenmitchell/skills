@@ -1,0 +1,11 @@
+{
+  "owner": "darkstards9",
+  "slug": "grafana-plugin",
+  "displayName": "Grafana Plugin",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771705319942,
+    "commit": null
+  },
+  "history": []
+}

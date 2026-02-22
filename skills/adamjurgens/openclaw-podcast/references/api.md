@@ -8,6 +8,8 @@ This document describes the Superlore.ai API endpoints used by the OpenClaw Dail
 https://superlore-api.onrender.com
 ```
 
+> **Note:** This is the official Superlore API, hosted on [Render](https://render.com). The `superlore.ai` website proxies to this backend. Both URLs point to the same service owned and operated by Superlore.
+
 ## Authentication
 
 The Superlore API supports multiple authentication methods. **API key is the primary and recommended method for skill and server integrations.**

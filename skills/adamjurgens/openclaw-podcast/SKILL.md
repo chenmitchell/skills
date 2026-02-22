@@ -1,6 +1,17 @@
 ---
 name: openclaw-podcast
 description: Transform your OpenClaw workspace into personalized AI-powered podcast briefings. Get daily audio updates on your work, priorities, and strategy in 8 compelling styles—from documentary narrator to strategic advisor. Connects directly to your agent's memory and files. Includes 3 free hours of podcast generation with your Superlore.ai API key. Schedule morning, midday, or evening briefings that keep you informed without reading screens.
+metadata:
+  openclaw:
+    requires:
+      env:
+        - name: SUPERLORE_API_KEY
+          description: "API key from superlore.ai — get one free at https://superlore.ai or use the setup wizard's email OTP flow"
+          required: true
+    permissions:
+      - network: "HTTPS requests to superlore-api.onrender.com (official Superlore API hosted on Render)"
+      - filesystem: "Reads workspace files (memory/*.md, JOBS.md, HEARTBEAT.md, MEMORY.md). Setup wizard optionally appends env var to ~/.zshrc or ~/.bashrc (user-confirmed)."
+      - cron: "Setup wizard outputs openclaw cron commands for scheduling. Runs them only with explicit user confirmation."
 ---
 
 # openclaw-podcast

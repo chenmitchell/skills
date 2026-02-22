@@ -20,6 +20,7 @@ const https = require('https');
 // --- Config ---
 const DEFAULT_STYLE = 'The Briefing';
 const DEFAULT_TIME = 'evening';
+// Official Superlore API — hosted on Render (superlore.ai domain proxies here)
 const DEFAULT_API = 'https://superlore-api.onrender.com';
 const DEFAULT_DEVICE_ID = 'openclaw-daily-podcast-v1';
 const DEFAULT_API_KEY = process.env.SUPERLORE_API_KEY || '';

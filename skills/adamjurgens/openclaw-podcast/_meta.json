@@ -3,9 +3,15 @@
   "slug": "openclaw-podcast",
   "displayName": "Superlore Podcast Briefings",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1771760117733,
-    "commit": "https://github.com/openclaw/skills/commit/dbc0f53d8eb1f79fa8d9e489c7da3d27579421db"
+    "version": "1.0.1",
+    "publishedAt": 1771760708925,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1771760117733,
+      "commit": "https://github.com/openclaw/skills/commit/dbc0f53d8eb1f79fa8d9e489c7da3d27579421db"
+    }
+  ]
 }

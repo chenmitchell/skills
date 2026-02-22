@@ -32,6 +32,7 @@ const { execFileSync } = require('child_process');
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Official Superlore API — hosted on Render (superlore.ai domain proxies here)
 const API_BASE = 'https://superlore-api.onrender.com';
 
 const VOICES = {

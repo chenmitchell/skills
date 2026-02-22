@@ -2,6 +2,9 @@
 name: twitter
 description: Write viral, persuasive, engaging tweets and threads. Uses web research to find viral examples in your niche, then models writing based on proven formulas and X algorithm optimization. Use when creating tweets, threads, or X content strategy.
 ---
+`READ BEFORE INSTALL`
+# [HOW TO USE](https://claude.ai/public/artifacts/3d745b01-1c07-4c14-a6ed-6757434520b5)
+`READ BEFORE INSTALL`
 
 # Tweet Writer Skill
 
@@ -10,8 +13,6 @@ description: Write viral, persuasive, engaging tweets and threads. Uses web rese
 This skill helps you write viral, persuasive tweets and threads optimized for X's algorithm. It combines proven copywriting frameworks, viral hook formulas, and real-time research to model your content after successful examples in your niche.
 
 **Keywords**: twitter, X, tweets, threads, viral content, social media, engagement, hooks, copywriting
-
-[INSTALLATION AND USE INSTRUCTIONS](https://claude.ai/public/artifacts/59bf1058-3a4c-450b-af5b-c85c13cfa8ab)
 
 ## Process Workflow
 

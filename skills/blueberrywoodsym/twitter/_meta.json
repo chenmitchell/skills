@@ -3,11 +3,16 @@
   "slug": "twitter",
   "displayName": "Twitter",
   "latest": {
-    "version": "1.0.5",
-    "publishedAt": 1771689507949,
-    "commit": "https://github.com/openclaw/skills/commit/cac288d91fc1200357b0c676f6b6ca72e50e9ff4"
+    "version": "1.0.11",
+    "publishedAt": 1771751582395,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.5",
+      "publishedAt": 1771689507949,
+      "commit": "https://github.com/openclaw/skills/commit/cac288d91fc1200357b0c676f6b6ca72e50e9ff4"
+    },
     {
       "version": "1.0.3",
       "publishedAt": 1771346247587,

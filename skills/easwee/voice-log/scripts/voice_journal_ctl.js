@@ -6,8 +6,7 @@ const path = require("path");
 const { spawn, spawnSync } = require("child_process");
 
 const skillRoot = path.resolve(__dirname, "..");
-const dataDir =
-  process.env.VOICE_JOURNAL_DATA_DIR || path.join(skillRoot, ".data");
+const dataDir = path.join(skillRoot, ".data");
 const paths = {
   dataDir,
   state: path.join(dataDir, "state.json"),
@@ -20,6 +19,10 @@ const paths = {
 
 function ensureDir() {
   fs.mkdirSync(paths.dataDir, { recursive: true });
+}
+
+function copyIfSet(target, key) {
+  if (process.env[key]) target[key] = process.env[key];
 }
 
 function parseLanguageHintsFromArgs(args) {
@@ -115,7 +118,16 @@ function start() {
 
   const startArgs = process.argv.slice(3);
   const languageHints = parseLanguageHintsFromArgs(startArgs);
-  const daemonEnv = { ...process.env };
+  const daemonEnv = {};
+  copyIfSet(daemonEnv, "PATH");
+  copyIfSet(daemonEnv, "HOME");
+  copyIfSet(daemonEnv, "LANG");
+  copyIfSet(daemonEnv, "LC_ALL");
+  copyIfSet(daemonEnv, "XDG_RUNTIME_DIR");
+  copyIfSet(daemonEnv, "PULSE_SERVER");
+  copyIfSet(daemonEnv, "ALSA_CONFIG_PATH");
+  copyIfSet(daemonEnv, "DBUS_SESSION_BUS_ADDRESS");
+  daemonEnv.SONIOX_API_KEY = process.env.SONIOX_API_KEY;
   if (languageHints && languageHints.length > 0) {
     daemonEnv.VOICE_JOURNAL_LANGUAGE_HINTS = JSON.stringify(languageHints);
   }
@@ -192,13 +204,8 @@ function last(minutesArg) {
   const args = process.argv.slice(2);
   const full = args.includes("--full");
   const maxCharsArg = args.find((a) => a.startsWith("--max-chars="));
-  const envMax = Number.parseInt(process.env.VOICE_JOURNAL_LAST_MAX_CHARS || "", 10);
   const argMax = maxCharsArg ? Number.parseInt(maxCharsArg.split("=")[1], 10) : NaN;
-  const maxChars = Number.isFinite(argMax) && argMax > 0
-    ? argMax
-    : Number.isFinite(envMax) && envMax > 0
-      ? envMax
-      : 1800;
+  const maxChars = Number.isFinite(argMax) && argMax > 0 ? argMax : 1800;
 
   if (full || out.length <= maxChars) {
     console.log(out);
@@ -229,8 +236,8 @@ async function main() {
         [
           "Usage:",
           "  node scripts/voice_journal_ctl.js start",
-          "  node scripts/voice_journal_ctl.js start '[\"en\",\"si\"]'",
-          "  node scripts/voice_journal_ctl.js start --language-hints='[\"en\",\"si\"]'",
+          "  node scripts/voice_journal_ctl.js start '[\"en\",\"de\"]'",
+          "  node scripts/voice_journal_ctl.js start --language-hints='[\"en\",\"de\"]'",
           "  node scripts/voice_journal_ctl.js end",
           "  node scripts/voice_journal_ctl.js status",
           "  node scripts/voice_journal_ctl.js last [minutes] [--full] [--max-chars=1800]",

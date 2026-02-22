@@ -14,8 +14,10 @@ const MAX_PENDING_AUDIO_BYTES = 30 * BYTES_PER_SECOND;
 const FLUSH_INTERVAL_MS = 3000;
 
 const skillRoot = path.resolve(__dirname, "..");
-const dataDir =
-  process.env.VOICE_JOURNAL_DATA_DIR || path.join(skillRoot, ".data");
+const dataDir = path.join(skillRoot, ".data");
+const sonioxApiKey = (process.env.SONIOX_API_KEY || "").trim();
+// Prevent accidental secret propagation to child processes.
+delete process.env.SONIOX_API_KEY;
 const paths = {
   dataDir,
   state: path.join(dataDir, "state.json"),
@@ -24,6 +26,17 @@ const paths = {
   daemonOut: path.join(dataDir, "daemon.out.log"),
   daemonErr: path.join(dataDir, "daemon.err.log"),
 };
+const baseChildEnv = {};
+if (process.env.PATH) baseChildEnv.PATH = process.env.PATH;
+if (process.env.HOME) baseChildEnv.HOME = process.env.HOME;
+if (process.env.LANG) baseChildEnv.LANG = process.env.LANG;
+if (process.env.LC_ALL) baseChildEnv.LC_ALL = process.env.LC_ALL;
+if (process.env.XDG_RUNTIME_DIR) baseChildEnv.XDG_RUNTIME_DIR = process.env.XDG_RUNTIME_DIR;
+if (process.env.PULSE_SERVER) baseChildEnv.PULSE_SERVER = process.env.PULSE_SERVER;
+if (process.env.ALSA_CONFIG_PATH) baseChildEnv.ALSA_CONFIG_PATH = process.env.ALSA_CONFIG_PATH;
+if (process.env.DBUS_SESSION_BUS_ADDRESS) {
+  baseChildEnv.DBUS_SESSION_BUS_ADDRESS = process.env.DBUS_SESSION_BUS_ADDRESS;
+}
 
 let audioProc = null;
 let session = null;
@@ -46,6 +59,28 @@ let lastStreamErrorLogAt = 0;
 
 function ensureDir() {
   fs.mkdirSync(paths.dataDir, { recursive: true });
+  try {
+    fs.chmodSync(paths.dataDir, 0o700);
+  } catch (_) {
+    // Best effort hardening.
+  }
+}
+
+function hardenFile(pathname) {
+  try {
+    if (fs.existsSync(pathname)) {
+      fs.chmodSync(pathname, 0o600);
+    }
+  } catch (_) {
+    // Best effort hardening.
+  }
+}
+
+function atomicWrite(pathname, content) {
+  const tmp = `${pathname}.tmp`;
+  fs.writeFileSync(tmp, content, { mode: 0o600 });
+  fs.renameSync(tmp, pathname);
+  hardenFile(pathname);
 }
 
 function nowIso() {
@@ -97,27 +132,25 @@ function minuteKeyFromEpochMs(ms) {
 
 function log(...args) {
   const line = `[${nowIso()}] ${args.join(" ")}\n`;
-  fs.appendFileSync(paths.daemonOut, line);
+  fs.appendFileSync(paths.daemonOut, line, { mode: 0o600 });
+  hardenFile(paths.daemonOut);
 }
 
 function logError(...args) {
   const line = `[${nowIso()}] ${args.join(" ")}\n`;
-  fs.appendFileSync(paths.daemonErr, line);
+  fs.appendFileSync(paths.daemonErr, line, { mode: 0o600 });
+  hardenFile(paths.daemonErr);
 }
 
 function isCommandAvailable(cmd) {
-  const result = spawnSync("bash", ["-lc", `command -v ${cmd}`], {
+  const result = spawnSync("which", [cmd], {
+    env: baseChildEnv,
     stdio: "ignore",
   });
   return result.status === 0;
 }
 
 function resolveAudioCommand() {
-  const custom = process.env.VOICE_JOURNAL_AUDIO_CMD;
-  if (custom && custom.trim()) {
-    return { cmd: "bash", args: ["-lc", custom.trim()], source: "custom-env" };
-  }
-
   const platform = process.platform;
   const candidates = [];
 
@@ -162,7 +195,7 @@ function resolveAudioCommand() {
   }
 
   throw new Error(
-    "No supported microphone capture command found. Set VOICE_JOURNAL_AUDIO_CMD."
+    "No supported microphone capture command found (need arecord, rec, or ffmpeg)."
   );
 }
 
@@ -188,9 +221,7 @@ function flushJournal() {
     .sort(([a], [b]) => Date.parse(a) - Date.parse(b))
     .map(([minute, text]) => `${minute}\t${text}`)
     .filter((line) => line.trim().length > 0);
-  const tmp = `${paths.journal}.tmp`;
-  fs.writeFileSync(tmp, lines.join("\n") + (lines.length ? "\n" : ""));
-  fs.renameSync(tmp, paths.journal);
+  atomicWrite(paths.journal, lines.join("\n") + (lines.length ? "\n" : ""));
 }
 
 function writeState(extra = {}) {
@@ -204,9 +235,7 @@ function writeState(extra = {}) {
     keepsMinutes: 60,
     ...extra,
   };
-  const tmp = `${paths.state}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(state, null, 2));
-  fs.renameSync(tmp, paths.state);
+  atomicWrite(paths.state, JSON.stringify(state, null, 2));
 }
 
 function enqueueAudio(buf) {
@@ -309,18 +338,17 @@ async function closeSessionGracefully() {
 }
 
 async function createSession() {
-  const apiKey = process.env.SONIOX_API_KEY;
-  if (!apiKey) {
+  if (!sonioxApiKey) {
     throw new Error("SONIOX_API_KEY is required");
   }
 
-  const wsUrl = process.env.SONIOX_WS_URL || SONIOX_API_WS_URL;
+  const wsUrl = SONIOX_API_WS_URL;
   if (configuredLanguageHints === null) {
     configuredLanguageHints = parseLanguageHints();
   }
   const languageHints = disableLanguageHints ? null : configuredLanguageHints;
   const sessionConfig = {
-    model: process.env.VOICE_JOURNAL_MODEL || "stt-rt-v4",
+    model: "stt-rt-v4",
     audio_format: "pcm_s16le",
     sample_rate: SAMPLE_RATE,
     num_channels: 1,
@@ -328,7 +356,7 @@ async function createSession() {
   if (languageHints) {
     sessionConfig.language_hints = languageHints;
   }
-  const s = new RealtimeSttSession(apiKey, wsUrl, sessionConfig);
+  const s = new RealtimeSttSession(sonioxApiKey, wsUrl, sessionConfig);
 
   s.on("connected", () => {
     log("Soniox session started");
@@ -379,7 +407,10 @@ async function rotateSession() {
 function startAudioCapture() {
   const ac = resolveAudioCommand();
   log("Audio source:", ac.source, ac.cmd, ...ac.args);
-  audioProc = spawn(ac.cmd, ac.args, { stdio: ["ignore", "pipe", "pipe"] });
+  audioProc = spawn(ac.cmd, ac.args, {
+    stdio: ["ignore", "pipe", "pipe"],
+    env: baseChildEnv,
+  });
 
   audioProc.stdout.on("data", (chunk) => {
     streamAudioChunk(chunk);
@@ -432,7 +463,7 @@ const startedAtIso = nowIso();
 
 async function main() {
   ensureDir();
-  fs.writeFileSync(paths.pid, String(process.pid));
+  atomicWrite(paths.pid, String(process.pid));
   writeState();
   log("Voice journal daemon starting", `pid=${process.pid}`);
 

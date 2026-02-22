@@ -1,7 +1,7 @@
 {
   "name": "voice-log",
-  "version": "0.1.1",
-  "description": "Background voice journaling with Soniox realtime STT and 1-hour rolling minute logs",
+  "version": "0.1.5",
+  "description": "OpenClaw live conversation journal powered by Soniox STT (requires SONIOX_API_KEY from https://soniox.com/speech-to-text)",
   "author": "local",
   "license": "MIT",
   "keywords": [
@@ -11,6 +11,29 @@
     "openclaw",
     "speech-to-text"
   ],
+  "openclaw": {
+    "skill": true,
+    "triggers": [
+      "start voice journal",
+      "start voice log",
+      "end voice journal",
+      "summarize last 10 minutes"
+    ],
+    "capabilities": [
+      "background-stt",
+      "rolling-minute-log",
+      "conversation-recap"
+    ],
+    "requirements": {
+      "bins": [
+        "node",
+        "arecord|rec|ffmpeg"
+      ],
+      "env": {
+        "SONIOX_API_KEY": "required - Soniox API key"
+      }
+    }
+  },
   "files": [
     "SKILL.md",
     "scripts/"

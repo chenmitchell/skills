@@ -12,6 +12,7 @@ requires:
       default: MAINNET
 model-invocation: autonomous
 model-invocation-reason: This skill enables agents to autonomously send and receive Bitcoin payments. Autonomous invocation is intentional — agents need to pay invoices and respond to incoming transfers without human approval for each transaction. Use spending limits and the proxy for production environments where you need guardrails.
+homepage: https://sparkbot.yvrbtclabs.dev
 ---
 
 # Spark Bitcoin L2 for AI Agents

@@ -4,7 +4,7 @@ description: Set up PostHog metrics plan with event funnel, KPI benchmarks, and 
 license: MIT
 metadata:
   author: fortunto2
-  version: "1.1.0"
+  version: "1.1.1"
   openclaw:
     emoji: "📈"
 allowed-tools: Read, Grep, Glob, Write, AskUserQuestion, mcp__solograph__kb_search
@@ -13,20 +13,19 @@ argument-hint: "<project-name>"
 
 # /metrics-track
 
-Set up a metrics tracking plan for a project. Defines PostHog event funnel, KPI benchmarks, and kill/iterate/scale decision thresholds based on the manifesto.
+Set up a metrics tracking plan for a project. Defines PostHog event funnel, KPI benchmarks, and kill/iterate/scale decision thresholds based on lean startup principles.
 
 ## MCP Tools (use if available)
 
-- `kb_search(query)` — find PostHog methodology, manifesto rules, STREAM framework
+- `kb_search(query)` — find PostHog methodology, analytics patterns
 
 If MCP tools are not available, fall back to Grep + Read.
 
 ## Methodology Reference
 
-This skill implements metrics tracking from:
-- `1-methodology/posthog-analytics.md` — unified PostHog architecture (iOS + Web, identity, events)
-- `0-principles/manifest.md` §12 — relative metrics vs niche benchmarks
-- `0-principles/manifest.md` §13 — kill/iterate/scale decision rules
+This skill implements metrics tracking based on lean startup principles:
+- **Relative metrics vs niche benchmarks** — compare against your own trajectory, not vanity averages
+- **Kill/iterate/scale decision rules** — data-driven thresholds for product decisions (see step 7 below)
 
 ## Steps
 
@@ -38,11 +37,11 @@ This skill implements metrics tracking from:
 2. **Detect platform:**
    - iOS app → PostHog iOS SDK events
    - Web app → PostHog JS SDK events
-   - Both → cross-platform identity (posthog-analytics.md pattern)
+   - Both → cross-platform identity (shared user ID across platforms)
 
 3. **Load PostHog methodology:**
    - If MCP available: `kb_search("PostHog analytics events funnel identity")`
-   - Otherwise: Read `1-methodology/posthog-analytics.md` directly (if accessible)
+   - Otherwise: check project docs for existing analytics configuration
    - Extract: event naming conventions, identity resolution, funnel pattern
 
 4. **Define event funnel** based on PRD features:
@@ -83,7 +82,7 @@ This skill implements metrics tracking from:
 
    Adjust based on product type (B2C vs B2B, free vs paid, mobile vs web).
 
-7. **Define decision rules** (manifesto §13):
+7. **Define decision rules** (lean startup kill/iterate/scale):
 
    ```markdown
    ## Decision Framework

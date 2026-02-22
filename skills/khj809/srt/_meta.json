@@ -3,11 +3,16 @@
   "slug": "srt",
   "displayName": "SRT",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1771499278441,
-    "commit": "https://github.com/openclaw/skills/commit/35a5735c35eca2072734d0dfde843c263bfe1f77"
+    "version": "1.1.1",
+    "publishedAt": 1771687682899,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1771499278441,
+      "commit": "https://github.com/openclaw/skills/commit/35a5735c35eca2072734d0dfde843c263bfe1f77"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1771399593710,

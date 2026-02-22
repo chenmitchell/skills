@@ -107,28 +107,55 @@ Log markers to watch for:
 - `TIMEOUT` — timed out without success
 
 ### Step 3: Create periodic reporting cron job
-Create an **isolated agentTurn** cron job (every 15 min) that:
-1. Checks process status:
+Create an **isolated agentTurn** cron job (every 15 min) with **`--no-deliver`** (delivery mode: none).
+The agent must use the `message` tool to post directly to the Discord channel — do **not** use `--announce` (the announce queue can fail with a gateway pairing error in isolated sessions).
+
+CLI:
+```bash
+openclaw cron add \
+  --agent srt \
+  --name "SRT 모니터링 보고 (15분마다)" \
+  --every 15m \
+  --session isolated \
+  --no-deliver \
+  --message "..."
+```
+
+Agent message must instruct:
+1. Check process status:
    ```bash
    cd <project_dir> && uv run --with SRTrain python3 scripts/srt_cli.py reserve status --pid-file <pid_file>
    ```
-   Outputs `RUNNING (<pid>)` or `NOT_RUNNING (...)` — no shell command substitution involved.
-2. Reads log tail: `tail -50 <log_file>`
-3. Parses attempt count and last attempt time from log
-4. Reports to channel
-5. On `SUCCESS` in log → extract 예약번호/좌석 info, report, remove this cron job
-6. On `TIMEOUT` or process `NOT_RUNNING` → report, remove this cron job
+2. Read log tail: `tail -50 <log_file>`
+3. Summarise attempt count, last attempt time, success/failure
+4. **Send report via `message` tool** (`channel=discord`, `target=<channel_id>`)
+5. On `SUCCESS` in log → include 예약번호/좌석 in message, then remove this cron job and termination job
+6. On `NOT_RUNNING` without `SUCCESS` → report crash, remove this cron job
 
-The cron job's task message must include its own job ID (update after creation) so it can self-remove.
+The message payload must include this job's own ID and the termination job ID so it can self-remove.
 
 ### Step 4: Create termination job
-Create an **isolated agentTurn** `at`-schedule cron job at the end time that:
-1. Stops the process:
+Create an **isolated agentTurn** `at`-schedule cron job (`--no-deliver`, `--delete-after-run`) at the deadline.
+
+CLI:
+```bash
+openclaw cron add \
+  --agent srt \
+  --name "SRT 모니터링 종료" \
+  --at "<ISO UTC time>" \
+  --session isolated \
+  --no-deliver \
+  --delete-after-run \
+  --message "..."
+```
+
+Agent message must instruct:
+1. Stop the process:
    ```bash
    cd <project_dir> && uv run --with SRTrain python3 scripts/srt_cli.py reserve stop --pid-file <pid_file>
    ```
-2. Removes the reporting cron job by ID
-3. Reads final log and reports outcome
+2. Remove the reporting cron job by ID
+3. Read final log and **send outcome via `message` tool** to Discord channel
 
 ---
 

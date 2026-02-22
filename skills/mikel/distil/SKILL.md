@@ -1,7 +1,7 @@
 ---
 name: distil
 description: Fetch web pages as clean Markdown and search the web via the distil.net proxy
-version: 1.0.1
+version: 1.0.5
 metadata:
   openclaw:
     emoji: "🔍"
@@ -12,11 +12,10 @@ metadata:
         - "curl"
       env:
         - "DISTIL_API_KEY"
-        - "DISTIL_PROXY_URL"
     primaryEnv: "DISTIL_API_KEY"
     install:
       - kind: node
-        package: "distil-mcp"
+        package: "distil-proxy"
         bins: [distil]
 ---
 
@@ -28,11 +27,11 @@ Distil converts web pages into clean Markdown, saving 60–80% of tokens for LLM
 
 ## Setup
 
-1. Get your API key from https://distil.ai (sign up or use your existing key)
-2. Install the `distil` CLI manually (one-time):
+1. Get your API key from https://distil.net (sign up or use your existing key)
+2. Install the `distil` CLI:
 
    ```bash
-   npm install distil-mcp
+   npm install -g distil-proxy
    ```
 3. Set the `DISTIL_API_KEY` environment variable
 
@@ -65,27 +64,14 @@ distil nocache https://example.com
 
 | Environment Variable | Default | Description |
 |---------------------|---------|-------------|
-| `DISTIL_API_KEY`   | (none) | API key |
-| `DISTIL_PROXY_URL` | `https://proxy.distil.ai/` | Proxy base URL |
-| `DISTIL_EXTRA_HEADERS` | (none) | Comma-separated extra headers in `Header-Name:value` format |
+| `DISTIL_API_KEY`   | (none, required) | API key |
+| `DISTIL_PROXY_URL` | `https://proxy.distil.net` | Proxy base URL (override for self-hosted) |
 
 ## Output
 
 - `distil fetch` — returns page content as Markdown on stdout
 - `distil search` — returns search results with titles, URLs, descriptions, and page content as Markdown on stdout
 - Errors are written to stderr; non-zero exit code on failure
-
-## Extra Headers
-
-To pass additional Distil headers, use comma-separated `Header-Name:value` pairs:
-
-```bash
-# Single header
-DISTIL_EXTRA_HEADERS="X-Distil-No-Cache:true" distil fetch https://example.com
-
-# Multiple headers
-DISTIL_EXTRA_HEADERS="X-Distil-No-Cache:true,X-Distil-Max-Tokens:2000" distil fetch https://example.com
-```
 
 ## Examples
 
@@ -97,20 +83,20 @@ distil search "OpenClaw agent framework"
 distil fetch https://docs.github.com/en/rest
 
 # Force fresh fetch (bypass cache)
-DISTIL_EXTRA_HEADERS="X-Distil-No-Cache:true" distil fetch https://news.ycombinator.com
+DISTIL_PROXY_URL=https://proxy.distil.net distil nocache https://news.ycombinator.com
 ```
 
 ## Fallback — Direct curl
 
-If you prefer not to install npm packages, you can call the proxy directly with curl:
+If you prefer to call the proxy directly:
 
 ```bash
 # Fetch a page
-curl -s "https://proxy.distil.ai/https://example.com" \
+curl -s "https://proxy.distil.net/https://example.com" \
   -H "X-Distil-Key: YOUR_API_KEY"
 
 # Search the web
-curl -s "https://proxy.distil.ai/search?q=your+query" \
+curl -s "https://proxy.distil.net/search?q=your+query" \
   -H "X-Distil-Key: YOUR_API_KEY" \
   -H "Accept: text/markdown"
 ```

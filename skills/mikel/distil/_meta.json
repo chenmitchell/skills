@@ -3,9 +3,15 @@
   "slug": "distil",
   "displayName": "Distil the web & PDFs into markdown",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771681470095,
-    "commit": "https://github.com/openclaw/skills/commit/22866adc78ea9d430bd23691ce4e91d2a25eba23"
+    "version": "1.0.5",
+    "publishedAt": 1771743859820,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771681470095,
+      "commit": "https://github.com/openclaw/skills/commit/22866adc78ea9d430bd23691ce4e91d2a25eba23"
+    }
+  ]
 }

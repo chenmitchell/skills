@@ -1,6 +1,6 @@
 # Distil — OpenClaw Native Skill
 
-This directory contains the **Distil native skill for [OpenClaw](https://openclaw.ai)** — a minimal bash-based command that gives AI agents running inside OpenClaw direct, zero-configuration access to the Distil web proxy.
+This directory contains the **Distil native skill for [OpenClaw](https://openclaw.ai)** — gives AI agents running inside OpenClaw direct, zero-configuration access to the Distil web proxy.
 
 ## What's in this folder
 
@@ -13,25 +13,18 @@ This directory contains the **Distil native skill for [OpenClaw](https://opencla
 When OpenClaw discovers this skill, it:
 
 1. Reads `SKILL.md` to learn the skill name, description, and what commands are available
-2. **Currently, you must manually install the `distil-mcp` npm package** (see Installation section below). Future versions of OpenClaw may auto-install based on the skill metadata.
+2. Installs the `distil-proxy` npm package (or prompts you to do so)
 3. The agent can then call `distil fetch <URL>` or `distil search <query>` directly from shell commands
 
-The `distil` script resolves your API key from the `DISTIL_API_KEY` env var, constructs the correct proxy URL, and fires a `curl` request — returning clean Markdown to stdout.
+The distil-proxy server can be found at [https://www.npmjs.com/package/distil-proxy](https://www.npmjs.com/package/distil-proxy) with github package located at [https://github.com/exec-io/distil-proxy](https://github.com/exec-io/distil-proxy)
 
 ## Installation
 
-### Via NPM
-
 ```bash
-npm install -g distil-mcp
+npm install -g distil-proxy
 ```
 
-**Security Note:** Before installing, verify the package provenance:
-- Check the package details: `npm view distil-mcp`
-- Visit the package page: https://www.npmjs.com/package/distil-mcp
-- Ensure you're installing from the official source
-
-Set the `DISTIL_API_KEY` environment variable
+Set the `DISTIL_API_KEY` environment variable to your key from [distil.net](https://distil.net).
 
 ### Verify the install
 
@@ -39,7 +32,7 @@ Set the `DISTIL_API_KEY` environment variable
 distil fetch https://example.com
 ```
 
-You should get clean Markdown back. If you see an error about a missing API key, check your Keychain entry.
+You should get clean Markdown back. If you see an error about a missing API key, set the `DISTIL_API_KEY` environment variable.
 
 ## Usage
 
@@ -53,22 +46,25 @@ distil search "best practices for Go error handling"
 # Multi-word queries work naturally — no quoting needed
 distil search top 10 AI companies 2025
 
-# Force a fresh fetch (bypass cache)
-DISTIL_EXTRA_HEADERS="-H X-Distil-No-Cache:true" distil fetch https://news.ycombinator.com
+# Screenshot a page
+distil screenshot https://example.com
 
-# Limit response size (saves tokens on very long pages)
-DISTIL_EXTRA_HEADERS="-H X-Distil-Max-Tokens:2000" distil fetch https://long-article.example.com
+# Render a javascript SPA before extracting markdown
+distil render https://example.com
+
+# Get raw content without markdown conversion
+distil raw https://example.com
+
+# Bypass cache
+distil nocache https://news.ycombinator.com
 ```
 
 ## Configuration
 
-All configuration is via environment variables. Defaults work for most users.
-
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DISTIL_API_KEY` | (none) | Your Distil API key |
-| `DISTIL_PROXY_URL` | `https://proxy.distil.ai/` | Proxy base URL — override for self-hosted instances |
-| `DISTIL_EXTRA_HEADERS` | (none) | Extra `curl -H` flags passed to every request |
+| `DISTIL_API_KEY` | (required) | Your Distil API key |
+| `DISTIL_PROXY_URL` | `https://proxy.distil.net` | Proxy base URL — override for self-hosted instances |
 
 ## Output
 
@@ -78,9 +74,9 @@ All configuration is via environment variables. Defaults work for most users.
 
 ## Getting an API key
 
-Sign up at [distil.ai](https://distil.ai) — free tier includes 500 requests/month.
+Sign up at [distil.net](https://distil.net) — free tier included.
 
-Your key looks like `dk_yourkey`. Store it in an environment variable.
+Your key looks like `dk_yourkey`. Set it as an environment variable:
 
 ```bash
 export DISTIL_API_KEY=dk_yourkey
@@ -88,8 +84,8 @@ export DISTIL_API_KEY=dk_yourkey
 
 ## Troubleshooting
 
-**"No API key found"** — set your environment variable `DISTIL_API_KEY=dk_yourkey`
+**"DISTIL_API_KEY environment variable is required"** — set `DISTIL_API_KEY=dk_yourkey` in your shell or MCP config
 
-**"fetch failed"** — check `curl -v https://proxy.distil.ai/` to confirm connectivity; verify your key is valid at [distil.ai/usage](https://distil.ai/usage)
+**"fetch failed"** — verify your key is valid at [distil.net/usage](https://distil.net/usage); check connectivity with `curl -s https://proxy.distil.net/healthz`
 
-**Empty output** — the page may require JavaScript rendering.
+**Empty output** — the page may require JavaScript rendering; try `distil render` instead of `distil fetch`

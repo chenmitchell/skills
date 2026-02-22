@@ -1,13 +1,18 @@
 {
   "owner": "tkuehnl",
   "slug": "dep-audit",
-  "displayName": "Dep Audit",
+  "displayName": "dep-audit",
   "latest": {
-    "version": "0.2.0",
-    "publishedAt": 1771471491742,
-    "commit": "https://github.com/openclaw/skills/commit/5b5b1fce16c7dfff42457ee81aa4c6f7903e98c0"
+    "version": "0.2.1",
+    "publishedAt": 1771717194509,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.2.0",
+      "publishedAt": 1771471491742,
+      "commit": "https://github.com/openclaw/skills/commit/5b5b1fce16c7dfff42457ee81aa4c6f7903e98c0"
+    },
     {
       "version": "0.1.5",
       "publishedAt": 1771314859500,

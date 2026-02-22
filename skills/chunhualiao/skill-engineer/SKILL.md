@@ -3,7 +3,7 @@ name: skill-engineer
 description: Design, test, review, and maintain agent skills for OpenClaw systems using multi-agent iterative refinement. Orchestrates Designer, Reviewer, and Tester subagents for quality-gated skill development. Use when user asks to "design skill", "review skill", "test skill", "audit skills", "refactor skill", or mentions "agent kit quality".
 metadata:
   author: skill-engineer
-  version: 3.0.0
+  version: 3.1.0
   owner: main agent (or any agent in the kit requiring skill development capability)
   based_on: Anthropic Complete Guide to Building Skills for Claude (2026-01)
 ---
@@ -295,6 +295,8 @@ Each subagent receives only what it needs:
 **Inputs:** Requirements, design principles, feedback (on iterations 2+)
 
 **Outputs:** SKILL.md, skill.yml, README.md, tests/, scripts/, references/
+
+**Naming step (mandatory):** Before writing artifacts, present 3-5 name candidates to the user with rationale. See `references/designer-guide.md` Step 2 for criteria and process.
 
 **Key constraints:**
 - Apply progressive disclosure (frontmatter → body → linked files)

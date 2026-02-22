@@ -1,3 +1,15 @@
+## v3.1.0 — 2026-02-21
+
+### Added
+- **Mandatory skill naming step** in Designer workflow (Step 2)
+  - Present 3-5 name candidates to user before writing artifacts
+  - Naming criteria table: action-clear, scope-obvious, trigger-friendly, kebab-case
+  - Step-by-step name generation process with worked example
+- Naming step callout in SKILL.md Designer quick reference
+
+### Removed
+- Redundant "Separation of Concerns Rule" section (already covered by ARCH-1 in reviewer rubric)
+
 # Changelog
 
 All notable changes to the skill-engineer skill will be documented in this file.

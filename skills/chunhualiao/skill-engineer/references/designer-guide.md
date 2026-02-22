@@ -267,7 +267,43 @@ Workflow guidance enhancing MCP server tool access. Coordinates multiple MCP cal
 4. What existing skills does it interact with?
 5. Are there deterministic components (scripts) or is it all judgment (AI)?
 
-### Step 2: Define Success Criteria
+### Step 2: Name the Skill
+
+A good name is critical -- it's the primary way agents and users identify the skill, and a bad name causes confusion forever.
+
+**Present 3-5 name candidates to the user.** Do not pick one unilaterally.
+
+**Naming criteria (in priority order):**
+
+| Criterion | Good | Bad |
+|-----------|------|-----|
+| **Action-clear** | `add-top-openrouter-models` | `model-manager` |
+| **Scope-obvious** | `github-pr-review` | `code-helper` |
+| **Trigger-friendly** | matches how users naturally ask | requires memorization |
+| **Kebab-case** | `blog-writer` | `BlogWriter`, `blog_writer` |
+| **No "claude" or "anthropic"** | any other name | `claude-helper` |
+
+**Name generation process:**
+1. Write down what the skill *does* in one sentence
+2. Extract the key verb + object (e.g. "sync openrouter models" -> `sync-openrouter-models`)
+3. Generate 3-5 variations: verb-first (`add-...`), noun-first (`openrouter-...`), short (`or-sync`), descriptive (`add-top-openrouter-models`)
+4. Score each against the criteria above
+5. Present candidates to user with brief rationale for each
+
+**Example:**
+```
+Skill purpose: "Add top OpenRouter models to openclaw config"
+
+Candidates:
+1. add-top-openrouter-models — most descriptive, action-clear
+2. openrouter-models — shorter, noun-focused
+3. openrouter-sync — implies bidirectional (misleading)
+4. model-sync — too vague (which models? from where?)
+
+Recommendation: #1 or #2
+```
+
+### Step 3: Define Success Criteria
 
 **Quantitative Metrics:**
 

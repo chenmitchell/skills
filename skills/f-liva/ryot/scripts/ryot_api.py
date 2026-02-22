@@ -98,6 +98,53 @@ def get_details(metadata_id):
     
     return result.get("data", {}).get("metadataDetails", {}).get("response", {})
 
+def get_progress(metadata_id):
+    """Get user's viewing/reading progress for a show."""
+    # First get basic details
+    details_query = """
+    query ($metadataId: String!) {
+      metadataDetails(metadataId: $metadataId) {
+        response {
+          title
+          showSpecifics {
+            totalSeasons
+            totalEpisodes
+          }
+        }
+      }
+    }
+    """
+    
+    details_result = graphql_request(details_query, {"metadataId": metadata_id})
+    details_data = details_result.get("data", {}).get("metadataDetails", {}).get("response", {})
+    
+    # Get user progress
+    progress_query = """
+    query ($metadataId: String!) {
+      userMetadataDetails(metadataId: $metadataId) {
+        response {
+          inProgress {
+            showExtraInformation {
+              season
+              episode
+            }
+          }
+        }
+      }
+    }
+    """
+    
+    progress_result = graphql_request(progress_query, {"metadataId": metadata_id})
+    user_data = progress_result.get("data", {}).get("userMetadataDetails", {}).get("response", {})
+    
+    return {
+        "title": details_data.get("title", ""),
+        "totalEpisodes": details_data.get("showSpecifics", {}).get("totalEpisodes", 0),
+        "totalSeasons": details_data.get("showSpecifics", {}).get("totalSeasons", 0),
+        "currentSeason": user_data.get("inProgress", {}).get("showExtraInformation", {}).get("season"),
+        "currentEpisode": user_data.get("inProgress", {}).get("showExtraInformation", {}).get("episode")
+    }
+
 def mark_completed(metadata_id):
     """Mark media as completed."""
     query = """
@@ -121,6 +168,7 @@ def main():
         print("Usage:")
         print("  ryot_api.py search <title> [--type SHOW|MOVIE|BOOK|ANIME|GAME]")
         print("  ryot_api.py details <metadata_id>")
+        print("  ryot_api.py progress <metadata_id>")
         print("  ryot_api.py complete <metadata_id>")
         sys.exit(1)
     
@@ -150,6 +198,25 @@ def main():
         metadata_id = sys.argv[2]
         details = get_details(metadata_id)
         print(json.dumps(details, indent=2))
+    
+    elif action == "progress":
+        if len(sys.argv) < 3:
+            print("Usage: ryot_api.py progress <metadata_id>")
+            sys.exit(1)
+        
+        metadata_id = sys.argv[2]
+        progress = get_progress(metadata_id)
+        
+        if progress.get("currentEpisode"):
+            current_ep = progress["currentEpisode"]
+            total_ep = progress["totalEpisodes"]
+            percentage = int((current_ep / total_ep * 100)) if total_ep > 0 else 0
+            
+            print(f"{progress['title']}")
+            print(f"Season {progress['currentSeason']}, Episode {current_ep}/{total_ep} ({percentage}%)")
+        else:
+            print(f"{progress['title']}")
+            print("Not started yet")
     
     elif action == "complete":
         if len(sys.argv) < 3:

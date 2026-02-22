@@ -1,6 +1,6 @@
 ---
 name: ryot
-description: Track and manage media consumption (TV shows, movies, books, anime, games) via Ryot API. Use when the user wants to mark content as watched/read/completed, search for media, check viewing progress, or log media activities. Triggers include requests like "mark X as completed", "did I watch Y?", "add Z to my list", "search for movie/show/book", or any media tracking tasks.
+description: Complete Ryot media tracker with progress tracking, reviews, collections, analytics, calendar, and automated daily/weekly reports. Track TV shows, movies, books, anime, games with full GraphQL API integration.
 metadata:
   credentials:
     required:
@@ -14,9 +14,9 @@ metadata:
           }
 ---
 
-# Ryot Media Tracker
+# Ryot Media Tracker - Complete Suite
 
-Track TV shows, movies, books, anime, and games via the Ryot GraphQL API.
+Full-featured Ryot integration with progress tracking, reviews, collections, analytics, calendar, and automated reports.
 
 ## Setup (Required)
 
@@ -39,19 +39,78 @@ Before using this skill, you must configure your Ryot instance:
 
 Use `scripts/ryot_api.py` for all Ryot operations.
 
-## Common Tasks
-
-### 1. Mark Media as Completed
+## 🚀 Quick Start - Automated Setup
 
 ```bash
-# Search for the item first
-python3 scripts/ryot_api.py search "Breaking Bad" --type SHOW
-
-# Mark as completed (uses metadata ID from search)
-python3 scripts/ryot_api.py complete met_XXXXX
+cd /home/node/clawd/skills/ryot/scripts
+./setup-automation.sh
 ```
 
-### 2. Search for Media
+This will:
+- ✅ Set up daily upcoming episodes notification (07:30)
+- ✅ Set up weekly stats report (Monday 08:00)
+- ✅ Set up daily recent activity (20:00)
+- ✅ Configure WhatsApp delivery
+
+## Common Tasks
+
+### 1. Progress Tracking 📊
+
+```bash
+# Check your progress on a TV show
+python3 scripts/ryot_api.py progress met_XXXXX
+
+# Example output:
+# Galaxy Express 999
+# Season 1, Episode 35/113 (30%)
+```
+
+### 2. Reviews & Ratings ⭐
+
+```bash
+# Add review with rating (0-100)
+python3 scripts/ryot_reviews.py add met_XXXXX 85 "Amazing show!"
+
+# Rating only
+python3 scripts/ryot_reviews.py add met_XXXXX 90
+```
+
+### 3. Collections 📚
+
+```bash
+# List your collections
+python3 scripts/ryot_collections.py list
+
+# Create new collection
+python3 scripts/ryot_collections.py create "Top Anime 2026" "My favorite anime of the year"
+
+# Add media to collection
+python3 scripts/ryot_collections.py add <collection_id> met_XXXXX
+```
+
+### 4. Analytics & Stats 📈
+
+```bash
+# View your statistics
+python3 scripts/ryot_stats.py analytics
+# Output: Total media, shows, movies, watch time
+
+# Recently consumed
+python3 scripts/ryot_stats.py recent
+# Output: Last 10 media you watched/read
+```
+
+### 5. Calendar & Upcoming 📅
+
+```bash
+# Upcoming episodes this week
+python3 scripts/ryot_calendar.py upcoming
+
+# Calendar for next 30 days
+python3 scripts/ryot_calendar.py calendar 30
+```
+
+### 6. Search & Details 🔍
 
 ```bash
 # Search for TV shows
@@ -60,27 +119,23 @@ python3 scripts/ryot_api.py search "The Wire" --type SHOW
 # Search for movies
 python3 scripts/ryot_api.py search "Inception" --type MOVIE
 
-# Search for books
-python3 scripts/ryot_api.py search "1984" --type BOOK
-
-# Search for anime
-python3 scripts/ryot_api.py search "Death Note" --type ANIME
+# Get details
+python3 scripts/ryot_api.py details met_XXXXX
 ```
 
-### 3. Get Media Details
-
-Verify metadata (title, year, etc.) before marking as completed:
+### 7. Mark as Completed ✅
 
 ```bash
-python3 scripts/ryot_api.py details met_XXXXX
+# Mark media as completed
+python3 scripts/ryot_api.py complete met_XXXXX
 ```
 
 ## Workflow
 
-1. **User request** → "I finished watching Breaking Bad"
+1. **User request** → "How many episodes of Galaxy Express 999 have I watched?"
 2. **Search** → Find the correct metadata ID
-3. **Verify** → Check year/details if ambiguous
-4. **Mark complete** → Deploy bulk progress update
+3. **Check progress** → `python3 scripts/ryot_api.py progress met_XXX`
+4. **Mark complete** → When finished, deploy bulk progress update
 
 ## Media Types
 

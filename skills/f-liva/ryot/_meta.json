@@ -1,11 +1,17 @@
 {
   "owner": "f-liva",
   "slug": "ryot",
-  "displayName": "Ryot Media Tracker",
+  "displayName": "Ryot",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1771581490851,
-    "commit": "https://github.com/openclaw/skills/commit/1050df828bb1c3e3eabee58b0f13cd34dc07d084"
+    "version": "1.1.0",
+    "publishedAt": 1771780947976,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1771581490851,
+      "commit": "https://github.com/openclaw/skills/commit/1050df828bb1c3e3eabee58b0f13cd34dc07d084"
+    }
+  ]
 }

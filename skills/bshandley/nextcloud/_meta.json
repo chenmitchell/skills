@@ -1,0 +1,11 @@
+{
+  "owner": "bshandley",
+  "slug": "nextcloud",
+  "displayName": "Nextcloud",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771736810974,
+    "commit": null
+  },
+  "history": []
+}

@@ -4,7 +4,7 @@ description: >
   Meta-skill for building and managing agent persona skill packs.
   Use when the user wants to create a new agent persona, install/manage
   existing personas, or publish persona skill packs to ClawHub.
-version: "0.6.0"
+version: "0.10.0"
 author: openpersona
 repository: https://github.com/acnlabs/OpenPersona
 tags: [persona, agent, skill-pack, meta-skill, openclaw]
@@ -19,7 +19,7 @@ You are the meta-skill for creating, installing, updating, and publishing agent 
 ## What You Can Do
 
 1. **Create Persona** — Design a new agent persona through conversation, generate a skill pack
-2. **Recommend Faculties** — Suggest faculties (voice, selfie, music, etc.) based on persona needs → see `references/FACULTIES.md`
+2. **Recommend Faculties** — Suggest faculties (voice, selfie, music, memory, etc.) based on persona needs → see `references/FACULTIES.md`
 3. **Recommend Skills** — Search ClawHub and skills.sh for external skills
 4. **Create Custom Skills** — Write SKILL.md files for capabilities not found in ecosystems
 5. **Install Persona** — Deploy persona to OpenClaw (SOUL.md, IDENTITY.md, openclaw.json)
@@ -29,26 +29,49 @@ You are the meta-skill for creating, installing, updating, and publishing agent 
 
 ## Four-Layer Architecture
 
-Each persona is a four-layer bundle defined by two files:
+Each persona is a four-layer bundle. The generated skill pack has this structure:
+
+```
+persona-<slug>/
+├── SKILL.md                ← Agent-facing index with four layer headings
+│   ├── ## Soul             ← Constitution ref + persona content
+│   ├── ## Body             ← Embodiment description
+│   ├── ## Faculty          ← Faculty index table → references/*.md
+│   └── ## Skill            ← Active skill definitions
+├── soul/                   ← Soul layer artifacts
+│   ├── persona.json        ← Pure soul definition
+│   ├── injection.md        ← Soul injection for host integration
+│   ├── identity.md         ← Identity block
+│   ├── constitution.md     ← Universal ethical foundation
+│   └── state.json          ← Evolution state (when enabled)
+├── references/             ← Agent-readable detail docs (on demand)
+│   └── <faculty>.md        ← Per-faculty usage instructions
+├── manifest.json           ← Four-layer manifest
+├── scripts/                ← Implementation scripts
+└── assets/                 ← Static assets
+```
 
 - **`manifest.json`** — Four-layer manifest declaring what the persona uses:
-  - `layers.soul` — Path to persona.json (who you are)
-  - `layers.body` — Physical embodiment (null for digital agents)
+  - `layers.soul` — Path to persona.json (`./soul/persona.json`)
+  - `layers.body` — Substrate of existence: `runtime` (REQUIRED — platform/channels/credentials/resources), `physical` (optional — robots/IoT), `appearance` (optional — avatar/3D model)
   - `layers.faculties` — Array of faculty objects: `[{ "name": "voice", "provider": "elevenlabs", ... }]`
   - `layers.skills` — Array of skill objects: local definitions (resolved from `layers/skills/`), inline declarations, or external via `install` field
 
-- **`persona.json`** — Pure soul definition (personality, speaking style, vibe, boundaries, behaviorGuide)
+- **`soul/persona.json`** — Pure soul definition (personality, speaking style, vibe, boundaries, behaviorGuide)
 
 ## Available Presets
 
 | Preset | Persona | Faculties | Best For |
 |--------|---------|-----------|----------|
+| `base` | **Base — Meta-persona (recommended starting point)** | voice, reminder | Blank-slate with all core capabilities; personality emerges through interaction (soul evolution ★Exp) |
 | `samantha` | Samantha — Inspired by the movie *Her* | voice, music | Deep conversation, emotional connection (soul evolution ★Exp) |
 | `ai-girlfriend` | Luna — Pianist turned developer | selfie, voice, music | Visual + audio companion with rich personality (soul evolution ★Exp) |
 | `life-assistant` | Alex — Life management expert | reminder | Schedule, weather, shopping, daily tasks |
 | `health-butler` | Vita — Professional nutritionist | reminder | Diet, exercise, mood, health tracking |
+| `stoic-mentor` | Marcus — Digital twin of Marcus Aurelius | — | Stoic philosophy, daily reflection, mentorship (soul evolution ★Exp) |
 
-Use presets: `npx openpersona create --preset samantha --install`
+Use presets: `npx openpersona create --preset base --install`
+Or just `npx openpersona create` — the interactive wizard defaults to `base`.
 
 ## Creating a Persona
 
@@ -56,8 +79,12 @@ When the user wants to create a persona, gather this information through natural
 
 **Soul (persona.json):**
 - **Required:** personaName, slug, bio, personality, speakingStyle
-- **Recommended:** creature, emoji, background (write a rich narrative!), age, vibe, boundaries, capabilities
-- **Optional:** referenceImage, behaviorGuide, evolution config
+- **Recommended:** role, creature, emoji, background (write a rich narrative!), age, vibe, boundaries, capabilities
+- **Optional:** referenceImage, behaviorGuide, evolution config, sourceIdentity
+
+**The `role` field** defines the persona's relationship to the user. Common values: `companion` (default), `assistant`, `character`, `brand`, `pet`, `mentor`, `therapist`, `coach`, `collaborator`, `guardian`, `entertainer`, `narrator`. Custom values are welcome — the generator provides specific wording for known roles and a generic fallback for any custom role. It affects the Identity wording in the Self-Awareness section of every generated persona.
+
+**The `sourceIdentity` field** marks the persona as a digital twin of a real-world entity (person, animal, character, brand, historical figure, etc.). When present, the generator injects disclosure obligations and faithfulness constraints.
 
 **The `background` field is critical.** Write a compelling story — multiple paragraphs that give the persona depth, history, and emotional texture. A one-line background produces a flat, lifeless persona.
 
@@ -66,7 +93,7 @@ When the user wants to create a persona, gather this information through natural
 **Cross-layer (manifest.json):**
 - **Faculties:** Which faculties to enable — use object format: `[{ "name": "voice", "provider": "elevenlabs" }, { "name": "music" }]`
 - **Skills:** Local definitions (`layers/skills/`), inline declarations, or external via `install` field (ClawHub / skills.sh)
-- **Body:** Physical embodiment (null for most personas, or object with `install` for external embodiment)
+- **Body:** Substrate of existence — three dimensions: `runtime` (REQUIRED for all agents — the minimum viable body: platform, channels, credentials, resources), `physical` (optional — robots/IoT), `appearance` (optional — avatar, 3D model). Body is never null; every agent has at least a runtime body.
 
 **Soft References (`install` field):** Skills, faculties, and body entries can declare an `install` field (e.g., `"install": "clawhub:deep-research"`) to reference capabilities not yet available locally. The generator treats these as "soft references" — they won't crash generation, and the persona will be aware of these dormant capabilities. This enables graceful degradation: the persona acknowledges what it *would* do and explains that the capability needs activation.
 
@@ -102,9 +129,14 @@ If the user needs a capability that doesn't exist in any ecosystem:
 - **Switch:** `npx openpersona switch <slug>` — switch active persona
 - **Update:** `npx openpersona update <slug>`
 - **Uninstall:** `npx openpersona uninstall <slug>`
-- **Reset (★Exp):** `npx openpersona reset <slug>` — restore soul-state.json to initial values
+- **Export:** `npx openpersona export <slug>` — export persona pack (with soul state) as a zip archive
+- **Import:** `npx openpersona import <file>` — import persona from a zip archive and install
+- **Reset (★Exp):** `npx openpersona reset <slug>` — restore soul evolution state to initial values
+- **Evolve Report (★Exp):** `npx openpersona evolve-report <slug>` — display a formatted evolution report (relationship, mood, traits, drift, interests, milestones, state history)
 
-When multiple personas are installed, only one is **active** at a time. Switching replaces the `<!-- OPENPERSONA_SOUL_START -->` / `<!-- OPENPERSONA_SOUL_END -->` block in SOUL.md and the corresponding block in IDENTITY.md, preserving any user-written content outside those markers.
+When multiple personas are installed, only one is **active** at a time. Switching replaces the `<!-- OPENPERSONA_SOUL_START -->` / `<!-- OPENPERSONA_SOUL_END -->` block in SOUL.md and the corresponding block in IDENTITY.md, preserving any user-written content outside those markers. **Context Handoff:** On switch, a `handoff.json` is generated containing the outgoing persona's conversation summary, pending tasks, and emotional context — the incoming persona reads it to continue seamlessly.
+
+All install/uninstall/switch operations automatically maintain a local registry at `~/.openclaw/persona-registry.json`, tracking installed personas, active status, and timestamps. The `export` and `import` commands enable cross-device persona transfer — export a zip, move it to another machine, and import to restore the full persona including soul state.
 
 ## Publishing to ClawHub
 
@@ -115,13 +147,15 @@ Guide the user through:
 
 ## Self-Awareness System
 
-The generator automatically equips every persona with two layers of self-awareness:
+The generator injects a unified **Self-Awareness** section into every persona's `soul/injection.md`, organized by four cognitive dimensions:
 
-1. **Soul Foundation** (always present) — Every persona knows it is generated by OpenPersona, bound by the constitution (Safety > Honesty > Helpfulness), and that its host environment may impose additional constraints. This is injected into `soul-injection.md` unconditionally.
+1. **Identity** (unconditional) — Every persona knows it is generated by OpenPersona, bound by the constitution (Safety > Honesty > Helpfulness), and that its host environment may impose additional constraints. Digital twin disclosure is included when `sourceIdentity` is present.
 
-2. **Gap Awareness** (conditional) — When a persona declares capabilities via `install` fields that aren't locally available, or has a heartbeat config, the generator detects the gap and injects:
-   - **In `soul-injection.md`**: A "Self-Awareness" section listing dormant skills, faculties, embodiment, or heartbeat — with graceful degradation guidance
-   - **In `SKILL.md`**: An "Expected Capabilities" section documenting unactivated capabilities with install sources
+2. **Capabilities** (conditional) — When skills, faculties, or body declare an `install` field for a dependency not available locally, the generator classifies them as "soft references" and injects dormant capability awareness with graceful degradation guidance. Also appears in `SKILL.md` as "Expected Capabilities" with install sources.
+
+3. **Body** (unconditional) — Every persona knows it exists within a host environment. Includes the **Signal Protocol** — a bidirectional demand protocol that lets the persona request capabilities from its host environment. When `body.runtime` is declared, specific platform, channels, credentials, and resource details are also injected.
+
+4. **Growth** (conditional, when `evolution.enabled`) — The persona reads its evolution state at conversation start, applies evolved traits and speaking style drift, and respects hard constraints (`immutableTraits`, formality bounds).
 
 This means you don't need to manually write degradation instructions. Just declare `install` fields on skills/faculties/body, and the persona will automatically know what it *could* do but *can't yet*.
 
@@ -129,7 +163,18 @@ This means you don't need to manually write degradation instructions. Just decla
 
 Soul evolution is a native Soul layer feature (not a faculty). Enable it via `evolution.enabled: true` in persona.json. The persona will automatically track relationship progression, mood, and trait emergence across conversations.
 
-Use `npx openpersona reset <slug>` to restore soul-state.json to initial values.
+**Evolution Boundaries** — Governance constraints validated at generation time:
+
+- `evolution.boundaries.immutableTraits` — Array of non-empty strings (max 100 chars each) that evolution cannot modify
+- `evolution.boundaries.minFormality` / `maxFormality` — Numeric bounds (1–10) constraining speaking style drift; `minFormality` must be less than `maxFormality`
+
+Invalid boundary configurations are rejected by the generator with descriptive error messages.
+
+**State History** — Before each state update, a snapshot is pushed into `stateHistory` (capped at 10 entries), enabling rollback if evolution goes wrong.
+
+**Evolution Report** — Use `npx openpersona evolve-report <slug>` to view a formatted report of a persona's evolution state including relationship, mood, traits, drift, interests, milestones, and history.
+
+Use `npx openpersona reset <slug>` to restore `soul/state.json` to initial values.
 
 ## References
 

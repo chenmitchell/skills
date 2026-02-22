@@ -4,7 +4,7 @@ description: Final code review and quality gate — run tests, check coverage, a
 license: MIT
 metadata:
   author: fortunto2
-  version: "1.1.0"
+  version: "1.1.1"
   openclaw:
     emoji: "🔎"
 allowed-tools: Read, Grep, Bash, Glob, Write, Edit, mcp__solograph__session_search, mcp__solograph__project_code_search, mcp__solograph__codegraph_query, mcp__solograph__codegraph_explain, mcp__solograph__web_search, mcp__context7__resolve-library-id, mcp__context7__query-docs
@@ -193,7 +193,7 @@ Read `docs/plan/*/plan.md`:
 
 ### 8. Production Logs (if deployed)
 
-If the project has been deployed (`.solo/states/deploy` exists or deploy URL in CLAUDE.md), **check production logs for runtime errors**.
+If the project has been deployed (deploy URL in CLAUDE.md, or `.solo/states/deploy` exists if pipeline state directory is present), **check production logs for runtime errors**.
 
 Read the `logs` field from the stack YAML (`templates/stacks/{stack}.yaml`) to get platform-specific commands.
 
@@ -245,7 +245,7 @@ Report:
 
 ### 9. Dev Principles Compliance
 
-Check adherence to `templates/principles/dev-principles.md` (solo-factory) or `1-methodology/dev-principles.md` (solopreneur KB).
+Check adherence to dev principles. Look for `templates/principles/dev-principles.md` (bundled with this skill), or check CLAUDE.md or project docs for architecture and coding conventions.
 
 Read the dev principles file, then spot-check 3-5 key source files for violations:
 
@@ -530,6 +530,8 @@ After the verdict report, revise the project's CLAUDE.md to keep it lean and use
 - Commit the update: `git add CLAUDE.md && git commit -m "docs: revise CLAUDE.md (post-review)"`
 
 ## AFTER CLAUDE.md revision — output signal EXACTLY ONCE:
+
+Output pipeline signal ONLY if pipeline state directory (`.solo/states/`) exists.
 
 **Output the signal tag ONCE and ONLY ONCE.** Do not repeat it. The pipeline detects the first occurrence.
 

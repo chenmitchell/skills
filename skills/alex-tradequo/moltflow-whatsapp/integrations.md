@@ -15,7 +15,30 @@ outreach, usage, and analytics. No npm package or
 Node.js required -- connects directly to the MoltFlow
 API via Streamable HTTP.
 
+### Option A: OAuth (Recommended) -- No API Key Needed
+
+Just add the URL. You'll be prompted to sign in the
+first time you use a tool.
+
 **Add to `claude_desktop_config.json`:**
+
+```json
+{
+  "mcpServers": {
+    "moltflow": {
+      "url": "https://apiv2.waiflow.app/mcp"
+    }
+  }
+}
+```
+
+On first use, Claude will prompt you to authorize.
+Click through to sign in (or create a free account)
+and approve access. That's it -- no API key to copy.
+
+### Option B: API Key (Manual)
+
+If you prefer explicit key management:
 
 ```json
 {
@@ -30,14 +53,14 @@ API via Streamable HTTP.
 }
 ```
 
-**Setup guide:** [Connect Claude to MoltFlow](https://molt.waiflow.app/guides/connect-claude-to-moltflow)
-
-**Dashboard setup page:** [https://molt.waiflow.app/mcp](https://molt.waiflow.app/mcp)
-
 **Required scopes:** Use the minimum scopes for your
 workflow: `sessions:read`, `messages:send`, `leads:read`,
 `custom-groups:read`, `usage:read`. Create a scoped key
 at Dashboard > Sessions > API Keys tab.
+
+**Setup guide:** [Connect Claude to MoltFlow](https://molt.waiflow.app/guides/connect-claude-to-moltflow)
+
+**Dashboard setup page:** [https://molt.waiflow.app/mcp](https://molt.waiflow.app/mcp)
 
 ## Claude.ai Web (Remote MCP)
 
@@ -45,6 +68,11 @@ No installation required -- configure in Claude.ai under
 Settings > Integrations > MCP Servers:
 
 - **URL:** `https://apiv2.waiflow.app/mcp`
+
+OAuth handles authentication automatically. You'll be
+prompted to sign in when you first use a MoltFlow tool.
+
+Alternatively, use manual auth:
 - **Auth header:** `X-API-Key`
 - **Value:** Your scoped MoltFlow API key
 
@@ -57,16 +85,32 @@ All 25 tools are available immediately after configuration.
 Add MoltFlow as a remote MCP server:
 
 ```bash
+claude mcp add moltflow --transport http --url https://apiv2.waiflow.app/mcp
+```
+
+OAuth handles authentication automatically. On first
+tool use you'll be prompted to sign in via your browser.
+
+For manual auth with an API key:
+
+```bash
 claude mcp add moltflow --transport http --url https://apiv2.waiflow.app/mcp --header "X-API-Key: YOUR_API_KEY_HERE"
 ```
 
 All 25 tools are available after adding the server.
 
-Set `MOLTFLOW_API_KEY` in your environment before launching.
-
 **Setup guide:** [Connect Claude to MoltFlow](https://molt.waiflow.app/guides/connect-claude-to-moltflow)
 
-## OpenAI Custom GPTs (ChatGPT)
+## ChatGPT (MCP Connector)
+
+Add MoltFlow in ChatGPT settings under MCP Servers:
+
+- **URL:** `https://apiv2.waiflow.app/mcp`
+
+OAuth handles authentication. You'll sign in via your
+browser on first use.
+
+## OpenAI Custom GPTs
 
 Import the MoltFlow OpenAPI specification in GPT Builder
 to give your GPT access to messaging, sessions, leads,
@@ -83,17 +127,21 @@ and paste your scoped MoltFlow API key.
 
 - **URL:** `https://apiv2.waiflow.app/mcp`
 - **Protocol:** MCP Streamable HTTP (2025-03-26)
-- **Auth:** `X-API-Key` header
+- **Auth:** OAuth 2.1 (automatic) or `X-API-Key` header (manual)
+- **OAuth discovery:** `https://apiv2.waiflow.app/.well-known/oauth-authorization-server`
 - **Tools:** 25 tools across 7 categories (Sessions, Messaging, Groups, Leads, Outreach, Usage, Analytics)
 
 ---
 
 ## Security Notes
 
-- **Scoped API keys only** -- create a key with minimum
-  required scopes at Dashboard > Sessions > API Keys tab.
-- **Environment variables** -- store your API key as an
-  env var, not in shared config files. Rotate regularly.
+- **OAuth 2.1 with PKCE** -- the recommended auth method.
+  Uses S256 code challenge, no client secrets exposed.
+- **Scoped API keys** -- if using manual auth, create a
+  key with minimum required scopes at Dashboard >
+  Sessions > API Keys tab.
+- **Environment variables** -- store API keys as env vars,
+  not in shared config files. Rotate regularly.
 - **GDPR compliance** -- all data processing follows
   GDPR guidelines with appropriate consent gates.
 

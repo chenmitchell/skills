@@ -2,7 +2,7 @@
 name: moltflow-outreach
 description: "Bulk messaging, scheduled messages, scheduled reports, and custom groups for WhatsApp outreach. Use when: bulk send, broadcast, schedule message, schedule report, cron, custom group, contact list, ban-safe messaging."
 source: "MoltFlow Team"
-version: "2.11.8"
+version: "2.15.1"
 risk: safe
 requiredEnv:
   - MOLTFLOW_API_KEY

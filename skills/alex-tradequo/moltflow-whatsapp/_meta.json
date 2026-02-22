@@ -1,13 +1,18 @@
 {
   "owner": "alex-tradequo",
   "slug": "moltflow-whatsapp",
-  "displayName": "WhatsApp AI Agent — No Meta API | Lead Mining, Smart Replies, Bulk Campaigns & Scheduled Reports",
+  "displayName": "MoltFlow WhatsApp — ERC-8004 Agent | Lead Mining, AI Outreach, Bulk Campaigns & MCP",
   "latest": {
-    "version": "2.14.6",
-    "publishedAt": 1771490036437,
-    "commit": "https://github.com/openclaw/skills/commit/97541c77022ad99fff6298cd2f2b90373be4cdfd"
+    "version": "2.15.1",
+    "publishedAt": 1771757572476,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.14.6",
+      "publishedAt": 1771490036437,
+      "commit": "https://github.com/openclaw/skills/commit/97541c77022ad99fff6298cd2f2b90373be4cdfd"
+    },
     {
       "version": "2.14.4",
       "publishedAt": 1771487944482,

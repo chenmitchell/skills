@@ -1,5 +1,6 @@
 ---
 name: token-usage-optimizer
+version: 1.0.5
 description: Maximize your Claude Code subscription value with smart usage monitoring and burn rate optimization. Track 5-hour session and 7-day weekly quotas, get one-time alerts, and daily reports showing if you're under/over-using your $20-200/month plan. Ultra-lightweight (10min cache, minimal API calls). Perfect for Pro, Max 100, and Max 200 subscribers who want to get every dollar's worth.
 metadata:
   clawdbot:
@@ -15,6 +16,8 @@ metadata:
 ---
 
 # Token Usage Optimizer
+
+**Version:** 1.0.5
 
 **Get the most out of your Claude Code subscription** by monitoring usage in real-time and optimizing your daily burn rate.
 
@@ -34,7 +37,7 @@ This skill tracks your **5-hour session** and **7-day weekly** quotas, calculate
 - 🎯 **Plan-Aware** — Auto-detects Pro ($20), Max 100 ($100), Max 200 ($200)
 - 💾 **Ultra-Lightweight** — 10-minute cache, minimal API calls
 - 📅 **Daily Reports** — Evening summary: SESSION, WEEKLY, burn rate
-- 🔄 **Auto-Refresh** — OAuth token refresh every hour (access tokens expire ~1h)
+- 🔄 **Token Health Check** — Hourly check + alert if manual refresh needed (~once per week)
 
 ## Quick Start
 
@@ -169,20 +172,30 @@ Tokens are stored in `{baseDir}/.tokens` (gitignored).
 
 Never share your access/refresh tokens.
 
-## Auto-Refresh Setup (Recommended)
+## Token Health Check (Recommended)
 
-To prevent token expiration (access tokens expire ~1 hour), set up automatic refresh:
+OAuth tokens work for ~1 week, then need manual refresh. Set up 30-minute health check for better reliability:
 
 ```bash
-# Add cron job to refresh token every hour
+# Add cron job to check token health every 30 minutes
 openclaw cron add \
   --name "claude-token-refresh" \
-  --every 1h \
+  --every 30m \
   --announce \
-  --message "Рефреш Claude Code OAuth токена: запусти {baseDir}/scripts/auto-refresh-cron.sh"
+  --message "Запусти {baseDir}/scripts/auto-refresh-cron.sh"
 ```
 
-The script uses Claude CLI for reliable token refresh. If it fails, you'll get a notification to manually refresh via `claude auth login`.
+**What it does:**
+- ✅ Token valid → silent (no spam)
+- 🔴 Token expired → **one-time alert** with manual refresh instructions
+
+**Manual refresh (once per week, 30 seconds):**
+```bash
+claude auth login
+# Browser opens → sign in to claude.ai → done!
+```
+
+Tokens auto-sync to `{baseDir}/.tokens` after successful login.
 
 ## Troubleshooting
 
@@ -190,9 +203,9 @@ The script uses Claude CLI for reliable token refresh. If it fails, you'll get a
 → Run `./scripts/setup.sh`
 
 **"Token expired" / "API request failed"**
-→ Access tokens expire after ~1 hour
-→ Option 1: Set up auto-refresh cron every hour (see above)
-→ Option 2: Manually refresh: `claude auth login` and re-run setup
+→ OAuth tokens expire after ~1 week
+→ Manual refresh: `claude auth login` (browser opens → sign in → done)
+→ Set up hourly health check to get alerts before expiry (see above)
 
 **Burn rate shows empty**
 → API response missing `resets_at` — try again in a few minutes
@@ -200,6 +213,22 @@ The script uses Claude CLI for reliable token refresh. If it fails, you'll get a
 **Auto-refresh failed**
 → OAuth refresh endpoint may have changed
 → Manual refresh: `claude auth login` → copy new tokens → run `./scripts/setup.sh`
+
+## Changelog
+
+### v1.0.5 (2026-02-22)
+- 🐛 **Bugfix:** Fixed token extraction in `auto-refresh-cron.sh` (removed quotes handling)
+- ⚡ **Performance:** Reduced cron interval from 1h to 30m for more reliable token refresh
+- 📝 Improved reliability of OAuth token sync with `~/.claude/.credentials.json`
+
+### v1.0.4 (2026-02-21)
+- 🔄 Replaced automatic refresh with health check + manual refresh workflow
+- 📚 Updated documentation with manual refresh instructions
+- ⏰ Health check alerts when manual refresh needed (~once per week)
+
+### v1.0.3 (2026-02-20)
+- ⏱️ Fixed auto-refresh interval (hourly instead of 5h)
+- 📊 Improved burn rate calculation accuracy
 
 ## Contributing
 

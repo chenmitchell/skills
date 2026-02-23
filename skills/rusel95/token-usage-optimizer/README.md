@@ -30,7 +30,8 @@ You're paying **$20-200/month** for Claude Code. This skill helps you:
 - ✅ **Smart Alerts** — One-time warnings (no spam)
 - ✅ **Plan-Aware** — Works with Pro, Max 100, Max 200
 - ✅ **Ultra-Lightweight** — 10-min cache, minimal API calls
-- ✅ **No Dependencies** — Just bash + curl
+- ✅ **No Dependencies** — Just bash + curl + python3
+- ✅ **Manual Refresh** — ~Once per week, 30 seconds (`claude auth login`)
 
 ## Output Example
 

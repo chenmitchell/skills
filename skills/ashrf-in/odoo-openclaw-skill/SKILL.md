@@ -21,27 +21,16 @@ description: "Query Odoo data including salesperson performance, customer analyt
 
 ## Security & Credentials
 
-### Security Model
-
-This skill implements a **defense-in-depth security model**:
-
-1. **User Invocation Required**: This skill CANNOT be invoked autonomously by AI models
-2. **Read-Only Enforcement**: All data modifications are blocked at the code level
-3. **Credential Isolation**: Credentials stored only in local `.env` file, never transmitted elsewhere
-4. **Network Boundaries**: Only connects to user-specified Odoo URL, no external telemetry
-
 ### Required Environment Variables
 
-This skill **REQUIRES** Odoo connection credentials stored in `assets/autonomous-cfo/.env`:
+This skill requires Odoo connection credentials stored in `assets/autonomous-cfo/.env`:
 
-| Variable | Description | Secret | Required |
-|----------|-------------|--------|----------|
-| `ODOO_URL` | Odoo instance URL (e.g., `https://your-odoo.com`) | No | **Yes** |
-| `ODOO_DB` | Odoo database name | No | **Yes** |
-| `ODOO_USER` | Odoo username/email | No | **Yes** |
-| `ODOO_PASSWORD` | Odoo API key (recommended) or password | **Yes** | **Yes** |
-
-**⚠️ CRITICAL**: These credentials are REQUIRED. The skill will not function without them.
+| Variable | Description | Secret |
+|----------|-------------|--------|
+| `ODOO_URL` | Odoo instance URL (e.g., `https://your-odoo.com`) | No |
+| `ODOO_DB` | Odoo database name | No |
+| `ODOO_USER` | Odoo username/email | No |
+| `ODOO_PASSWORD` | Odoo password or API key | **Yes** |
 
 **Setup:**
 ```bash
@@ -51,80 +40,18 @@ cp .env.example .env
 nano .env
 ```
 
-### API Key vs Password
-
-**For production, use an Odoo API key:**
-1. Log into Odoo → Settings → Account Security → API Keys
-2. Generate a new key (e.g., "Financial Reports Skill")
-3. Use this key as `ODOO_PASSWORD`
-
-**Why API keys?**
-- Scoped permissions (can be read-only)
-- Can be revoked independently
-- Don't expose your main password
-- Better audit trail in Odoo
-
-### Authentication Methods
-
-**XML-RPC (Legacy, default):**
-- Password/API key sent in XML-RPC request body
-- Supported by all Odoo versions
-
-**JSON-RPC (Odoo 19+):**
-- API key sent as `Authorization: Bearer <api_key>` header
-- More efficient for large datasets
-- Use `ODOO_RPC_BACKEND=json2` to enable
-
 ### Model Invocation Policy
 
-**🚫 Model invocation is STRICTLY DISABLED.**
+**Model invocation is DISABLED** per `skill.json` policy. This skill handles sensitive financial data and external Odoo connections — it must be explicitly invoked by the user.
 
-Per `skill.json`:
-```json
-"modelInvocation": {
-  "disabled": true,
-  "requiresUserInvocation": true
-}
-```
+**Data Handling:** All queries are read-only. No data is modified or exfiltrated.
 
-This means:
-- AI models CANNOT invoke this skill automatically
-- User MUST explicitly request Odoo operations
-- Every invocation requires user intent
+### Data Handling
 
-### Read-Only Enforcement
-
-The skill blocks ALL data modification methods:
-
-**Blocked Methods:**
-- `create`, `write`, `unlink` (CRUD operations)
-- `copy` (duplicate records)
-- `action_post`, `action_confirm`, `button_validate` (workflow actions)
-
-**Allowed Methods (Read-Only):**
-- `search`, `search_read`, `read` (data retrieval)
-- `search_count`, `fields_get` (metadata)
-- `name_search`, `context_get`, `default_get` (helpers)
-
-Attempting to call blocked methods raises `PermissionError`.
-
-### Data Handling & Privacy
-
-- **No Data Exfiltration:** Reports generated locally in `assets/autonomous-cfo/output/`
-- **No Telemetry:** No usage data sent to external servers
-- **Network Isolation:** Only connects to `ODOO_URL` specified in `.env`
-- **Credential Security:** Password/API key never logged or displayed
-- **Local Processing:** All chart generation, PDF creation happens locally
-
-### Output Security
-
-All outputs are local files only:
-- `output/pdf_reports/` - PDF reports
-- `output/whatsapp_cards/` - PNG image cards  
-- `output/charts/` - Chart images
-- `output/excel/` - Excel spreadsheets
-
-No cloud upload, no external sharing, no data leaves your machine except to your specified Odoo instance.
+- **Read-only:** All mutating methods (`create`, `write`, `unlink`, etc.) are blocked at the client level
+- **No exfiltration:** Reports are generated locally in `assets/autonomous-cfo/output/`
+- **Network endpoints:** Only connects to the Odoo URL specified in `.env`
+- **Output formats:** PDF, Excel, and WhatsApp image cards (local files only)
 
 ### Installation
 

@@ -1,53 +1,3 @@
-"""
-Odoo RPC Client - Secure Read-Only Connector
-
-This module provides a secure, read-only connection to Odoo ERP systems.
-It enforces strict read-only access and blocks all data modification operations.
-
-Authentication Methods:
-----------------------
-1. XML-RPC (Legacy, default):
-   - Uses standard Odoo XML-RPC endpoints
-   - Password/API key sent in request body
-   - Compatible with all Odoo versions
-
-2. JSON-RPC (Odoo 19+, optional):
-   - Uses Odoo 19+ JSON-2 API
-   - API key sent as Authorization: Bearer <token> header
-   - More efficient for large datasets
-   - Enable with: ODOO_RPC_BACKEND=json2
-
-Security Features:
------------------
-- Read-only enforcement: Blocks create, write, unlink, and workflow actions
-- Safe method whitelist: Only allows search, read, and metadata operations
-- No credential logging: Password/API key never logged or displayed
-- SSL verification: HTTPS connections verified by default (disable with --insecure)
-- Request timeouts: Prevents hanging connections
-- Retry logic: Handles transient network failures
-
-Usage:
-------
-    from connectors.odoo_client import OdooClient
-
-    # Load from environment variables
-    client = OdooClient.from_env()
-
-    # Or instantiate directly
-    client = OdooClient(
-        url="https://mycompany.odoo.com",
-        db="mycompany_prod",
-        username="admin@mycompany.com",
-        password="my_api_key",
-        rpc_backend="json2"  # or "xmlrpc"
-    )
-
-    # Authenticate
-    if client.authenticate():
-        # Read-only operations only
-        partners = client.search_read("res.partner", limit=10)
-"""
-
 import os
 import socket
 import ssl
@@ -59,8 +9,6 @@ import requests
 
 
 class OdooConnectionError(ConnectionError):
-    """Raised when Odoo connection or authentication fails."""
-
     pass
 
 
@@ -76,12 +24,7 @@ class _TimeoutTransport(xmlrpc.client.Transport):
 
 
 class _SafeTimeoutTransport(xmlrpc.client.SafeTransport):
-    def __init__(
-        self,
-        timeout: int = 30,
-        context: Optional[ssl.SSLContext] = None,
-        use_datetime: bool = False,
-    ):
+    def __init__(self, timeout: int = 30, context: Optional[ssl.SSLContext] = None, use_datetime: bool = False):
         super().__init__(use_datetime=use_datetime, context=context)
         self.timeout = timeout
 
@@ -201,20 +144,6 @@ class OdooClient:
         return _TimeoutTransport(timeout=timeout)
 
     def _headers(self):
-        """
-        Build HTTP headers for JSON-RPC (Odoo 19+) requests.
-
-        Security Note:
-        --------------
-        The API key is transmitted as a Bearer token in the Authorization header.
-        This is the standard Odoo 19+ JSON-2 API authentication method.
-
-        For XML-RPC (legacy), the password/API key is sent in the request body
-        via XML-RPC protocol instead.
-
-        Returns:
-            dict: HTTP headers with Authorization bearer token
-        """
         return {
             "Authorization": f"bearer {self.password}",
             "X-Odoo-Database": self.db,
@@ -222,9 +151,7 @@ class OdooClient:
             "User-Agent": "autonomous-cfo/1.0",
         }
 
-    def _json2_call(
-        self, model: str, method: str, payload: Optional[Dict[str, Any]] = None
-    ):
+    def _json2_call(self, model: str, method: str, payload: Optional[Dict[str, Any]] = None):
         payload = payload or {}
         if self.context:
             merged_context = dict(payload.get("context", {}))
@@ -245,25 +172,16 @@ class OdooClient:
                     verify=self.verify_ssl,
                 )
                 if resp.status_code >= 400:
-                    raise OdooConnectionError(
-                        f"JSON-2 call failed ({resp.status_code}): {resp.text[:800]}"
-                    )
+                    raise OdooConnectionError(f"JSON-2 call failed ({resp.status_code}): {resp.text[:800]}")
                 return resp.json()
-            except (
-                requests.Timeout,
-                requests.ConnectionError,
-                OSError,
-                socket.timeout,
-            ) as e:
+            except (requests.Timeout, requests.ConnectionError, OSError, socket.timeout) as e:
                 last_error = e
                 continue
             except Exception as e:
                 last_error = e
                 break
 
-        raise OdooConnectionError(
-            f"JSON-2 call failed ({model}.{method}): {last_error}"
-        )
+        raise OdooConnectionError(f"JSON-2 call failed ({model}.{method}): {last_error}")
 
     def version(self) -> Dict[str, Any]:
         if self.rpc_backend == "xmlrpc":
@@ -273,9 +191,7 @@ class OdooClient:
                 raise OdooConnectionError(f"Odoo version check failed: {e}")
 
         try:
-            resp = requests.get(
-                f"{self.url}/web/version", timeout=self.timeout, verify=self.verify_ssl
-            )
+            resp = requests.get(f"{self.url}/web/version", timeout=self.timeout, verify=self.verify_ssl)
             resp.raise_for_status()
             return resp.json()
         except Exception as e:
@@ -287,9 +203,7 @@ class OdooClient:
 
         if self.rpc_backend == "xmlrpc":
             try:
-                uid = self.common.authenticate(
-                    self.db, self.username, self.password, {}
-                )
+                uid = self.common.authenticate(self.db, self.username, self.password, {})
                 self.uid = uid or None
                 return bool(self.uid)
             except Exception as e:
@@ -307,21 +221,6 @@ class OdooClient:
             raise OdooConnectionError("Authentication failed")
 
     def _assert_read_only_method(self, method: str):
-        """
-        Enforce read-only access by validating method names.
-
-        Security enforcement:
-        - Blocks all CRUD operations (create, write, unlink)
-        - Blocks workflow actions (action_post, action_confirm, button_validate)
-        - Only allows safe read-only methods
-
-        Raises:
-            PermissionError: If method is blocked or not in safe list
-
-        Note:
-            This is a client-side enforcement. For additional security,
-            use an Odoo user with restricted read-only permissions.
-        """
         m = (method or "").strip().lower()
         if m in self.BLOCKED_METHODS:
             raise PermissionError(f"Blocked mutating method: {method}")
@@ -354,9 +253,7 @@ class OdooClient:
             elif method == "search_count" and len(args) >= 1:
                 payload.setdefault("domain", args[0])
             else:
-                raise ValueError(
-                    f"JSON-2 execute_kw cannot safely map positional args for {model}.{method}; use dedicated helper"
-                )
+                raise ValueError(f"JSON-2 execute_kw cannot safely map positional args for {model}.{method}; use dedicated helper")
 
             return self._json2_call(model, method, payload)
 
@@ -379,12 +276,7 @@ class OdooClient:
                     args,
                     call_kwargs,
                 )
-            except (
-                socket.timeout,
-                TimeoutError,
-                OSError,
-                xmlrpc.client.ProtocolError,
-            ) as e:
+            except (socket.timeout, TimeoutError, OSError, xmlrpc.client.ProtocolError) as e:
                 last_error = e
                 continue
             except xmlrpc.client.Fault:
@@ -398,15 +290,7 @@ class OdooClient:
     def execute(self, model: str, method: str, *args, **kwargs):
         return self.execute_kw(model, method, *args, **kwargs)
 
-    def search(
-        self,
-        model: str,
-        domain: Optional[List] = None,
-        *,
-        limit: Optional[int] = None,
-        offset: int = 0,
-        order: Optional[str] = None,
-    ):
+    def search(self, model: str, domain: Optional[List] = None, *, limit: Optional[int] = None, offset: int = 0, order: Optional[str] = None):
         domain = domain or []
         kw = {"offset": offset}
         if limit is not None:
@@ -427,15 +311,7 @@ class OdooClient:
             kw["fields"] = fields
         return self.execute_kw(model, "read", list(ids), **kw)
 
-    def search_read(
-        self,
-        model: str,
-        domain: Optional[List] = None,
-        fields: Optional[List[str]] = None,
-        limit: Optional[int] = None,
-        offset: int = 0,
-        order: Optional[str] = None,
-    ):
+    def search_read(self, model: str, domain: Optional[List] = None, fields: Optional[List[str]] = None, limit: Optional[int] = None, offset: int = 0, order: Optional[str] = None):
         domain = domain or []
         kwargs: Dict[str, Any] = {"offset": offset}
         if fields:
@@ -497,9 +373,7 @@ class OdooClient:
             return self._json2_call(model, "fields_get", {"attributes": attributes})
         return self.execute_kw(model, "fields_get", [], attributes=attributes)
 
-    def call_raw(
-        self, model: str, method: str, payload: Optional[Dict[str, Any]] = None
-    ):
+    def call_raw(self, model: str, method: str, payload: Optional[Dict[str, Any]] = None):
         """Advanced read-only escape hatch for power users."""
         self._ensure_auth()
         self._assert_read_only_method(method)
@@ -537,9 +411,7 @@ if __name__ == "__main__":
         print(f"✅ Connected. Backend={client.rpc_backend}. Server version: {version}")
         if client.authenticate():
             print(f"✅ Authenticated successfully! UID: {client.uid}")
-            partners = client.search_read(
-                "res.partner", limit=5, fields=["name", "email"]
-            )
+            partners = client.search_read("res.partner", limit=5, fields=["name", "email"])
             print(f"Fetched {len(partners)} partners.")
             for p in partners:
                 print(f"- {p['name']} ({p.get('email') or 'No email'})")

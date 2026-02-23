@@ -7,7 +7,7 @@ metadata: { "openclaw": { "emoji": "🔐", "requires": { "bins": ["npm", "node",
 
 # Cybercentry OpenClaw AI Agent Verification
 
-**$1.00 per audit. Enterprise-grade security for your OpenClaw agents.**
+**$0.10 per audit. Enterprise-grade security for your OpenClaw agents.**
 
 ## What This Service Does
 
@@ -126,7 +126,7 @@ AGENT_CONFIG='{
 Before sending any funds, verify the Cybercentry wallet address using the **Cybercentry Wallet Verification** skill:
 - Validates wallet authenticity and detects fraud
 - Identifies high-risk addresses and scam patterns
-- Only $1.00 USDC per verification
+- Only $0.10 USDC per verification
 - See: https://clawhub.ai/Cybercentry/cybercentry-wallet-verification for full details
 
 **Additional verification sources:**
@@ -361,7 +361,7 @@ Command execution without proper sanitization, validation, or sandboxing.
 - Security consulting: $150-300/hour
 - Post-breach incident response: $50,000+ average cost
 
-**ROI**: Single prevented breach pays for 50,000 audits.
+**ROI**: Single prevented breach pays for 500,000 audits.
 
 ## Use Cases
 

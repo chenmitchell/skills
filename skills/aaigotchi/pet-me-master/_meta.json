@@ -3,11 +3,16 @@
   "slug": "pet-me-master",
   "displayName": "Pet Me Master",
   "latest": {
-    "version": "2.0.1",
-    "publishedAt": 1771648984590,
-    "commit": "https://github.com/openclaw/skills/commit/8b3a9a618412b2477fa6a49c4c5d31b405720439"
+    "version": "2.0.2",
+    "publishedAt": 1771779687347,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.0.1",
+      "publishedAt": 1771648984590,
+      "commit": "https://github.com/openclaw/skills/commit/8b3a9a618412b2477fa6a49c4c5d31b405720439"
+    },
     {
       "version": "1.3.1",
       "publishedAt": 1771525993941,

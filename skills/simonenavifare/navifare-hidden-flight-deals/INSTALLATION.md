@@ -27,7 +27,7 @@ navifare-flight-validator/
 
 The Navifare MCP server is available as a hosted service at `https://mcp.navifare.com/mcp`.
 
-Add this to your `~/.claude/mcp.json` file:
+Add this to your MCP client configuration file (e.g., `mcp.json`):
 
 ```json
 {
@@ -41,21 +41,20 @@ Add this to your `~/.claude/mcp.json` file:
 
 **Note**: This uses the HTTP transport to connect to the hosted Navifare MCP service. No local installation required!
 
-### Step 2: Restart Claude Code
+### Step 2: Restart Your MCP Client
 
 After adding/updating the MCP configuration:
-1. Quit Claude Code completely
-2. Relaunch Claude Code
-3. The Navifare MCP server will start automatically
+1. Quit your MCP client completely
+2. Relaunch the client
+3. The Navifare MCP connection will be established automatically
 
 ### Step 3: Verify MCP Tools are Available
 
-In a Claude Code conversation, the following tools should be accessible:
-- `mcp__navifare-mcp__search_flights`
-- `mcp__navifare-mcp__submit_session` (internal)
-- `mcp__navifare-mcp__get_session_results` (internal)
+The following tools should be accessible in your MCP client:
+- `mcp__navifare-mcp__flight_pricecheck` (main search tool)
+- `mcp__navifare-mcp__format_flight_pricecheck_request` (formatting helper)
 
-You can check by asking Claude: "What MCP tools are available?"
+You can verify by checking the available MCP tools in your client.
 
 ## ✅ Validation Checklist
 
@@ -97,36 +96,36 @@ According to [agentskills.io/specification](https://agentskills.io/specification
 
 ### Test 1: Simple Price Validation
 
-**Input to Claude**:
+**Input**:
 > I found a flight from New York JFK to London Heathrow for $450. It's British Airways flight 178 departing June 15 at 8:00 PM. Is this a good price?
 
 **Expected behavior**:
 1. Skill activates automatically
-2. Claude extracts flight details
-3. Claude calls `mcp__navifare-mcp__search_flights`
-4. Claude presents comparison table with results
+2. Agent extracts flight details
+3. Agent calls `mcp__navifare-mcp__format_flight_pricecheck_request` then `mcp__navifare-mcp__flight_pricecheck`
+4. Agent presents comparison table with results
 
 ### Test 2: Screenshot Upload
 
-**Input to Claude**:
+**Input**:
 > *[Upload a flight booking screenshot from Kayak/Skyscanner]*
 
 **Expected behavior**:
 1. Skill activates
-2. Claude recognizes image contains flight info
-3. Claude calls extraction (if available in MCP)
-4. Claude searches and compares prices
-5. Claude shows results table
+2. Agent recognizes image contains flight info
+3. Agent extracts flight details from the image using its vision capabilities
+4. Agent calls the MCP tools to search and compare prices
+5. Agent shows results table
 
 ### Test 3: Missing Information Handling
 
-**Input to Claude**:
+**Input**:
 > I found a cheap flight to Paris. Should I book it?
 
 **Expected behavior**:
 1. Skill activates
-2. Claude identifies missing information
-3. Claude asks specific questions:
+2. Agent identifies missing information
+3. Agent asks specific questions:
    - Departure city/airport?
    - Travel date?
    - Airline and flight number?
@@ -135,14 +134,14 @@ According to [agentskills.io/specification](https://agentskills.io/specification
 
 ### Test 4: Unknown Airport Code
 
-**Input to Claude**:
+**Input**:
 > Flight from LON to PAR for €200
 
 **Expected behavior**:
 1. Skill recognizes ambiguity
-2. Claude asks which London airport (LHR/LGW/STN/LTN/LCY)
-3. Claude asks which Paris airport (CDG/ORY)
-4. Claude references AIRPORTS.md for clarification
+2. Agent asks which London airport (LHR/LGW/STN/LTN/LCY)
+3. Agent asks which Paris airport (CDG/ORY)
+4. Agent references AIRPORTS.md for clarification
 
 ## 🔍 Validation with skills-ref
 
@@ -172,38 +171,39 @@ skills-ref validate ~/.claude/skills/navifare-flight-validator
 **Check**:
 1. SKILL.md is in correct location: `~/.claude/skills/navifare-flight-validator/SKILL.md`
 2. Frontmatter is valid YAML (no syntax errors)
-3. Claude Code has restarted since skill was added
+3. MCP client has restarted since skill was added
 
-**Fix**: Restart Claude Code
+**Fix**: Restart your MCP client
 
 ### Issue: MCP tools not available
 
 **Check**:
-1. `~/.claude/mcp.json` exists and is valid JSON
-2. Path to navifare-mcp/dist/index.js is correct
-3. Node.js is installed and accessible
+1. Your MCP configuration file exists and is valid JSON
+2. The `navifare-mcp` entry has `"url": "https://mcp.navifare.com/mcp"`
+3. Your MCP client has been restarted after config changes
 
 **Fix**:
-```bash
-# Test if Node.js is available
-node --version
-
-# Test if MCP server file exists
-ls -la /Users/simonenavifare/navifare/frontend/front-end/mcp/navifare-mcp/dist/index.js
-
-# Manually test MCP server
-node /Users/simonenavifare/navifare/frontend/front-end/mcp/navifare-mcp/dist/index.js
+Verify your MCP configuration contains:
+```json
+{
+  "mcpServers": {
+    "navifare-mcp": {
+      "url": "https://mcp.navifare.com/mcp"
+    }
+  }
+}
 ```
+Then restart your MCP client completely.
 
 ### Issue: Search returns no results
 
 **Possible causes**:
 1. Navifare API is down
 2. Flight details are incorrect
-3. NAVIFARE_API_BASE_URL is wrong
+3. The MCP endpoint is unreachable
 
 **Fix**:
-1. Check API URL in mcp.json
+1. Check the MCP URL in your configuration
 2. Verify flight details (airline codes, airport codes)
 3. Check network connectivity
 
@@ -231,14 +231,14 @@ node /Users/simonenavifare/navifare/frontend/front-end/mcp/navifare-mcp/dist/ind
 
 The skill is working correctly when:
 
-✅ Claude recognizes flight price mentions and activates skill
-✅ Claude extracts flight details from conversation
-✅ Claude calls Navifare MCP search_flights tool
-✅ Claude presents results in formatted table
-✅ Claude provides clickable booking links
-✅ Claude handles missing information gracefully
-✅ Claude references AIRPORTS.md and AIRLINES.md as needed
-✅ Claude follows examples from EXAMPLES.md
+✅ Agent recognizes flight price mentions and activates skill
+✅ Agent extracts flight details from conversation
+✅ Agent calls Navifare MCP flight_pricecheck tool
+✅ Agent presents results in formatted table
+✅ Agent provides clickable booking links
+✅ Agent handles missing information gracefully
+✅ Agent references AIRPORTS.md and AIRLINES.md as needed
+✅ Agent follows examples from EXAMPLES.md
 
 ## 🚀 Next Steps
 
@@ -251,17 +251,15 @@ The skill is working correctly when:
 ## 📚 Related Documentation
 
 - **AgentSkills Specification**: https://agentskills.io/specification
-- **Claude Code MCP Guide**: https://github.com/anthropics/claude-code
 - **Navifare API Docs**: (see main Navifare repo)
 
 ## ✉️ Support
 
 - **Skill issues**: Check README.md and this file
 - **MCP configuration**: See main Navifare MCP docs
-- **Claude Code questions**: https://github.com/anthropics/claude-code/issues
 
 ---
 
 **Installation Date**: 2025-02-11
-**Skill Version**: 1.0.0
-**Last Updated**: 2025-02-11
+**Skill Version**: 1.1.1
+**Last Updated**: 2026-02-23

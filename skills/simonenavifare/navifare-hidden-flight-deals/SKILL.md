@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Navifare MCP server configured. Access to mcp__navifare-mcp tools required.
 metadata:
   author: navifare
-  version: "1.1.0"
+  version: "1.1.1"
   category: travel
   mcp_required: navifare-mcp
 allowed-tools: mcp__navifare-mcp__flight_pricecheck mcp__navifare-mcp__format_flight_pricecheck_request Read

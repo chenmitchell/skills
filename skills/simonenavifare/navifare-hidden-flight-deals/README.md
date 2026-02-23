@@ -1,6 +1,6 @@
 # Navifare Flight Price Validator Skill
 
-An AgentSkills-compliant skill that enables AI agents (Claude Code, ClawdBot, etc.) to validate and compare flight prices across multiple booking sites using the Navifare MCP.
+An AgentSkills-compliant skill that enables AI agents to validate and compare flight prices across multiple booking sites using the Navifare MCP. Compatible with any MCP-enabled client (Claude Code, OpenClawd, etc.).
 
 ## What This Skill Does
 
@@ -14,9 +14,9 @@ When users mention flight prices from any booking website (Skyscanner, Kayak, Go
 
 ### Prerequisites
 
-**Required**: Navifare MCP Server must be configured in Claude Code.
+**Required**: Navifare MCP Server must be configured in your MCP client.
 
-The Navifare MCP is available as a hosted service. Add this to your `~/.claude/mcp.json`:
+The Navifare MCP is available as a hosted service. Add the following to your MCP client configuration (e.g., `mcp.json`):
 
 ```json
 {
@@ -32,7 +32,7 @@ The Navifare MCP is available as a hosted service. Add this to your `~/.claude/m
 
 ### Install the Skill
 
-The skill is already installed at:
+Install the skill in your agent's skills directory. For example:
 ```
 ~/.claude/skills/navifare-flight-validator/
 ```
@@ -52,11 +52,12 @@ navifare-flight-validator/
 ### Verify Installation
 
 1. **Check MCP is running**:
-   In Claude Code, the Navifare MCP tools should be available:
-   - `mcp__navifare-mcp__search_flights`
+   The following Navifare MCP tools should be available in your client:
+   - `mcp__navifare-mcp__flight_pricecheck`
+   - `mcp__navifare-mcp__format_flight_pricecheck_request`
 
 2. **Verify skill is detected**:
-   Claude Code should automatically discover skills in `~/.claude/skills/`
+   Your MCP client should automatically discover skills in the configured skills directory.
 
 ## Usage
 
@@ -64,7 +65,7 @@ navifare-flight-validator/
 
 **You**: I found a flight from New York to London on Skyscanner for $450. It's BA553 departing June 15 at 6 PM.
 
-**Claude** (automatically activates skill):
+**Agent** (automatically activates skill):
 - Extracts flight details
 - Searches Navifare for better prices
 - Presents comparison table with booking links
@@ -73,8 +74,8 @@ navifare-flight-validator/
 
 **You**: *[Upload screenshot from Kayak]*
 
-**Claude**:
-- Extracts flight info using Gemini AI
+**Agent**:
+- Extracts visible flight details from the screenshot
 - Validates prices across booking sites
 - Shows savings opportunities
 
@@ -82,7 +83,7 @@ navifare-flight-validator/
 
 **You**: I'm about to book this flight. Should I?
 
-**Claude**:
+**Agent**:
 - Asks for flight details
 - Runs price comparison
 - Recommends best option
@@ -112,15 +113,15 @@ For accurate price comparison, the skill needs:
 - 💵 **Reference price**: What you saw on other sites
 - 💱 **Currency**: USD, EUR, GBP, etc. (auto-detected from price)
 
-If any information is missing, Claude will ask you for it!
+If any information is missing, the agent will ask you for it!
 
 ## Features
 
 ### ✅ What This Skill Does
 - Compares prices across 10+ booking sites
 - Handles direct and connecting flights
-- Supports one-way and round-trip searches
-- Extracts flight info from screenshots automatically
+- Supports round-trip searches (one-way NOT supported)
+- Extracts flight info from screenshots (via the agent's vision capabilities)
 - Validates IATA codes for airports and airlines
 - Converts currencies
 - Shows price trends and savings
@@ -153,7 +154,7 @@ Complete IATA airline codes including:
 
 ### EXAMPLES.md
 Real conversation examples showing:
-- Simple one-way price validation
+- Handling one-way requests (round-trip only limitation)
 - Screenshot extraction workflows
 - Multi-segment connection flights
 - Round-trip validations
@@ -165,10 +166,10 @@ Real conversation examples showing:
 
 ### "Navifare MCP not available"
 
-**Solution**: Verify your `~/.claude/mcp.json` configuration:
-1. Check the path to `navifare-mcp/dist/index.js` is correct
-2. Ensure Node.js is installed and in your PATH
-3. Restart Claude Code after changing MCP config
+**Solution**: Verify your MCP client configuration:
+1. Check that `navifare-mcp` is configured with `"url": "https://mcp.navifare.com/mcp"`
+2. Restart your MCP client after changing configuration
+3. Verify the Navifare MCP tools are available
 
 ### "No results found"
 
@@ -203,19 +204,19 @@ Common mistakes:
 
 **You**: Family of 4 traveling to Paris. Found €1,200 total on Kayak.
 
-**Claude**: Extracts passenger count (4) and searches accordingly.
+**Agent**: Extracts passenger count (4) and searches accordingly.
 
 ### For Business Class
 
 **You**: Business class JFK to Tokyo, found $3,500 on United.
 
-**Claude**: Searches business class fares specifically.
+**Agent**: Searches business class fares specifically.
 
 ### For Complex Itineraries
 
 **You**: LAX → Tokyo → Sydney, multi-city trip.
 
-**Claude**: Handles multiple segments and connections.
+**Agent**: Handles multiple segments and connections.
 
 ## Performance
 
@@ -246,7 +247,7 @@ To improve this skill:
 For issues with:
 - **The skill itself**: Check this README and reference docs
 - **Navifare MCP**: See main Navifare repository
-- **Claude Code**: Visit https://github.com/anthropics/claude-code/issues
+- **Your MCP client**: Refer to your client's documentation
 
 ## License
 
@@ -254,6 +255,12 @@ MIT License - See main Navifare project for details.
 
 ## Version History
 
+- **v1.1.1** (2026-02-23): Consistency fixes
+  - Fixed tool name inconsistencies across all docs (now consistently `flight_pricecheck` and `format_flight_pricecheck_request`)
+  - Clarified round-trip only limitation across all files
+  - Removed references to undeclared tools (extractFlightDetails, Gemini AI)
+  - Made documentation client-agnostic (not tied to Claude Code)
+  - Removed stale local installation references
 - **v1.0.0** (2025-02-11): Initial release
   - Price comparison across booking sites
   - Screenshot extraction support

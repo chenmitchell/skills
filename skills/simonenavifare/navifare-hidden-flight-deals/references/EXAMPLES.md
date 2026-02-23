@@ -11,43 +11,9 @@ Real conversation examples showing how to use this skill effectively.
 **User**: I found a flight from New York to London on Skyscanner for $450. It's BA553 departing June 15 at 6 PM.
 
 **Assistant** (activates skill):
-Let me check if that's the best price available across multiple booking sites.
+I'd love to help you check if that's the best price! However, Navifare currently only supports **round-trip** flight searches.
 
-*[Extracts flight details]*
-- Route: JFK → LHR
-- Flight: BA553
-- Date: 2025-06-15
-- Departure: 18:00
-- Class: Economy (assumed)
-- Passengers: 1 adult (assumed)
-- Reference price: $450 USD
-
-*[Calls mcp__navifare-mcp__search_flights]*
-
-Searching across multiple booking sites... This takes up to 90 seconds.
-
-*[90 seconds later, receives results]*
-
-✅ **I found a better deal!**
-
-Your reference: $450 on Skyscanner
-Best price found: **$429 on Kiwi.com**
-💰 You save: $21 (4.7%)
-
-**Top 3 Options:**
-
-| # | Website | Price | Fare Type | Booking Link |
-|---|---------|-------|-----------|--------------|
-| 1 | Kiwi.com | $429 | Standard | [Book Now](https://kiwi.com/...) |
-| 2 | Momondo | $445 | Standard | [Book Now](https://momondo.com/...) |
-| 3 | eDreams | $450 | Special Fare | [Book Now](https://edreams.com/...) |
-
-All prices checked: 2025-02-11 16:30 UTC
-
-**What would you like to do?**
-- Click any booking link to complete your purchase
-- Check alternative dates for better prices
-- Add return flight to compare round-trip options
+Do you have a return flight as well? If so, share the return flight details (airline, flight number, date, and times) and I'll compare prices across multiple booking sites for the full round trip.
 
 ---
 
@@ -60,7 +26,7 @@ All prices checked: 2025-02-11 16:30 UTC
 **Assistant** (activates skill):
 I can see your flight search. Let me extract the details and find the best price for you.
 
-*[Calls extractFlightDetails from image]*
+*[Extracts flight details from screenshot]*
 
 Extracted from your screenshot:
 - Route: MXP (Milan Malpensa) → BCN (Barcelona)
@@ -71,7 +37,7 @@ Extracted from your screenshot:
 - Class: Economy
 - Reference price: €299 on Kayak
 
-*[Calls mcp__navifare-mcp__search_flights with extracted data]*
+*[Calls mcp__navifare-mcp__flight_pricecheck with extracted data]*
 
 Searching multiple booking sites...
 

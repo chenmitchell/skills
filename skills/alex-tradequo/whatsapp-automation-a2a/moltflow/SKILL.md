@@ -2,7 +2,7 @@
 name: moltflow
 description: "WhatsApp Business automation API for sessions, messaging, groups, labels, and webhooks. Use when: whatsapp, send message, create session, qr code, monitor group, label contacts, webhook."
 source: "MoltFlow Team"
-version: "2.11.8"
+version: "2.15.1"
 risk: safe
 requiredEnv:
   - MOLTFLOW_API_KEY
@@ -253,6 +253,57 @@ Monitor WhatsApp groups for keywords, messages, and activity.
 - `keywords` -- Only capture messages matching specified keywords
 - `mentions` -- Only when your account is mentioned
 - `first_message` -- Only first messages from new users (default for new groups)
+- `ai_analysis` -- AI-powered intent classification and lead scoring (Pro+ only)
+
+### Group Messages (AI Intelligence)
+
+**GET** `/groups/{group_id}/messages`
+
+Retrieve paginated messages from a monitored group, including AI analysis results.
+
+Query parameters: `limit` (default 50, max 100), `offset` (default 0)
+
+**Requires scope:** `groups:read`
+
+```json
+{
+  "items": [
+    {
+      "id": "msg-uuid",
+      "sender_phone": "+15550123456",
+      "sender_name": "John D.",
+      "content_preview": "I'm interested in the 3BR property",
+      "wa_timestamp": "2026-02-20T14:30:00Z",
+      "ai_analysis": {
+        "intent": "buying_intent",
+        "lead_score": 9,
+        "confidence": 0.92,
+        "reason": "Explicit interest in a specific property with buying signal"
+      }
+    }
+  ],
+  "total": 142,
+  "limit": 50,
+  "offset": 0,
+  "has_more": true
+}
+```
+
+`ai_analysis` is null when AI hasn't processed the message or AI monitoring is not enabled.
+
+### MCP Tool: moltflow_get_group_messages
+
+Retrieve messages from a monitored WhatsApp group via Claude or any MCP client.
+
+**Args:**
+- `group_id` (required): UUID of the monitored group
+- `limit` (optional): Max messages 1-100 (default: 50)
+- `offset` (optional): Skip count for pagination (default: 0)
+- `response_format` (optional): `"markdown"` or `"json"`
+
+**Returns:** Paginated list of messages with sender info, content preview, timestamp, and `ai_analysis` (intent, lead_score, confidence, reason) when AI has processed the message.
+
+**Requires scope:** `groups:read`
 
 ---
 
@@ -325,8 +376,9 @@ Receive real-time notifications when events occur in your WhatsApp sessions.
 | `message.sent` | Outbound message sent |
 | `session.connected` | Session connected to WhatsApp |
 | `session.disconnected` | Session disconnected |
-| `lead.detected` | New lead detected |
+| `lead.detected` | New lead detected (includes `ai_analysis` when available) |
 | `group.message` | Message in a monitored group |
+| `group.message.analyzed` | AI analysis completed for a group message (Pro/Business only) |
 
 ### Create Webhook
 

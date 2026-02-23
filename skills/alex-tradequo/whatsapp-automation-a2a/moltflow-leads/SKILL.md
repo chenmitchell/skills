@@ -2,7 +2,7 @@
 name: moltflow-leads
 description: "WhatsApp lead detection and CRM pipeline. Detect purchase-intent signals in groups, track lead status, bulk operations, CSV/JSON export. Use when: leads, lead detection, pipeline, qualify, convert, bulk status, export leads."
 source: "MoltFlow Team"
-version: "2.11.8"
+version: "2.15.1"
 risk: safe
 requiredEnv:
   - MOLTFLOW_API_KEY
@@ -74,6 +74,28 @@ X-API-Key: <your_api_key>
 3. When a keyword match is detected, MoltFlow auto-creates a lead
 4. Leads appear in the Leads API with status `new` and the triggering keyword highlighted
 5. You track them through the pipeline: `new` -> `contacted` -> `qualified` -> `converted`
+
+## AI Group Intelligence (Pro+ Plans)
+
+When AI monitoring is enabled on a group (`monitor_mode: "ai_analysis"`), each message is classified by an LLM using your own API key (OpenAI, Anthropic, Groq, or Mistral). Results are available on each message and on the `lead.detected` webhook.
+
+**AI analysis fields** — available via `GET /api/v2/groups/{group_id}/messages` and the MCP tool `moltflow_get_group_messages`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `intent` | string | `buying_intent`, `product_inquiry`, `support_request`, `complaint`, `off_topic`, `spam_noise`, `unknown` |
+| `lead_score` | integer | 1-10 (10 = highest buying signal) |
+| `confidence` | float | 0.0-1.0 classifier confidence |
+| `reason` | string | Human-readable explanation for the classification |
+
+**Webhook events for AI leads:**
+- `lead.detected` — fires immediately when a lead is created; includes `ai_analysis` field (may be null if AI hasn't completed yet)
+- `group.message.analyzed` — fires after AI analysis completes (Pro/Business only); includes full `ai_analysis` object
+
+**Setup:**
+1. Go to Settings > AI Configuration and add your LLM API key
+2. Set `monitor_mode: "ai_analysis"` on the group (via PATCH `/api/v2/groups/{id}` or dashboard)
+3. Optionally set `monitor_prompt` for custom classification instructions
 
 ---
 

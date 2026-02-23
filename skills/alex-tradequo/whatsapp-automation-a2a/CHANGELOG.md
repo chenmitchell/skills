@@ -4,6 +4,41 @@ All notable changes to the **MoltFlow Skills** package are documented here.
 
 ---
 
+## [2.15.1] - 2026-02-22
+
+### Fixed
+- **OpenClaw "Suspicious" classification resolved** — `requiredEnv` now correctly declares `MOLTFLOW_API_KEY` (was empty `[]`, contradicting `primaryEnv`)
+- Removed `optionalEnv` field — LLM API key is configured via the MoltFlow web dashboard, never passed through this skill
+- Updated metadata JSON to match `requiredEnv` declaration
+- Clarified description: documentation-only package, zero executables, MOLTFLOW_API_KEY is the only credential
+- **MCP server endpoint fixes** — corrected 6 wrong API paths discovered during comprehensive testing:
+  - `list_monitored_groups`: `groups/monitored` → `groups`
+  - `add_monitored_group`: `groups/monitored` → `groups`
+  - `get_current_usage`: `usage` → `usage/current`
+  - `get_plan_limits`: `usage/limits` → `usage/current`
+  - `list_chats`: session_id moved from query param to path param
+  - `get_chat_messages`: corrected path and added missing session_id parameter
+- Synced all sub-skill versions to 2.15.1
+
+---
+
+## [2.15.0] - 2026-02-20
+
+### Added
+- New MCP tool `moltflow_get_group_messages`: retrieve paginated messages from a monitored WhatsApp group, including AI analysis results (intent, lead_score, confidence, reason) when AI monitoring is enabled
+- AI Group Intelligence support: messages returned by the tool include `ai_analysis` fields populated by the Phase 91 AI analysis pipeline
+- Documentation updates in SKILL.md, moltflow-leads/SKILL.md, and moltflow/SKILL.md reflecting the new tool and AI analysis fields
+
+---
+
+## v2.14.6 (2026-02-19)
+
+### Fixed
+- **Republished both ClawHub slugs** — legacy `whatsapp-automation-a2a` was showing "Skill not found"
+- **Restored correct display names** per v2.14.4 convention (no ERC-8004 in titles)
+
+---
+
 ## v2.14.4 (2026-02-19)
 
 ### Changed

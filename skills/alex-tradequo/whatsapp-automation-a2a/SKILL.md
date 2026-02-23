@@ -1,7 +1,7 @@
 ---
 name: "WhatsApp Ultimate — No Meta API | Lead Mining, Bulk Send, Scheduled Reminders & Follow-ups"
-version: "2.14.4"
-description: "The only WhatsApp skill you need. Documentation and API reference — nothing is auto-installed or auto-executed. All actions require explicit user invocation. Provides endpoints for sending messages, capturing leads, running campaigns, scheduling reports, tracking campaign analytics, and managing clients. Read-only account health check surfaces growth opportunities from existing data. Native MCP endpoint + Custom GPT Actions available via separate setup (see integrations.md). 90+ API endpoints. Bulk messaging, scheduled sends, scheduled reports with WhatsApp delivery, AI replies with style cloning, RAG knowledge base, group monitoring, lead scoring, review collection, campaign analytics & engagement tracking, GDPR compliance, and agent-to-agent protocol."
+version: "2.15.1"
+description: "Documentation-only WhatsApp API reference — zero executables, zero install scripts, zero local file writes. All actions require explicit user invocation. Provides 90+ API endpoints for sending messages, capturing leads, running campaigns, scheduling reports, tracking campaign analytics, and managing clients. MOLTFLOW_API_KEY is the only credential required — generate a scoped key from the MoltFlow dashboard (Settings > API Keys). AI features (voice transcription, RAG, style profiles) use the user's own LLM API key configured via the MoltFlow web dashboard, never passed through this skill."
 source: "MoltFlow Team"
 risk: safe
 homepage: "https://molt.waiflow.app"
@@ -48,6 +48,10 @@ Whisper transcription on incoming voice messages, retrievable via API.
 **"Alert me when someone mentions 'budget', 'bedroom', or 'viewing' in my property groups"**
 
 Keyword monitoring on WhatsApp groups, auto-creates leads in your pipeline.
+
+**"Analyze the last 50 messages in my real estate group and score every lead"**
+
+AI Group Intelligence classifies message intent (buying_intent, inquiry, complaint), scores leads 1-10, and surfaces high-priority contacts. Requires Pro plan + your LLM API key.
 
 **"Set up automatic order confirmation messages after every purchase"**
 
@@ -361,6 +365,7 @@ MoltFlow is a verified on-chain AI agent registered on **Ethereum mainnet**.
 | Leads/CRM | Detect signals, pipeline |
 | Monitoring | 50+ groups, keywords |
 | Labels | Sync to WA Business |
+| AI Group Intel | Intent classification, lead scoring (Pro+) |
 | AI Replies | GPT-4/Claude, RAG |
 | Style Clone | Matches your writing tone |
 | RAG | PDF/TXT, semantic search |
@@ -488,8 +493,11 @@ or `Authorization: Bearer $TOKEN` (JWT).
 
 ## AI Agent Integrations
 
-25 MCP tools for Claude Desktop, Claude.ai,
-Claude Code, and OpenAI Custom GPTs.
+26 MCP tools for Claude Desktop, Claude.ai,
+Claude Code, and OpenAI Custom GPTs. Includes
+`moltflow_get_group_messages` for AI-powered
+group intelligence (retrieve messages with intent
+classification, lead scoring, and confidence scores).
 
 **User Action Required** — each integration
 requires manual setup by the user. No code
@@ -536,7 +544,7 @@ and curl examples.
 
 ## Changelog
 
-**v2.11.3** (2026-02-15) -- See [CHANGELOG.md](CHANGELOG.md) for full history.
+**v2.15.0** (2026-02-20) -- See [CHANGELOG.md](CHANGELOG.md) for full history.
 
 <!-- FILEMAP:BEGIN -->
 ```text

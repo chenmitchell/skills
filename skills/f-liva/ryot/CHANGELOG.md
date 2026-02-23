@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.2.0] - 2026-02-23
+
+### Added - Bulk Episode Marking 🎬
+- **New script: `ryot-mark-episodes.py`** - Mark multiple episodes at once
+  - `search <title>` - Find show and get metadata ID
+  - `<metadata_id> <season> <from_ep> <to_ep>` - Mark range of episodes
+  - Example: `ryot-mark-episodes.py met_huCCEo1Pu0xM 1 1 46` marks episodes 1-46 of season 1
+  - Perfect for: Catching up on binged series, bulk importing viewing history
+  - Uses GraphQL `createNewInProgress` mutation with `showSeasonNumber`/`showEpisodeNumber`
+
+### Technical
+- Multi-source search (TMDB, ANILIST, MAL, IGDB)
+- Automatic fallback between sources
+- Proper User-Agent headers to avoid 403 errors
+- Individual episode marking for accurate progress tracking
+
 ## [1.1.0] - 2026-02-22
 
 ### 🚀 Major Release - Complete Ryot Suite

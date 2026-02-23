@@ -130,6 +130,29 @@ python3 scripts/ryot_api.py details met_XXXXX
 python3 scripts/ryot_api.py complete met_XXXXX
 ```
 
+### 8. Bulk Episode Marking 🎬
+
+```bash
+# Search for a show to get metadata_id
+python3 scripts/ryot-mark-episodes.py search "Galaxy Express 999"
+# Output: Found: met_huCCEo1Pu0xM (source: TMDB, type: SHOW)
+
+# Mark range of episodes as watched (e.g., episodes 1-46 of season 1)
+python3 scripts/ryot-mark-episodes.py met_huCCEo1Pu0xM 1 1 46
+# Marks all episodes from 1 to 46 in season 1
+
+# Mark single season episodes
+python3 scripts/ryot-mark-episodes.py met_XXXXX 2 1 24
+# Marks season 2, episodes 1-24
+```
+
+**Use cases:**
+- Catching up on a series you've already watched elsewhere
+- Bulk importing viewing history
+- Marking entire seasons at once
+
+**Note:** Each episode is marked individually with `createNewInProgress` + `showSeasonNumber`/`showEpisodeNumber`.
+
 ## Workflow
 
 1. **User request** → "How many episodes of Galaxy Express 999 have I watched?"

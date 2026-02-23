@@ -1,13 +1,18 @@
 {
   "owner": "nonlinear",
   "slug": "backstage",
-  "displayName": "Backstage Protocol Skill",
+  "displayName": "backstage companion",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771614283798,
-    "commit": "https://github.com/openclaw/skills/commit/2ca436bd4c8481c5a68e73f2852b3a34857c4b3b"
+    "version": "1.0.2",
+    "publishedAt": 1771814787688,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771614283798,
+      "commit": "https://github.com/openclaw/skills/commit/2ca436bd4c8481c5a68e73f2852b3a34857c4b3b"
+    },
     {
       "version": "0.3.5",
       "publishedAt": 1771111530796,

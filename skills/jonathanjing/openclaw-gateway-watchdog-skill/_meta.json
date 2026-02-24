@@ -1,0 +1,11 @@
+{
+  "owner": "jonathanjing",
+  "slug": "openclaw-gateway-watchdog-skill",
+  "displayName": "Gateway Watchdog Discord",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1771826151042,
+    "commit": null
+  },
+  "history": []
+}

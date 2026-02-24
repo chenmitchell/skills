@@ -1,0 +1,11 @@
+{
+  "owner": "notestone",
+  "slug": "model-manager",
+  "displayName": "OpenClaw Model Manager",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771872359879,
+    "commit": null
+  },
+  "history": []
+}

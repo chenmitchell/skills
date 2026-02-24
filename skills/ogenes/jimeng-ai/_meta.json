@@ -3,9 +3,15 @@
   "slug": "jimeng-ai",
   "displayName": "Jimeng AI",
   "latest": {
-    "version": "2.1.0",
-    "publishedAt": 1771946355407,
-    "commit": "https://github.com/openclaw/skills/commit/bb039c475acd81db54a68f8ef862718777b89593"
+    "version": "1.0.0",
+    "publishedAt": 1771950916281,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "2.1.0",
+      "publishedAt": 1771946355407,
+      "commit": "https://github.com/openclaw/skills/commit/bb039c475acd81db54a68f8ef862718777b89593"
+    }
+  ]
 }

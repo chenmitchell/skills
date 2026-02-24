@@ -1,6 +1,6 @@
 {
   "name": "jimeng",
-  "version": "2.1.0",
+  "version": "1.0.0",
   "description": "即梦AI（字节跳动火山引擎）文生图 CLI 工具 - 支持任务持久化和异步查询",
   "main": "index.js",
   "scripts": {

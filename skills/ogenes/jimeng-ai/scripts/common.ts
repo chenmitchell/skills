@@ -275,8 +275,11 @@ export async function submitTask(
 
   const url = `${API_ENDPOINT}?${queryString}`;
 
-  console.error('Debug - Request URL:', url.slice(0, 200) + '...');
-  console.error('Debug - Request Body:', payload);
+  // 仅在 DEBUG 模式下打印调试信息，避免泄露凭证到日志
+  if (process.env.DEBUG) {
+    console.error('Debug - Request URL:', url.slice(0, 200) + '...');
+    console.error('Debug - Request Body:', payload);
+  }
 
   let response: any;
   try {

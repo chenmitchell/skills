@@ -32,6 +32,14 @@ npm install
 
 ### 2. 配置凭证
 
+| 变量名 | 是否必需 | 说明 |
+|--------|----------|------|
+| `VOLCENGINE_AK` | **必需** | 火山引擎 Access Key |
+| `VOLCENGINE_SK` | 条件必需 | 火山引擎 Secret Key（永久凭证必需） |
+| `VOLCENGINE_TOKEN` | 可选 | 安全令牌（临时凭证 STS 必需） |
+
+> **注意**：使用临时凭证（AKTP 开头）时，可以只使用 AK + Token，不需要 SK。
+
 ```bash
 export VOLCENGINE_AK="your-access-key"
 export VOLCENGINE_SK="your-secret-key"
@@ -59,8 +67,8 @@ npx ts-node scripts/text2image.ts "提示词" [选项]
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | `prompt` | 图片生成提示词（必填） | - |
-| `--version` | API版本: `v30`, `v31`, `v40` | `v40` |
-| `--ratio` | 宽高比: `1:1`, `9:16`, `16:9`, `3:4`, `4:3`, `2:3`, `3:2`, `1:2`, `2:1` | `1:1` |
+| `--version` | API版本: `v30`, `v31`, `v40` | `v31` |
+| `--ratio` | 宽高比: `1:1`, `9:16`, `16:9`, `3:4`, `4:3`, `2:3`, `3:2`, `1:2`, `2:1` | `16:9` |
 | `--count` | 生成数量 1-4 | `1` |
 | `--width` | 指定宽度（可选） | - |
 | `--height` | 指定高度（可选） | - |
@@ -68,6 +76,7 @@ npx ts-node scripts/text2image.ts "提示词" [选项]
 | `--seed` | 随机种子（可选） | - |
 | `--output` | 图片输出目录 | `./output` |
 | `--debug` | 调试模式 | `false` |
+| `--no-download` | 不下载图片，只返回URL | `false` |
 
 ## 工作流程
 

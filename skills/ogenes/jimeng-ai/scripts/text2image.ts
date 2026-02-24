@@ -6,8 +6,8 @@
  * 用法: ts-node text2image.ts "提示词" [选项]
  *
  * 选项:
- *   --version <v30|v31|v40>  API版本 (默认: v40)
- *   --ratio <宽高比>         图片宽高比 (默认: 1:1)
+ *   --version <v30|v31|v40>  API版本 (默认: v31)
+ *   --ratio <宽高比>         图片宽高比 (默认: 9:16)
  *   --count <数量>           生成数量 1-4 (默认: 1)
  *   --width <宽度>           指定宽度 (可选)
  *   --height <高度>          指定高度 (可选)
@@ -56,8 +56,8 @@ function parseArgs(): Text2ImageOptions {
     console.error('用法: ts-node text2image.ts "提示词" [选项]');
     console.error('');
     console.error('选项:');
-    console.error('  --version <v30|v31|v40>  API版本 (默认: v40)');
-    console.error('  --ratio <宽高比>         图片宽高比 (默认: 1:1)');
+    console.error('  --version <v30|v31|v40>  API版本 (默认: v31)');
+    console.error('  --ratio <宽高比>         图片宽高比 (默认: 9:16)');
     console.error('  --count <数量>           生成数量 1-4 (默认: 1)');
     console.error('  --width <宽度>           指定宽度 (可选)');
     console.error('  --height <高度>          指定高度 (可选)');
@@ -76,8 +76,8 @@ function parseArgs(): Text2ImageOptions {
   }
 
   const prompt = args[0];
-  let version: 'v30' | 'v31' | 'v40' = 'v40';
-  let ratio = '1:1';
+  let version: 'v30' | 'v31' | 'v40' = 'v31';
+  let ratio = '16:9';
   let count = 1;
   let width: number | undefined;
   let height: number | undefined;
@@ -149,7 +149,8 @@ function md5Hash(str: string): string {
  */
 function getTaskFolderPath(prompt: string, baseOutputDir: string): string {
   const hash = md5Hash(prompt);
-  return path.join(baseOutputDir, hash);
+  const cwd = process.cwd();
+  return path.join(cwd, baseOutputDir, hash);
 }
 
 /**
@@ -258,27 +259,27 @@ async function main(): Promise<void> {
     const reqKey = reqKeyMap[options.version];
 
     // 构建请求体 - OpenAPI 格式
-    const ratioMap: Record<string, { min: number; max: number }> = {
-      '1:1': { min: 0.95, max: 1.05 },
-      '9:16': { min: 0.55, max: 0.65 },
-      '16:9': { min: 1.75, max: 1.85 },
-      '3:4': { min: 0.70, max: 0.80 },
-      '4:3': { min: 1.25, max: 1.35 },
-      '2:3': { min: 0.60, max: 0.70 },
-      '3:2': { min: 1.45, max: 1.55 },
-      '1:2': { min: 0.45, max: 0.55 },
-      '2:1': { min: 1.95, max: 2.05 }
+    const ratioMap: Record<string, { width: number; height: number }> = {
+      '1:1': { width: 2048, height: 2048 },
+      '9:16': { width: 1440, height: 2560 },
+      '16:9': { width: 2560, height: 1440 },
+      '3:4': { width: 1728, height: 2304 },
+      '4:3': { width: 2304, height: 1728 },
+      '2:3': { width: 1664, height: 2496 },
+      '3:2': { width: 2496, height: 1664 },
+      '1:2': { width: 1440, height: 2880 },
+      '2:1': { width: 2880, height: 1440 }
     };
 
-    const ratioValue = ratioMap[options.ratio] || { min: 0.95, max: 1.05 };
+    const ratioValue = ratioMap[options.ratio] || { width: 2560, height: 1440 };
     const body: Record<string, any> = {
       req_key: reqKey,
       prompt: options.prompt,
       force_single: options.count === 1,
-      min_ratio: ratioValue.min,
-      max_ratio: ratioValue.max,
-      scale: 0.5,
-      size: options.size || 4194304  // 默认 2048x2048
+      count: options.count || 1,
+      width: ratioValue.width,
+      height: ratioValue.height,
+      scale: 0.5
     };
 
     if (options.seed !== undefined) {

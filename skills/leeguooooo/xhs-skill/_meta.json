@@ -3,11 +3,16 @@
   "slug": "xhs-skill",
   "displayName": "Xhs Skill",
   "latest": {
-    "version": "1.0.8",
-    "publishedAt": 1770959502928,
-    "commit": "https://github.com/openclaw/skills/commit/011a746bf6b91da068dad230c23ff75558b2af34"
+    "version": "1.0.10",
+    "publishedAt": 1771931028230,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.8",
+      "publishedAt": 1770959502928,
+      "commit": "https://github.com/openclaw/skills/commit/011a746bf6b91da068dad230c23ff75558b2af34"
+    },
     {
       "version": "1.0.5",
       "publishedAt": 1770918476694,

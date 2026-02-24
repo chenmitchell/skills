@@ -20,6 +20,11 @@ except ImportError:
     sys.exit(1)
 
 
+# Use Pyrogram's default device identity (Python MTProto client).
+# Spoofing a mobile client causes Telegram to terminate sessions — the
+# behaviour doesn't match and it's detected server-side.
+_DEVICE: dict = {}
+
 # ── Config ──────────────────────────────────────────────────────────────────
 
 def get_config():
@@ -73,14 +78,15 @@ async def fetch_messages(channel: str, since: datetime, limit: int, include_medi
     api_id, api_hash, session_name = get_config()
 
     messages = []
-    async with Client(session_name, api_id=api_id, api_hash=api_hash) as app:
+    async with Client(session_name, api_id=api_id, api_hash=api_hash, **_DEVICE) as app:
         try:
             async for msg in app.get_chat_history(channel, limit=limit):
-                if msg.date < since:
+                msg_date = msg.date if msg.date.tzinfo else msg.date.replace(tzinfo=timezone.utc)
+                if msg_date < since:
                     break
                 entry = {
                     "id": msg.id,
-                    "date": msg.date.isoformat(),
+                    "date": msg_date.isoformat(),
                     "text": msg.text or msg.caption or "",
                     "views": msg.views,
                     "forwards": msg.forwards,
@@ -109,6 +115,25 @@ async def fetch_multiple(channels: list, since: datetime, limit: int, include_me
     return list(results)
 
 
+# ── Channel info ─────────────────────────────────────────────────────────────
+
+async def fetch_info(channel: str):
+    api_id, api_hash, session_name = get_config()
+    async with Client(session_name, api_id=api_id, api_hash=api_hash) as app:
+        try:
+            chat = await app.get_chat(channel)
+            return {
+                "id": chat.id,
+                "title": chat.title,
+                "username": chat.username,
+                "description": chat.description,
+                "members_count": chat.members_count,
+                "link": f"https://t.me/{chat.username}" if chat.username else None,
+            }
+        except (ChannelInvalid, UsernameNotOccupied) as e:
+            return {"error": str(e), "channel": channel}
+
+
 # ── Auth setup ───────────────────────────────────────────────────────────────
 
 async def setup_auth():
@@ -116,7 +141,7 @@ async def setup_auth():
     api_id, api_hash, session_name = get_config()
     print(f"Starting auth for session: {session_name}")
     print("You will receive a code in Telegram. Enter it when prompted.")
-    async with Client(session_name, api_id=api_id, api_hash=api_hash) as app:
+    async with Client(session_name, api_id=api_id, api_hash=api_hash, **_DEVICE) as app:
         me = await app.get_me()
         print(json.dumps({"status": "authenticated", "user": me.username or str(me.id)}))
 
@@ -138,10 +163,19 @@ def main():
     fetch_p.add_argument("--media", action="store_true", help="Include media type info")
     fetch_p.add_argument("--format", choices=["json", "text"], default="json")
 
+    # info
+    info_p = sub.add_parser("info", help="Get channel title, description and subscriber count")
+    info_p.add_argument("channel", help="Channel username e.g. @durov")
+
     # auth
     sub.add_parser("auth", help="Authenticate with Telegram (first-time setup)")
 
     args = parser.parse_args()
+
+    if args.cmd == "info":
+        result = asyncio.run(fetch_info(args.channel))
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
 
     if args.cmd == "auth":
         asyncio.run(setup_auth())

@@ -1,3 +1,49 @@
+## [0.5.0] - 2026-02-23
+
+### Added
+- `tg-reader info @channel` — new subcommand to fetch channel title, description, subscriber count and link
+- `SKILL.md`: documented `info` command in When to Use, How to Use, and Output Format sections
+- `SKILL.md`: `~/.tg-reader.json` recommended as primary credentials method for agent/server environments that don't load `.bashrc`/`.zshrc`
+
+## [0.4.3] - 2026-02-23
+
+### Fixed
+- `reader.py`: removed `system_lang_code` from Pyrogram `Client` init — parameter is Telethon-only and caused `TypeError` on auth
+- `reader.py`: fixed `TypeError: can't compare offset-naive and offset-aware datetimes` when fetching messages — `msg.date` from Pyrogram is UTC-naive, now normalized before comparison with `since`
+- `reader.py`: removed iOS device spoofing (`_DEVICE`) — Telegram detects the mismatch between declared client identity and actual behaviour and terminates the session; Pyrogram's default identity is stable
+
+## [0.4.2] - 2026-02-23
+
+### Fixed
+- `README.md`: fix `python3 -m reader` fallback → `python3 -m tg_reader_unified`
+- `README.md`: add Linux venv install instructions for managed Python environments (Debian/Ubuntu)
+- `README.md`: add macOS `~/.zshrc` for `TG_USE_TELETHON` alongside Linux `~/.bashrc`
+- `README.md`: update PATH section to cover venv bin path, not just `~/.local/bin`
+- `README.md`: add note to confirm phone number with `y` during Pyrogram auth
+- `SKILL.md`: add Linux venv install instructions
+- `SKILL.md`: add note to confirm phone number with `y` during Pyrogram auth
+
+## [0.4.1] - 2026-02-23
+
+### Security
+- `test_session.py`: replaced partial `api_hash[:10]` print with masked output (`***`) to prevent secret leakage in logs or shared terminals
+- `SKILL.md`: added `chmod 600` step after auth to restrict session file permissions
+
+## [0.4.0] - 2026-02-23
+
+### Fixed
+- `SKILL.md` frontmatter converted to single-line JSON as required by OpenClaw spec
+- `requires.env` format corrected to array of strings `["TG_API_ID", "TG_API_HASH"]`
+- Removed undocumented `requires.python` field from metadata
+- Removed optional env vars (`TG_SESSION`, `TG_USE_TELETHON`) from gating filter
+- Added missing `primaryEnv: "TG_API_HASH"` for openclaw.json `apiKey` support
+- Auth command in setup guide corrected from `python3 -m reader auth` to `tg-reader auth`
+- Fallback command in Error Handling corrected to `python3 -m tg_reader_unified`
+
+### Added
+- macOS (`~/.zshrc`) credentials setup alongside Linux (`~/.bashrc`) in agent instructions
+- `CLAUDE.md` with project context and documentation references for Claude Code
+
 ## [0.2.1] - 2026-02-22
 
 ### Added

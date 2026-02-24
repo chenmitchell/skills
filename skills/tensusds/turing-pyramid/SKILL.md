@@ -53,13 +53,28 @@ requires:
 
 **Tension**: `importance × (3 - satisfaction)`
 
-**Probability-based decisions**:
-| Sat | P(action) | P(notice) |
-|-----|-----------|-----------|
-| 3 | 5% | 95% |
-| 2 | 20% | 80% |
-| 1 | 75% | 25% |
-| 0 | 100% | 0% |
+**Probability-based decisions** (v1.5.0):
+
+Base chance by satisfaction:
+| Sat | Base P(action) |
+|-----|----------------|
+| 3 | 5% |
+| 2 | 20% |
+| 1 | 75% |
+| 0 | 100% |
+
+**Tension bonus** (v1.5.0): Higher importance needs are more "impatient".
+```
+bonus = (tension × 50) / 30
+final_chance = min(100, base_chance + bonus)
+```
+
+Example at sat=2:
+| Need | Importance | Tension | Bonus | Final P(action) |
+|------|------------|---------|-------|-----------------|
+| security | 10 | 10 | +16.7% | 36.7% |
+| closure | 7 | 7 | +11.7% | 31.7% |
+| expression | 1 | 1 | +1.7% | 21.7% |
 
 - **ACTION** = do something, then `mark-satisfied.sh`
 - **NOTICED** = logged but deferred, satisfaction unchanged

@@ -1,14 +1,34 @@
 ---
 name: icom-7610
 description: Control an Icom IC-7610 transceiver over USB/LAN. Get/set frequency, mode, power, S-meter, SWR. CW keying and beacon mode. Remote power on/off.
-metadata: {"openclaw":{"emoji":"📻","requires":{"bins":["rigctl","curl","python3"]},"install":[{"id":"hamlib","kind":"brew","formula":"hamlib","bins":["rigctl"],"label":"Install Hamlib (rigctl)"}]}}
+metadata: {"openclaw":{"emoji":"📻","homepage":"https://clawhub.ai/morozsm/icom-7610","requires":{"bins":["rigctl","curl","python3"]},"install":[{"id":"hamlib","kind":"brew","formula":"hamlib","bins":["rigctl"],"label":"Install Hamlib (rigctl)"}]}}
 ---
 
 # Icom IC-7610
 
+## Prerequisites
+
+- **Hamlib** (rigctl): `brew install hamlib`
+- **curl**: usually pre-installed
+- **python3**: usually pre-installed
+- **pyserial** (only for serial power on): `pip3 install pyserial`
+- **wfview** (optional, for LAN control): [wfview.org/download](https://wfview.org/download)
+
 ## Configuration
 
 Station config in `.env` (not in git). On first install: `cp .env.example .env`.
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CALLSIGN` | *(required for CW/beacon)* | Your callsign |
+| `SERIAL_PORT` | `/dev/cu.usbserial-11320` | CI-V USB serial port |
+| `BAUD_RATE` | `19200` | Serial baud rate (⚠️ not 115200!) |
+| `HAMLIB_MODEL` | `3078` | Hamlib model ID for IC-7610 |
+| `FLRIG_URL` | `http://127.0.0.1:12345/RPC2` | flrig XML-RPC endpoint |
+| `RIGCTLD_ADDR` | `127.0.0.1:4533` | rigctld TCP address (wfview/hamlib) |
+| `MAX_POWER_W` | `50` | Hard power limit in watts |
 
 ```bash
 source "$(dirname "$0")/.env" 2>/dev/null || true
@@ -16,6 +36,7 @@ PORT="${SERIAL_PORT:-/dev/cu.usbserial-11320}"
 BAUD="${BAUD_RATE:-19200}"
 MODEL="${HAMLIB_MODEL:-3078}"
 FLRIG="${FLRIG_URL:-http://127.0.0.1:12345/RPC2}"
+RIGCTLD="${RIGCTLD_ADDR:-127.0.0.1:4533}"
 MAX_POWER="${MAX_POWER_W:-50}"
 ```
 
@@ -27,9 +48,49 @@ flrig uses watts directly: `rig.set_power 50` = 50 W.
 
 ## Connecting
 
-**flrig running** (`pgrep -x flrig`) → use XML-RPC. **flrig not running** → use rigctl.
+Three connection methods, in priority order. **Auto-detect logic:**
 
-### rigctl (serial, full control incl. CW and power on/off)
+```bash
+# 1. Check rigctld (wfview LAN or standalone hamlib rigctld)
+if rigctl -m 2 -r "$RIGCTLD" f >/dev/null 2>&1; then
+  CONN="rigctld"
+# 2. Check flrig
+elif curl -s --connect-timeout 2 --max-time 3 -X POST "$FLRIG" \
+     -H "Content-Type: text/xml" \
+     -d '<?xml version="1.0"?><methodCall><methodName>rig.get_vfoA</methodName></methodCall>' \
+     | grep -q '<value>'; then
+  CONN="flrig"
+# 3. Fall back to direct serial
+else
+  CONN="serial"
+fi
+```
+
+### rigctld — LAN via wfview (recommended) or standalone hamlib daemon
+
+Connects to IC-7610 over network via wfview (UDP) or a running `rigctld` daemon.
+**Full control:** freq, mode, power, S-meter, SWR, CW keying, power on/off.
+
+```bash
+rigctl -m 2 -r "$RIGCTLD" <cmd>
+# Read:  f   m   l RFPOWER   l SWR
+# Write: F 14074000   M USB 3000   L RFPOWER 0.50
+# CW:    b "CQ CQ DE YOURCALL K"
+# Power: set_powerstat 0 (off)   set_powerstat 1 (on)
+```
+
+Setup: wfview → Settings → Enable LAN → connect to radio IP → Enable RigCtld (port 4533).
+
+⚠️ Note: `M` (set mode) may hang waiting for ack from wfview rigctld — command still executes.
+Use a timeout wrapper or send as fire-and-forget when needed.
+
+**Advantages over serial:**
+- No USB cable needed — Ethernet only
+- Power on works with simple `set_powerstat 1` (no raw CI-V / pyserial needed)
+- Multiple programs can share the radio via wfview (rigctld + virtual serial port)
+- Longer distance (Ethernet 100m vs USB 5m)
+
+### rigctl serial (direct USB, full control incl. CW and power on/off)
 
 ```bash
 rigctl -m $MODEL -r "$PORT" -s $BAUD <cmd>
@@ -61,9 +122,18 @@ call_flrig() {
 
 Requires: rear POWER switch ON + **MENU → SET → Network → Power OFF Setting = Standby/Shutdown**.
 
+### Via rigctld (wfview LAN) — simplest
+
+```bash
+rigctl -m 2 -r "$RIGCTLD" set_powerstat 0   # off
+rigctl -m 2 -r "$RIGCTLD" set_powerstat 1   # on — works! wfview handles it
+```
+
+### Via serial — power off works, power on needs raw CI-V
+
 **Off:** `rigctl -m $MODEL -r "$PORT" -s $BAUD set_powerstat 0`
 
-**On:** rigctl `set_powerstat 1` DOES NOT WORK (rig_open fails in standby). Use raw CI-V:
+**On:** rigctl `set_powerstat 1` DOES NOT WORK via serial (rig_open fails in standby). Use raw CI-V:
 
 ```bash
 python3 -c "
@@ -80,15 +150,18 @@ Wait **7–10 sec** after power on before sending commands. "Command rejected" d
 
 ## CW & Beacon
 
-flrig must be closed (port conflict).
+Works via both rigctld (LAN) and direct serial.
 
 ```bash
-# Single CW message
+# Via rigctld (LAN):
+rigctl -m 2 -r "$RIGCTLD" b "CQ CQ CQ DE $CALLSIGN $CALLSIGN K"
+
+# Via serial:
 rigctl -m $MODEL -r "$PORT" -s $BAUD b "CQ CQ CQ DE $CALLSIGN $CALLSIGN K"
 
-# Beacon loop
+# Beacon loop (works with either connection)
 for i in $(seq 1 $REPEATS); do
-  rigctl -m $MODEL -r "$PORT" -s $BAUD b "VVV DE $CALLSIGN VVV DE $CALLSIGN"
+  rigctl -m 2 -r "$RIGCTLD" b "VVV DE $CALLSIGN VVV DE $CALLSIGN"
   [ $i -lt $REPEATS ] && sleep $INTERVAL
 done
 ```

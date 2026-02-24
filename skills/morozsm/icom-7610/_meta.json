@@ -3,9 +3,15 @@
   "slug": "icom-7610",
   "displayName": "Icom IC-7610",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1771911323292,
-    "commit": "https://github.com/openclaw/skills/commit/97916aa04ceac7e61cd992474a1c2769a18b49ef"
+    "version": "2.1.0",
+    "publishedAt": 1771963696131,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1771911323292,
+      "commit": "https://github.com/openclaw/skills/commit/97916aa04ceac7e61cd992474a1c2769a18b49ef"
+    }
+  ]
 }

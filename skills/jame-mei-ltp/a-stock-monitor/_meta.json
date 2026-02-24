@@ -1,13 +1,18 @@
 {
   "owner": "jame-mei-ltp",
   "slug": "a-stock-monitor",
-  "displayName": "A股实时监控系统",
+  "displayName": "A股量化监控系统",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1771896630252,
-    "commit": "https://github.com/openclaw/skills/commit/2967ed234978be860267e0ef3612e80ebe85e07c"
+    "version": "1.1.0",
+    "publishedAt": 1771896873119,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1771896630252,
+      "commit": "https://github.com/openclaw/skills/commit/2967ed234978be860267e0ef3612e80ebe85e07c"
+    },
     {
       "version": "1.0.2",
       "publishedAt": 1771896504900,

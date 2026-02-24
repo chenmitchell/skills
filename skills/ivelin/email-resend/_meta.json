@@ -1,0 +1,11 @@
+{
+  "owner": "ivelin",
+  "slug": "email-resend",
+  "displayName": "Email Resend",
+  "latest": {
+    "version": "1.0.4",
+    "publishedAt": 1771887246761,
+    "commit": null
+  },
+  "history": []
+}

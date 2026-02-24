@@ -3,9 +3,15 @@
   "slug": "deploydevnlu",
   "displayName": "Deploydevnlu",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1771804481118,
-    "commit": "https://github.com/openclaw/skills/commit/bee3f8d015c57f14bed7911cb324168a55bcc780"
+    "version": "1.0.4",
+    "publishedAt": 1771807597009,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1771804481118,
+      "commit": "https://github.com/openclaw/skills/commit/bee3f8d015c57f14bed7911cb324168a55bcc780"
+    }
+  ]
 }

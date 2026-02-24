@@ -1,6 +1,6 @@
 {
   "name": "deploydevnlu",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Deploy to SupplyWhy via Slack natural language",
   "author": "yusong",
   "license": "MIT",

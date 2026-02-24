@@ -1,6 +1,6 @@
-# Deploy to SupplyWhy Dev Server
+# DeployDevNLU
 
-Deploy the application to the SupplyWhy development EC2 server using SSH and kubectl.
+Deploy the application to SupplyWhy via Slack natural language commands.
 
 ## Instructions
 

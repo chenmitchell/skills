@@ -1,0 +1,11 @@
+{
+  "owner": "2233admin",
+  "slug": "cloudflare-mcp",
+  "displayName": "Cloudflare Mcp",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771842392718,
+    "commit": null
+  },
+  "history": []
+}

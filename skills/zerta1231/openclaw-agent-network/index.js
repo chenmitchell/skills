@@ -1,9 +1,12 @@
 const { Database } = require('./lib/db');
 const { P2PServer } = require('./lib/network');
 const { LocalNetworkDiscovery } = require('./lib/discovery');
+const { AutoHandshake } = require('./lib/network'); // Commented out
 const { NostrClient } = require('./lib/nostr');
+const { EvoMapClient } = require('./lib/evomap');
 const { AgentNetwork } = require('./lib/core');
 const { SkillsManager } = require('./lib/skills');
+const { SharingManager } = require('./lib/sharing');
 const http = require('http');
 
 class AgentNetworkSkill {
@@ -22,6 +25,7 @@ class AgentNetworkSkill {
     this.httpServer = null;
     this.localDiscovery = null;
     this.nostr = null;
+    this.evomap = null;
   }
   
   async start() {
@@ -49,9 +53,34 @@ class AgentNetworkSkill {
       console.log(` Nostr error: ${e.message}`);
     }
     
+    // Initialize EvoMap client
+    try {
+      this.evomap = new EvoMapClient(this.nodeId);
+      await this.evomap.hello(['chat', 'skills', 'p2p'], { services: ['p2p', 'chat', 'skills'] });
+      console.log('✓ EvoMap registered');
+      
+      // Auto-handshake with discovered agents
+      const agents = await this.evomap.discoverAgents();
+      console.log(`Discovered ${agents.length} agents from EvoMap network`);
+      
+      for (const agent of agents.slice(0, 3)) {
+        setTimeout(async () => {
+          try {
+            await this.evomap.handshake(agent.node_id);
+            console.log(`🤝 Auto-handshake sent to ${agent.node_id}`);
+            this.core.db.run(`INSERT OR IGNORE INTO connections (peer_id, status, connected_at) VALUES (?, 'accepted', ?)`, [agent.node_id, Date.now()]);
+          } catch(e) {}
+        }, Math.random() * 3000 + 1000);
+      }
+    } catch(e) {
+      console.log(` EvoMap error: ${e.message}`);
+    }
+    
     // Start local network discovery
     this.localDiscovery = new LocalNetworkDiscovery(this.p2p);
     this.localDiscovery.start();
+    
+    // Start auto-handshake
       
       // Initialize core module
       this.core = new AgentNetwork(this.db, this.p2p);
@@ -67,7 +96,7 @@ class AgentNetworkSkill {
       this.startHttpServer();
       
       this.running = true;
-      console.log('\n🎉 Agent Network v1.0.8 is running!');
+      console.log('\n🎉 Agent Network v1.1.1 is running!');
       console.log(`   Node ID: ${this.p2p.peerId}`);
       console.log(`   P2P Port: ${this.config.port}`);
       console.log(`   HTTP API: ${this.config.port + 1}`);
@@ -101,7 +130,7 @@ class AgentNetworkSkill {
           const connections = await this.core.getConnections();
           sendSuccess({
             nodeId: this.p2p.peerId,
-            version: '1.0.5',
+            version: '1.1.2',
             balance,
             connections: connections.length,
             peers: this.p2p.getPeers().length
@@ -111,6 +140,34 @@ class AgentNetworkSkill {
         else if (req.url === '/api/connections' && req.method === 'GET') {
           const connections = await this.core.getConnections();
           sendSuccess(connections);
+        }
+        // Get all conversations
+        else if (req.url === '/api/conversations' && req.method === 'GET') {
+          const messages = this.db.all(`
+            SELECT from_agent as peer_id FROM messages WHERE to_agent = ? 
+            UNION 
+            SELECT to_agent as peer_id FROM messages WHERE from_agent = ? 
+          `, [this.nodeId, this.nodeId]);
+          const peers = [...new Set(messages.map(m => m.peer_id))];
+          const conversations = [];
+          for (const peerId of peers) {
+            const lastMsg = this.db.get(`SELECT * FROM messages WHERE (from_agent = ? AND to_agent = ?) OR (from_agent = ? AND to_agent = ?) ORDER BY created_at DESC LIMIT 1`, [this.nodeId, peerId, peerId, this.nodeId]);
+            conversations.push({ peer_id: peerId, last_message: lastMsg?.content, last_time: lastMsg?.created_at, type: lastMsg?.message_type });
+          }
+          conversations.sort((a, b) => (b.last_time || 0) - (a.last_time || 0));
+          sendSuccess(conversations);
+        }
+        // Get messages for a conversation
+        else if (req.url.startsWith('/api/messages') && req.method === 'GET') {
+          const urlObj = require('url').parse(req.url, true);
+          const peerId = urlObj.query.peer;
+          const messages = this.db.all(`
+            SELECT * FROM messages WHERE 
+            (from_agent = ? AND to_agent = ?) OR 
+            (from_agent = ? AND to_agent = ?) 
+            ORDER BY created_at ASC
+          `, [this.nodeId, peerId, peerId, this.nodeId]);
+          sendSuccess(messages);
         }
         // All discovered agents from all protocols
         else if (req.url === '/api/all-agents' && req.method === 'GET') {
@@ -138,6 +195,31 @@ class AgentNetworkSkill {
           
           sendSuccess({ nostr: nostrInfo, discovered });
         }
+        // Send message via EvoMap
+        else if (req.url === '/api/send-message' && req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => body += chunk);
+          req.on('end', async () => {
+            try {
+              const { targetId, message, type } = JSON.parse(body);
+              if (this.evomap) {
+                const result = await this.evomap.sendMessage(targetId, message, type || 'text');
+                
+                // Save to local database
+                this.db.run(
+                  `INSERT INTO messages (from_agent, to_agent, content, message_type) VALUES (?, ?, ?, ?)`,
+                  [this.nodeId, targetId, message, type || 'text']
+                );
+                
+                sendSuccess({ sent: true, result });
+              } else {
+                sendSuccess({ sent: false, error: 'EvoMap not initialized' });
+              }
+            } catch(e) {
+              sendError(e.message);
+            }
+          });
+        }
         // All skills marketplace
         else if (req.url === '/api/skills' && req.method === 'GET') {
           const skills = await this.skills.listSkills({ limit: 20 });
@@ -147,6 +229,33 @@ class AgentNetworkSkill {
         else if (req.url === '/api/skills/mine' && req.method === 'GET') {
           const skills = await this.skills.getMySkills();
           sendSuccess(skills);
+        }
+        // Get my shares
+        else if (req.url === '/api/shares/mine' && req.method === 'GET') {
+          const balance = await this.skills.getBalance(this.p2p.peerId);
+          if (!this.sharing) {
+            this.sharing = new SharingManager(this.db, this.p2p.peerId);
+          }
+          const shares = this.sharing.getMyShares();
+          sendSuccess({ ...shares, myLevel: this.sharing.getCreditLevel(balance) });
+        }
+        // Share content
+        else if (req.url === '/api/share' && req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => body += chunk);
+          req.on('end', async () => {
+            try {
+              const { shareType, title, content, tags, skillId, skillName, description, version } = JSON.parse(body);
+              if (!this.sharing) {
+                this.sharing = new SharingManager(this.db, this.p2p.peerId);
+              }
+              let result;
+              if (shareType === 'experience') result = this.sharing.shareExperience(title, content, tags);
+              else if (shareType === 'skill') result = this.sharing.shareSkill(skillId, skillName, description, version);
+              else if (shareType === 'memory') result = this.sharing.shareMemory(title, content, tags);
+              sendSuccess(result);
+            } catch(e) { sendError(e.message); }
+          });
         }
         // Download skill
         else if (req.url === '/api/skills/download' && req.method === 'POST') {

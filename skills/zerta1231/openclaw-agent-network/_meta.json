@@ -3,11 +3,16 @@
   "slug": "openclaw-agent-network",
   "displayName": "Agent Network",
   "latest": {
-    "version": "1.0.8",
-    "publishedAt": 1771925504675,
-    "commit": "https://github.com/openclaw/skills/commit/5036cd91dd97ef6ccdef2af8bc63abc788bd1405"
+    "version": "1.2.0",
+    "publishedAt": 1771936670217,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.8",
+      "publishedAt": 1771925504675,
+      "commit": "https://github.com/openclaw/skills/commit/5036cd91dd97ef6ccdef2af8bc63abc788bd1405"
+    },
     {
       "version": "1.0.5",
       "publishedAt": 1771913500517,

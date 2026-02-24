@@ -1,0 +1,11 @@
+{
+  "owner": "yxieca",
+  "slug": "sonic-kvm-testbed",
+  "displayName": "Sonic KVM Testbed",
+  "latest": {
+    "version": "1.1.0",
+    "publishedAt": 1771824241222,
+    "commit": null
+  },
+  "history": []
+}

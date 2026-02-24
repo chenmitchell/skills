@@ -1,6 +1,6 @@
 ---
 name: post-bridge-social-manager
-version: 1.0.3
+version: 1.0.6
 title: Social Media Assistant (via post-bridge.com)
 description: Turn your OpenClaw into an autonomous social media manager using Post Bridge API. Use when scheduling, posting, or managing content across TikTok, Instagram Reels, YouTube Shorts, Twitter/X, LinkedIn, Pinterest, Facebook, Threads, or Bluesky. Covers media upload, post creation, scheduling, platform-specific configs, draft mode, and post result tracking.
 license: MIT
@@ -18,7 +18,7 @@ metadata:
     primaryEnv: POST_BRIDGE_API_KEY
 ---
 
-# Post Bridge Social Manager
+# Social Media Assistant (via post-bridge.com)
 
 Autonomously manage social media posting via [Post Bridge](https://post-bridge.com) API.
 
@@ -80,16 +80,44 @@ GET /v1/posts/<post_id>
 ```
 Returns status: `processing`, `scheduled`, `posted`, `failed`.
 
+### 5. Analytics (TikTok)
+```
+GET /v1/analytics?platform=tiktok
+```
+Retrieve performance data (views, likes, shares, etc.) for TikTok posts. Supports filtering by `timeframe` (7d, 30d, 90d, all) and `post_result_id`.
+
+```
+POST /v1/analytics/sync
+```
+Manually trigger a sync of TikTok analytics. This is rate-limited—wait between calls.
+
 ## Platform Configurations
 
-Pass inside `platform_configurations` object on post creation:
+Pass inside `platform_configurations` object on post creation. **Crucial:** Always wrap these in the correct platform key to ensure they only apply to the target platform and don't cause issues on other platforms in the same post.
 
-**TikTok:**
+**TikTok (`tiktok`):**
 - `draft: true` — save as draft (publish manually on TikTok with trending sound)
-- `video_cover_timestamp_ms: 3000` — cover thumbnail at 3 seconds
+- `video_cover_timestamp_ms: 3000` — cover thumbnail
 - `is_aigc: true` — label as AI-generated content
 
-**Instagram:**
+**Example of correct multi-platform config:**
+```json
+{
+  "caption": "Default caption",
+  "social_accounts": [44029, 44030],
+  "platform_configurations": {
+    "tiktok": {
+      "draft": true,
+      "is_aigc": false
+    },
+    "instagram": {
+      "is_trial_reel": false
+    }
+  }
+}
+```
+
+**Instagram (`instagram`):**
 - `video_cover_timestamp_ms: 3000` — cover thumbnail
 - `is_trial_reel: true` — trial reel mode (needs 1000+ followers)
 - `trial_graduation: "SS_PERFORMANCE"` — auto-graduate based on performance

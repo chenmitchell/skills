@@ -1,13 +1,18 @@
 {
   "owner": "jackfriks",
   "slug": "post-bridge-social-manager",
-  "displayName": "Social Media Assistant (via post-bridge.com)",
+  "displayName": "Post Bridge Social Manager",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1771176019134,
-    "commit": "https://github.com/openclaw/skills/commit/f06b390f31c0f0f05579e9f90ddf370e18394162"
+    "version": "1.0.6",
+    "publishedAt": 1771871286500,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1771176019134,
+      "commit": "https://github.com/openclaw/skills/commit/f06b390f31c0f0f05579e9f90ddf370e18394162"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770996238373,

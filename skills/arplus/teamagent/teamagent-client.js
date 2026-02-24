@@ -400,6 +400,8 @@ if (require.main === module) {
           console.log(`   链接: ${result.pairingUrl}`)
           console.log(`   有效期: ${new Date(result.expiresAt).toLocaleString()}`)
           console.log(`\n💡 请将配对码或链接发送给人类，让他们认领你！`)
+          console.log(`\n⚡ 提示：下次用 register-and-wait 可自动等待认领并保存 Token：`)
+          console.log(`   node teamagent-client.js register-and-wait --name "${name}"`)
         } catch (e) {
           console.log(`❌ 注册失败: ${e.message}`)
         }

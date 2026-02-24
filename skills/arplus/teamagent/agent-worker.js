@@ -14,7 +14,68 @@ const { TeamAgentClient } = require('./teamagent-client.js')
 const fs = require('fs')
 const path = require('path')
 
+const { execSync } = require('child_process')
+
 const client = new TeamAgentClient()
+
+// config.json 路径（与 teamagent-client.js 共享）
+const CONFIG_PATH = path.join(process.env.HOME || process.env.USERPROFILE, '.teamagent', 'config.json')
+
+function readConfig() {
+  try {
+    if (fs.existsSync(CONFIG_PATH)) return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'))
+  } catch (_) {}
+  return {}
+}
+
+function patchConfig(data) {
+  const dir = path.dirname(CONFIG_PATH)
+  fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify({ ...readConfig(), ...data }, null, 2))
+}
+
+// ================================================================
+// 🆕 Skill 自动更新检查
+// ================================================================
+/**
+ * 检查 ClawHub 是否有新版 teamagent skill，有则自动更新。
+ * @param {boolean} silent  true = 无新版时不打印日志
+ * @returns {boolean} 是否完成了更新（需要重启）
+ */
+async function checkSkillUpdate(silent = false) {
+  try {
+    if (!silent) console.log('🔍 检查 TeamAgent Skill 版本...')
+    const output = execSync('clawhub inspect teamagent', {
+      encoding: 'utf8', timeout: 15000, stdio: 'pipe'
+    })
+    const match = output.match(/Latest:\s*([\d.]+)/)
+    if (!match) {
+      if (!silent) console.log('⚠️  无法解析版本号，跳过更新检查')
+      return false
+    }
+    const latestVersion = match[1]
+    const cfg = readConfig()
+    const localVersion = cfg.skillVersion || '0.0.0'
+
+    if (latestVersion === localVersion) {
+      if (!silent) console.log(`✅ Skill 已是最新版 v${latestVersion}`)
+      return false
+    }
+
+    console.log(`🆕 发现新版本 v${localVersion} → v${latestVersion}，自动更新中...`)
+    const updateOut = execSync('clawhub update teamagent', {
+      encoding: 'utf8', timeout: 30000, stdio: 'pipe'
+    })
+    console.log(updateOut.trim())
+    patchConfig({ skillVersion: latestVersion })
+    console.log(`✅ TeamAgent Skill 已升级至 v${latestVersion}`)
+    return true   // 已更新，调用方应重启进程使新代码生效
+  } catch (e) {
+    const msg = e.message?.slice(0, 80) || String(e)
+    if (!silent) console.log(`⚠️  Skill 检查失败（${msg}），跳过`)
+    return false
+  }
+}
 
 // PID 文件：用于 OpenClaw heartbeat 检测 watch 进程是否在运行
 const PID_FILE = path.join(process.env.HOME || process.env.USERPROFILE, '.teamagent', 'watch.pid')
@@ -211,9 +272,29 @@ async function main() {
         await checkAndSuggestNext()
         break
 
+      case 'update-skill':
+        // 手动触发 Skill 更新检查
+        const skillUpdated = await checkSkillUpdate(false)
+        if (skillUpdated) {
+          console.log('🔄 请重新运行 `node agent-worker.js watch` 使用新版本')
+        }
+        break
+
       case 'watch':
         writePid()
         console.log(`📡 开始 SSE 实时监控模式（PID=${process.pid}，Ctrl+C 退出）\n`)
+
+        // ── Skill 自动更新检查 ──────────────────────────────────────
+        // 每次 watch 启动时静默检查；有新版则更新后 exit(0)，
+        // HEARTBEAT 检测到 PID 消失会重启 watch，自动加载新代码
+        {
+          const updated = await checkSkillUpdate(true)
+          if (updated) {
+            console.log('🔄 Skill 已更新，重启 watch 进程以加载新版本...')
+            clearPid()
+            process.exit(0)
+          }
+        }
 
         // 处理 SSE 事件
         const handleSSEEvent = async (event) => {
@@ -322,11 +403,12 @@ async function main() {
 TeamAgent Worker
 
 Commands:
-  check       检查待执行步骤
-  run         检查并执行一个步骤（decompose 优先）
-  decompose   执行所有待拆解任务（主 Agent 专用）
-  suggest     为已完成任务建议下一步
-  watch       SSE 实时监控（长连接，收到事件立即执行，自动重连）
+  check          检查待执行步骤
+  run            检查并执行一个步骤（decompose 优先）
+  decompose      执行所有待拆解任务（主 Agent 专用）
+  suggest        为已完成任务建议下一步
+  update-skill   检查并更新 TeamAgent Skill（ClawHub 最新版）
+  watch          SSE 实时监控（长连接，收到事件立即执行，自动检查 Skill 更新，自动重连）
         `)
     }
   } catch (error) {

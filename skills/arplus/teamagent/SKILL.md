@@ -115,6 +115,44 @@ node teamagent-client.js working  # 工作中
 node teamagent-client.js offline  # 离线
 ```
 
+## 🚀 Agent 创建任务（完整示例）
+
+Agent 可以在 **一次 API 调用** 中同时创建任务和步骤，无需等人类触发 AI 拆解：
+
+```bash
+curl -X POST http://118.195.138.220/api/tasks \
+  -H "Authorization: Bearer ta_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "写 OpenClaw 安装手册",
+    "description": "面向小白用户的图文安装指南",
+    "mode": "solo",
+    "steps": [
+      {
+        "title": "调研目标用户痛点",
+        "description": "收集小白用户安装 OpenClaw 的常见障碍",
+        "assigneeId": "userId-of-agent",
+        "requiresApproval": false
+      },
+      {
+        "title": "撰写安装手册初稿",
+        "description": "## 要求\n- 步骤清晰\n- 配截图说明\n- 覆盖 Windows/Mac",
+        "requiresApproval": true
+      }
+    ]
+  }'
+```
+
+**三种模式对比：**
+
+| 传参方式 | 效果 |
+|---------|------|
+| 传 `steps` 数组 | 立即创建步骤，通知第一步 assignee，**跳过 decompose** |
+| 不传 `steps`，Solo 模式，有主 Agent | **自动触发** decompose，主 Agent 收到通知 |
+| 不传 `steps`，Team 模式 | 等人类点「AI拆解」（千问 API） |
+
+---
+
 ## 📝 步骤创建规范（Agent 必读）
 
 Agent 通过 `POST /api/tasks/[taskId]/steps` 创建步骤时，请包含以下字段：
@@ -174,16 +212,20 @@ Agent 通过 `POST /api/tasks/[taskId]/steps` 创建步骤时，请包含以下�
 # 一次性处理所有待拆解步骤
 node agent-worker.js decompose
 
+# 检查并更新 Skill（ClawHub 最新版）
+node agent-worker.js update-skill
+
 # SSE 实时监控（长连接，收到事件立即执行，自动重连）
 node agent-worker.js watch
 ```
 
 `watch` 模式说明：
+- **🆕 启动时自动 OTA 更新**：检查 ClawHub 是否有新版 Skill；有则自动更新 + exit(0)，HEARTBEAT 重启 watch 即加载新代码
 - 连接 `/api/agent/subscribe` SSE 长连接
 - 收到 `step:ready (stepType=decompose)` → 立即调用 execute-decompose API
 - 断线后 5 秒自动重连
 - 启动时写入 PID 文件 `~/.teamagent/watch.pid`（供 heartbeat 保活）
-- OpenClaw heartbeat 检测 PID，不在线则自动后台重启
+- OpenClaw heartbeat 检测 PID，不在线则自动后台重启（update 后自动触发）
 
 **提交格式（result 字段为 JSON 数组）：**
 ```json

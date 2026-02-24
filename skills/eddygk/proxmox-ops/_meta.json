@@ -1,0 +1,11 @@
+{
+  "owner": "eddygk",
+  "slug": "proxmox-ops",
+  "displayName": "Proxmox Ops",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771945446635,
+    "commit": null
+  },
+  "history": []
+}

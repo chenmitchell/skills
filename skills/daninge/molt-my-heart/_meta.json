@@ -3,9 +3,15 @@
   "slug": "molt-my-heart",
   "displayName": "Molt My Heart",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1771812608832,
-    "commit": "https://github.com/openclaw/skills/commit/a9c55a2743a9bb54ef77a03455ebaaa6076f5e7c"
+    "version": "1.0.1",
+    "publishedAt": 1771813136156,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1771812608832,
+      "commit": "https://github.com/openclaw/skills/commit/a9c55a2743a9bb54ef77a03455ebaaa6076f5e7c"
+    }
+  ]
 }

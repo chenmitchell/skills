@@ -2,7 +2,7 @@
 # Full pattern set for deep scanning
 # v3.1.0 Token Optimization
 
-version: "3.1.0"
+version: "3.6.0"
 tier: 2
 description: "Suspicious patterns requiring attention"
 
@@ -306,3 +306,71 @@ patterns:
 
   # PAP Social Engineering patterns are in high.yaml (for default-tier loading)
   # See: pap_social_engineering section in high.yaml
+
+  # =============================================================================
+  # v3.5.0 Cascade Amplification Attack
+  # Source: Sub-agent chain abuse for infinite loops / cost explosion
+  # =============================================================================
+
+  # Cascade Amplification (sub-agent spawning abuse)
+  cascade_amplification:
+    - pattern: "(?:spawn|create|start|launch|fork)\\s+(?:an?\\s+)?(?:agent|sub.?agent|worker|task)\\s+(?:for\\s+)?(?:each|every|all)\\s+(?:item|entry|element|record)"
+      severity: medium
+      category: cascade_amplification
+      description: "Unbounded agent spawning per list item (cost amplification)"
+
+    - pattern: "(?:create|spawn|start)\\s+(?:unlimited|infinite|unbounded|maximum)\\s+(?:sub.?agents?|agents?|workers?|tasks?|processes?)"
+      severity: medium
+      category: cascade_amplification
+      description: "Explicit request for unlimited sub-agent creation"
+
+    - pattern: "(?:keep|continue)\\s+(?:retrying|trying|spawning|creating)\\s+(?:until|indefinitely|forever|without\\s+limit)"
+      severity: medium
+      category: cascade_amplification
+      description: "Infinite retry/spawn loop instruction"
+
+    - pattern: "(?:loop|iterate|recurse|repeat)\\s+(?:indefinitely|infinitely|forever|without\\s+(?:end|limit|bound|stop))"
+      severity: medium
+      category: cascade_amplification
+      description: "Infinite loop instruction for agent operations"
+
+    - pattern: "(?:spawn|create|fork)\\s+(?:agents?|sub.?agents?|workers?)\\s+(?:recursively|in\\s+a\\s+(?:loop|chain)|that\\s+(?:spawn|create)\\s+(?:more|other))"
+      severity: medium
+      category: cascade_amplification
+      description: "Recursive agent spawning (exponential resource consumption)"
+
+  # Financial Data Detection
+  financial_data_detection:
+    - pattern: "\\bIBAN\\s*:\\s*[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}"
+      severity: medium
+      category: financial_data
+    - pattern: "\\bSWIFT\\s*:\\s*[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?"
+      severity: medium
+      category: financial_data
+    - pattern: "(routing|account).{0,10}number.{0,20}[0-9]{8,17}"
+      severity: medium
+      category: financial_data
+
+  # SQL Injection via Tool Parameters
+  sql_injection_tools:
+    - pattern: "(SELECT|INSERT|UPDATE|DELETE).{0,50}(FROM|INTO|WHERE).{0,100}(--|;|'\\s*OR)"
+      severity: medium
+      category: sql_injection_tool
+    - pattern: "\\bUNION\\b.{0,30}\\bSELECT\\b"
+      severity: medium
+      category: sql_injection_tool
+    - pattern: "1\\s*=\\s*1|'\\s*OR\\s*'[^']*'\\s*=\\s*'"
+      severity: medium
+      category: sql_injection_tool
+
+  # Path Traversal in Tool Parameters
+  path_traversal_tools:
+    - pattern: "\\.{2,}/\\.{2,}/"
+      severity: medium
+      category: path_traversal
+    - pattern: "\\.\\./\\.\\./\\.\\."
+      severity: medium
+      category: path_traversal
+    - pattern: "%2e%2e%2f|%252e%252e%252f"
+      severity: medium
+      category: path_traversal_encoded

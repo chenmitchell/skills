@@ -2,6 +2,39 @@
 
 All notable changes to Prompt Guard will be documented in this file.
 
+## [3.6.0] - 2026-02-24
+
+### 🛡️ ClawSecurity Alignment — 50+ New Patterns
+
+Cross-referencing ClawSecurity's threat intelligence (50+ prompt injection patterns, 30+ DLP patterns) revealed 6 new attack categories not covered by previous versions.
+
+#### 🆕 New Pattern Categories (CRITICAL)
+- **ClawHavoc Supply Chain Signatures** — Detects the ClawHavoc campaign's specific attack patterns: webhook.site/ngrok exfil pipes, base64 decode-to-shell, __import__ RCE
+- **Cloud Credentials Exfiltration** — AWS (AKIA/ASIA/AROA prefix), GCP (AIza prefix), Azure credential patterns
+- **Code Exfiltration Detection** — Source code/codebase sent to external destinations via HTTP/FTP/SSH
+
+#### 🆕 New Pattern Categories (HIGH)
+- **Multi-turn Manipulation** (8 patterns) — "remember earlier when you agreed", "you previously said", "as we discussed", "pick up where we left off" — cross-session context hijacking
+- **Authority Escalation** (7 patterns) — EMERGENCY OVERRIDE, DEBUG MODE, MAINTENANCE MODE, DEVELOPER CONSOLE, SUDO GRANT
+- **PII Output Detection** — SSN (xxx-xx-xxxx), credit cards (Visa/MC/Amex), passport numbers, health IDs
+- **SOUL.md / Config Drift Injection** — Attempts to modify SOUL.md, AGENTS.md, USER.md, MEMORY.md via echo/append/inject
+- **Large Data Dump / Base64 Exfil** — 100+ char base64 blobs in output streams, hexdump exfil patterns
+
+#### 🆕 New Pattern Categories (MEDIUM)
+- **Financial Data Detection** — IBAN, SWIFT codes, bank routing/account numbers
+- **SQL Injection via Tool Parameters** — UNION SELECT, OR 1=1, SQL comment injection in tool call context
+- **Path Traversal in Tool Parameters** — ../../../ patterns, URL-encoded traversal (%2e%2e%2f)
+
+#### 📊 Pattern Count
+- Previous: ~600 patterns
+- Added: ~50 patterns (ClawSecurity-derived)
+- Total: **650+ patterns**
+- Categories: 11 → **12 SHIELD categories**
+
+#### 🔗 References
+- ClawSecurity: github.com/jiayaoqijia/ClawSecurity
+- OWASP Agentic Top 10: ASI01-ASI10 coverage expanded
+
 ## [3.3.0] - 2026-02-17
 
 ### 🛡️ Agent Payment Redirect Defense

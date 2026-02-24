@@ -2,7 +2,7 @@
 # Always loaded - ~30 patterns for immediate threat detection
 # v3.1.0 Token Optimization
 
-version: "3.1.0"
+version: "3.6.0"
 tier: 0
 description: "Immediate threats requiring instant block"
 
@@ -229,3 +229,79 @@ patterns:
       severity: critical
       category: agent_payment_hijack
       description: "Payment redirect with audit suppression"
+
+  # =============================================================================
+  # v3.5.0 Supply Chain Skill Injection
+  # Source: Malicious community skill attack vectors
+  # =============================================================================
+
+  # Supply Chain Skill Injection (malicious skills with hidden payloads)
+  supply_chain_skill_injection:
+    - pattern: "(?:SKILL|skill)\\.md.{0,100}(?:curl|wget|bash|sh|eval|exec)\\s"
+      severity: critical
+      category: supply_chain_injection
+      description: "Hidden shell/eval command embedded in SKILL.md"
+
+    - pattern: "(?:atob|btoa|base64|b64decode|b64encode|Buffer\\.from).{0,40}(?:exec|eval|spawn|fetch|curl|wget)"
+      severity: critical
+      category: supply_chain_injection
+      description: "Base64 encoded payload followed by code execution"
+
+    - pattern: "(?:curl|wget|fetch|axios|post|put).{0,60}(?:webhook\\.site|requestbin|pipedream|ngrok\\.io|burpcollaborator).{0,40}(?:token|key|secret|credential|env|password)"
+      severity: critical
+      category: supply_chain_injection
+      description: "Credential exfiltration to known data collection endpoints"
+
+    - pattern: "(?:postinstall|preinstall|postupdate|preupdate).{0,40}(?:curl|wget|bash|sh|eval|exec|nc|ncat)"
+      severity: critical
+      category: supply_chain_injection
+      description: "Malicious lifecycle hook in skill package (install/update scripts)"
+
+    - pattern: "(?:skill|plugin|extension).{0,30}(?:update|upgrade|install).{0,40}(?:curl|wget|bash|eval|exec).{0,40}(?:\\||>|>>)"
+      severity: critical
+      category: supply_chain_injection
+      description: "Malicious code injection via skill update mechanism"
+  # ClawHavoc Supply Chain Attack Signatures (CRITICAL)
+  clawhavoc_supply_chain:
+    - pattern: "curl\\s+.{0,80}(webhook\\.site|ngrok\\.io|requestbin|pipedream)\\s*\\|"
+      severity: critical
+      category: supply_chain_exfil
+    - pattern: "base64\\s+(-d|--decode)\\s*.{0,50}\\|\\s*(ba)?sh"
+      severity: critical
+      category: supply_chain_exfil
+    - pattern: "(import|require|exec|eval)\\s*.{0,30}(base64\\.b64decode|atob)\\s*\\("
+      severity: critical
+      category: supply_chain_exfil
+    - pattern: "__import__\\s*\\(\\s*['\"]os['\"]\\s*\\)\\.system"
+      severity: critical
+      category: supply_chain_rce
+
+  # Cloud Credentials Exfiltration (CRITICAL)
+  cloud_credentials_exfil:
+    - pattern: "(AKIA|ASIA|AROA)[A-Z0-9]{16}"
+      severity: critical
+      category: cloud_credentials
+    - pattern: "aws[_-]?(secret[_-]?access[_-]?key|access[_-]?key[_-]?id)"
+      severity: critical
+      category: cloud_credentials
+    - pattern: "AIza[0-9A-Za-z\\-_]{35}"
+      severity: critical
+      category: cloud_credentials
+    - pattern: "(gcp|google)[_-]?(credentials|service[_-]?account|private[_-]?key)"
+      severity: critical
+      category: cloud_credentials
+    - pattern: "AZURE[_-]?(CLIENT[_-]?SECRET|TENANT[_-]?ID|SUBSCRIPTION)"
+      severity: critical
+      category: cloud_credentials
+
+  # Code Exfiltration Detection (CRITICAL)
+  code_exfiltration:
+    - pattern: "(send|upload|post|transmit).{0,30}(source[_-]?code|codebase|repository|\\.py|\\.js|\\.ts)"
+      severity: critical
+      category: code_exfil
+    - pattern: "def .{1,50}\\n.{0,500}(send|post|upload).{0,50}(http|ftp|ssh)"
+      severity: critical
+      category: code_exfil
+    - pattern: "tar\\s+.{0,30}\\|\\s*curl.{0,80}(webhook|requestbin|ngrok)"
+      severity: critical
+      category: code_exfil

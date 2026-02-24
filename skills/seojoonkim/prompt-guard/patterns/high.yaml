@@ -2,7 +2,7 @@
 # Loaded with critical - ~70 patterns for serious threats
 # v3.1.0 Token Optimization
 
-version: "3.1.0"
+version: "3.6.0"
 tier: 1
 description: "Serious threats requiring blocking"
 
@@ -373,3 +373,180 @@ patterns:
       severity: medium
       category: social_engineering
       description: "Alternate-reality framing to circumvent safety rules"
+
+  # =============================================================================
+  # v3.5.0 Memory Poisoning / Persistent Write Injection
+  # Source: External content manipulating agent persistent storage
+  # =============================================================================
+
+  # Memory Poisoning (injecting into agent memory/config files)
+  memory_poisoning:
+    - pattern: "(?:remember|memorize|store|save|record)\\s+(?:this|the\\s+following|that).{0,30}(?:in|to|into)\\s+(?:your\\s+)?(?:memory|storage|file|MEMORY)"
+      severity: high
+      category: memory_poisoning
+      description: "Instruction to write attacker content into agent memory"
+
+    - pattern: "(?:update|modify|edit|change|add\\s+to|append\\s+to)\\s+(?:your\\s+)?(?:AGENTS|SOUL|MEMORY|HEARTBEAT|IDENTITY)\\.md"
+      severity: high
+      category: memory_poisoning
+      description: "Direct instruction to modify agent identity/config files"
+
+    - pattern: "(?:write|add|insert|append)\\s+(?:the\\s+following|this).{0,30}(?:to|into|in)\\s+(?:your\\s+)?(?:memory|permanent\\s+storage|long.?term|persistent)"
+      severity: high
+      category: memory_poisoning
+      description: "Persistent write injection into agent long-term memory"
+
+    - pattern: "(?:save|store|keep|retain)\\s+(?:this|these).{0,20}(?:to|in|into)\\s+(?:your\\s+)?(?:permanent|persistent|long.?term)\\s+(?:storage|memory|file)"
+      severity: high
+      category: memory_poisoning
+      description: "Instruction to persist attacker data in permanent storage"
+
+  # =============================================================================
+  # v3.5.0 High-Risk Action Gate Bypass
+  # Source: Bypassing approval gates for dangerous actions
+  # =============================================================================
+
+  # Action Gate Bypass (executing high-risk actions without approval)
+  action_gate_bypass:
+    - pattern: "(?:transfer|send|wire|move)\\s+(?:the\\s+)?(?:funds?|money|payment|ETH|BTC|SOL|USDT|USDC).{0,40}(?:without|skip|bypass|no).{0,20}(?:approval|confirmation|check|review)"
+      severity: high
+      category: action_gate_bypass
+      description: "Financial transfer bypassing approval gate"
+
+    - pattern: "(?:export|dump|print|display|list|show)\\s+(?:all\\s+)?(?:API\\s*keys?|secrets?|credentials?|tokens?|passwords?|\\.env)"
+      severity: high
+      category: action_gate_bypass
+      description: "Bulk credential export without authorization gate"
+
+    - pattern: "(?:modify|change|update|edit|add|remove)\\s+(?:the\\s+)?(?:SSH|firewall|iptables|authorized_keys|sudoers|access.?control)"
+      severity: high
+      category: action_gate_bypass
+      description: "Access control modification without approval"
+
+    - pattern: "(?:rm\\s+-rf|force\\s+push|drop\\s+(?:table|database)|truncate|wipe|format|destroy)\\s+.{0,40}(?:without|skip|bypass|no).{0,20}(?:approval|confirm|check|backup)"
+      severity: high
+      category: action_gate_bypass
+      description: "Destructive action bypassing safety confirmation"
+
+    - pattern: "(?:send|post|publish|DM|email|message)\\s+(?:this|it|the\\s+following).{0,30}(?:to\\s+(?:all|every|each)|on\\s+behalf\\s+of|as\\s+(?:me|the\\s+(?:admin|owner)))"
+      severity: high
+      category: action_gate_bypass
+      description: "Unauthorized external communication on behalf of user/admin"
+
+  # =============================================================================
+  # v3.5.0 Bidi Override / Unicode Steganography
+  # Source: Hidden instructions via Unicode directional/invisible characters
+  # =============================================================================
+
+  # Unicode Steganography (direction overrides and invisible chars for hiding commands)
+  unicode_steganography:
+    - pattern: "[\\u202a\\u202b\\u202c\\u202d\\u202e]"
+      severity: high
+      category: unicode_steganography
+      description: "Unicode bidirectional override characters (U+202A-E) hiding text direction"
+
+    - pattern: "[\\u2028\\u2029]"
+      severity: high
+      category: unicode_steganography
+      description: "Unicode line/paragraph separator used for instruction hiding"
+
+    - pattern: "[\\u200b\\ufeff].{0,5}[\\u200b\\ufeff]"
+      severity: high
+      category: unicode_steganography
+      description: "Multiple zero-width/BOM characters indicating steganographic payload"
+
+  # Multi-turn Manipulation (ClawSecurity category)
+  multi_turn_manipulation:
+    - pattern: "remember (earlier|before|when) (you|we|i).{0,50}(agreed|said|told|confirmed|approved)"
+      severity: high
+      category: multi_turn_manipulation
+    - pattern: "you (previously|already|earlier) (agreed|said|told|approved|confirmed|promised)"
+      severity: high
+      category: multi_turn_manipulation
+    - pattern: "as (we|you) discussed.{0,30}(earlier|before|previously|last time)"
+      severity: high
+      category: multi_turn_manipulation
+    - pattern: "based on (our|your) previous (conversation|discussion|agreement|session)"
+      severity: high
+      category: multi_turn_manipulation
+    - pattern: "continuing (from|our).{0,30}(earlier|previous|last).{0,20}(session|conversation|instruction)"
+      severity: high
+      category: multi_turn_manipulation
+    - pattern: "in (our|the) (last|previous) (session|conversation).{0,30}(you said|you agreed|you told)"
+      severity: high
+      category: multi_turn_manipulation
+    - pattern: "pick up where (we|you) left off"
+      severity: high
+      category: multi_turn_manipulation
+    - pattern: "your (memory|context) (shows|says|indicates).{0,50}(approved|allowed|permitted)"
+      severity: high
+      category: multi_turn_manipulation
+
+  # Authority Escalation (expanded)
+  authority_escalation:
+    - pattern: "EMERGENCY\\s+OVERRIDE"
+      severity: high
+      category: authority_escalation
+    - pattern: "DEBUG\\s+(MODE|OVERRIDE|ACCESS)"
+      severity: high
+      category: authority_escalation
+    - pattern: "MAINTENANCE\\s+(MODE|OVERRIDE|ACCESS)"
+      severity: high
+      category: authority_escalation
+    - pattern: "DEVELOPER\\s+(MODE|OVERRIDE|CONSOLE)"
+      severity: high
+      category: authority_escalation
+    - pattern: "DIAGNOSTIC\\s+(MODE|OVERRIDE|ACCESS)"
+      severity: high
+      category: authority_escalation
+    - pattern: "SUDO\\s+(MODE|OVERRIDE|ACCESS|GRANT)"
+      severity: high
+      category: authority_escalation
+    - pattern: "(AUTHORIZED|VERIFIED)\\s+ADMINISTRATOR\\s+(ACCESS|OVERRIDE)"
+      severity: high
+      category: authority_escalation
+
+  # PII Output Detection
+  pii_output_detection:
+    - pattern: "\\b[0-9]{3}-[0-9]{2}-[0-9]{4}\\b"
+      severity: high
+      category: pii_ssn
+    - pattern: "\\b4[0-9]{12}(?:[0-9]{3})?\\b"
+      severity: high
+      category: pii_credit_card
+    - pattern: "\\b5[1-5][0-9]{14}\\b"
+      severity: high
+      category: pii_credit_card
+    - pattern: "\\b3[47][0-9]{13}\\b"
+      severity: high
+      category: pii_credit_card
+    - pattern: "[A-Z]{1,2}[0-9]{6,9}"
+      severity: high
+      category: pii_passport
+    - pattern: "(passport|national[_-]?id|health[_-]?id).{0,20}[A-Z0-9]{6,12}"
+      severity: high
+      category: pii_identification
+
+  # SOUL.md / Config Drift Injection
+  config_drift_injection:
+    - pattern: "(modify|edit|update|overwrite|change).{0,30}(SOUL\\.md|AGENTS\\.md|USER\\.md|MEMORY\\.md)"
+      severity: high
+      category: config_drift
+    - pattern: "(append|add|inject|insert).{0,30}(SOUL\\.md|AGENTS\\.md|MEMORY\\.md)"
+      severity: high
+      category: config_drift
+    - pattern: "echo.{0,50}(>|>>).{0,30}(SOUL\\.md|AGENTS\\.md|USER\\.md)"
+      severity: high
+      category: config_drift
+
+  # Large Data Dump / Base64 Exfil
+  large_data_dump:
+    - pattern: "(?:[A-Za-z0-9+/]{4}){100,}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?"
+      severity: high
+      category: base64_dump
+    - pattern: "(output|print|send|transmit).{0,30}base64.{0,100}\\|.{0,30}(http|curl|wget)"
+      severity: high
+      category: base64_exfil
+    - pattern: "hexdump.{0,50}(send|curl|wget|post)"
+      severity: high
+      category: binary_exfil

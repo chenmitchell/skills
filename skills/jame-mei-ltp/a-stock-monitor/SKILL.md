@@ -1,6 +1,7 @@
 ---
 name: a-stock-monitor
 description: A股实时监控系统 - 7维度市场情绪评分、实时价格监控、涨跌幅排行榜。支持全市场5000+股票数据采集与分析，智能判断交易时间，交易时段每5秒更新价格。包含Web界面、自动化Cron任务、历史数据回溯。适用于A股量化分析、市场情绪追踪、个股监控告警。
+author: James Mei <meijinmeng@126.com>
 metadata:
   openclaw:
     requires:
@@ -11,6 +12,11 @@ metadata:
 # A股实时监控系统
 
 一个完整的A股实时监控与市场情绪分析系统。
+
+**作者**: James Mei  
+**邮箱**: meijinmeng@126.com  
+**版本**: 1.0.0  
+**许可证**: MIT
 
 ## 核心功能
 

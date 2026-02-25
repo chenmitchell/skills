@@ -1,0 +1,11 @@
+{
+  "owner": "masasdani",
+  "slug": "spf-dkim-setup",
+  "displayName": "SPF DKIM Setup",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771830782838,
+    "commit": null
+  },
+  "history": []
+}

@@ -1,6 +1,6 @@
 name: feishu-file-sender
-version: 1.0.3
-description: Upload any local file to Feishu via OpenAPI and send it as a downloadable attachment in the current chat using auto-detected credentials.
+version: 1.0.4
+description: Upload any local file to Feishu via OpenAPI and send it as a downloadable attachment in the current chat using auto-detected credentials. | 飞书文件发送器：通过 OpenAPI 上传本地文件，并用自动识别的凭证发送到当前聊天，作为可下载的附件。
 author:
   name: wen-ai
 license: MIT

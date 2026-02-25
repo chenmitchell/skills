@@ -3,9 +3,15 @@
   "slug": "ghapp",
   "displayName": "Github App Authentication",
   "latest": {
-    "version": "0.1.2",
-    "publishedAt": 1771880320985,
-    "commit": "https://github.com/openclaw/skills/commit/b6c6aa96c9ec5bf030ba9b3689c684b60e160042"
+    "version": "0.1.5",
+    "publishedAt": 1771930510280,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.2",
+      "publishedAt": 1771880320985,
+      "commit": "https://github.com/openclaw/skills/commit/b6c6aa96c9ec5bf030ba9b3689c684b60e160042"
+    }
+  ]
 }

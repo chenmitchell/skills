@@ -3,11 +3,16 @@
   "slug": "navclaw",
   "displayName": "NavClaw",
   "latest": {
-    "version": "0.1.8",
-    "publishedAt": 1771987758932,
-    "commit": "https://github.com/openclaw/skills/commit/4e1389df2531372961708bd56a88a5bf9df49aac"
+    "version": "0.2.1",
+    "publishedAt": 1772000355381,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.8",
+      "publishedAt": 1771987758932,
+      "commit": "https://github.com/openclaw/skills/commit/4e1389df2531372961708bd56a88a5bf9df49aac"
+    },
     {
       "version": "0.1.2",
       "publishedAt": 1771945566608,

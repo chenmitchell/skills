@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NavClaw — 智能导航路线规划 / OpenSource Intelligent Route Planner for OpenClaw & More
+NavClaw — 个人出行AI导航助手 / OpenSource Intelligent Route Planner for OpenClaw & More
 
 🌐 https://navclaw.com (Reserved for Github Page)
 📦 https://github.com/AI4MSE/NavClaw
@@ -58,7 +58,7 @@ def _c(attr, default):
 class PlannerConfig:
     """所有可调参数集中于此。优先读取 config.py，fallback 到内置默认值。"""
     # §2.1 版本
-    VERSION: str = "0.1-fix"
+    VERSION: str = "0.2.0"
     API_KEY: str = field(default_factory=lambda: _c("API_KEY", ""))
 
     # §2.2 Phase 1 广撒网

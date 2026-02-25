@@ -1,9 +1,8 @@
-# NavClaw 🦀 - 个人AI导航助手
+# NavClaw 🦀    个人出行AI导航助手
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-green.svg)](https://www.python.org/)
 [![ClawHub](https://img.shields.io/badge/ClawHub-navclaw-orange)](https://clawhub.ai/AI4MSE/navclaw)
-[![GitHub stars](https://img.shields.io/github/stars/AI4MSE/NavClaw?style=social)](https://github.com/AI4MSE/NavClaw/stargazers)
 
 **智能导航路线规划** — 支持 OpenClaw 集成，也可独立使用。避堵规划 · 极限搜索优化方案 · 兼容 iOS 和 Android · 链接一键跳转手机导航 APP。附加工具箱：天气查询、周边地点搜索、地理编码、行政区划查询等。目前支持高德，后续扩展。
 
@@ -11,7 +10,17 @@
 
 首版支持高德，后续扩展 / First supported platform: **Amap 高德** · 你可以贡献来使它更多平台支持 / More coming soon & Wecome your contribution.
 
- [📖 English](README_EN.md) · [GitHub](https://github.com/AI4MSE/NavClaw) · [技术文档](docs/technical_CN.md)
+ [📖 English](README_EN.md) · [GitHub](https://github.com/AI4MSE/NavClaw) · [技术文档](docs/technical_CN.md) · [Technical Doc (EN)](docs/technical_EN.md)
+
+## 效果演示 / Demos
+> Smart Navigation: 智能导航 极限搜索 智能绕行 一键跳转
+
+![智能导航 极限搜索 智能绕行 一键跳转](img/Overview_Smart_Navi_Demo.png)
+
+> Food & Weather & More... 餐饮，天气，以及其他无限可能
+
+![餐饮x天气](img/Overview_Food_Weather_Demo.png)
+
 
 ## 核心特性 / Highlights
 

@@ -1,0 +1,7 @@
+{
+  "name": "openclaw-self-healing-homeofe",
+  "version": "0.2.4",
+  "private": true,
+  "type": "module",
+  "openclaw": { "extensions": ["./index.ts"] }
+}

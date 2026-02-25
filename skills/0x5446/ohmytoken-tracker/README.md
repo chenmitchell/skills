@@ -1,53 +1,43 @@
 # ohmytoken-tracker
 
-> Watch your tokens burn, one bead at a time.
+> Your AI spending, visualized as pixel art. In real-time.
 
-OpenClaw skill that automatically tracks your LLM token consumption and visualizes it as a colorful pixel bead board at [ohmytoken.dev](https://ohmytoken.dev).
+![ohmytoken](https://ohmytoken.dev/preview.png)
+
+OpenClaw skill that turns your LLM token consumption into a mesmerizing pixel bead board at [ohmytoken.dev](https://ohmytoken.dev).
 
 ## Install
 
 ```bash
-openclaw skill install @ohmytoken/tracker
+openclaw skill install @0x5446/ohmytoken-tracker
 ```
 
 ## Configure
 
-Add your API key to `openclaw.json`:
+Get your free API key at [ohmytoken.dev](https://ohmytoken.dev), then add to `openclaw.json`:
 
 ```json
 {
   "skills": {
     "ohmytoken-tracker": {
-      "enabled": true,
-      "config": {
-        "api_key": "omt_your_key_here"
-      }
+      "config": { "api_key": "omt_your_key_here" }
     }
   }
 }
 ```
 
-Or set the environment variable:
-
-```bash
-export OHMYTOKEN_API_KEY=omt_your_key_here
-```
-
-## Get your API Key
-
-1. Go to [ohmytoken.dev](https://ohmytoken.dev)
-2. Sign in with Google or GitHub
-3. Copy the API key from the welcome screen
+That's it. Open [ohmytoken.dev](https://ohmytoken.dev) and watch the beads drop.
 
 ## Features
 
-- Zero-config after API key setup
-- Tracks all models automatically
-- Real-time bead board visualization
-- Achievements, leaderboards, and gallery
-- Share your unique token art
+- Every model gets a unique color (Claude=coral, GPT=green, Gemini=blue...)
+- 7 board shapes including a cat head
+- 10 achievements to unlock
+- Leaderboards, gallery, share cards with QR codes
+- Daily/monthly/yearly views
+- Embeddable SVG badges for GitHub READMEs
 
 ## Links
 
 - [ohmytoken.dev](https://ohmytoken.dev) — Dashboard
-- [API Docs](https://ohmytoken.dev/settings) — API reference
+- [GitHub](https://github.com/0x5446/ohmytoken-oss) — Source code

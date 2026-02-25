@@ -60,6 +60,7 @@ bash <skill_dir>/scripts/launch.sh /path/to/pixel-lobster
 
 | Key | Action |
 |-----|--------|
+| F8 | Move window to next monitor (cycles through all displays) |
 | F9 | Toggle click-through mode |
 | F12 | Toggle DevTools |
 

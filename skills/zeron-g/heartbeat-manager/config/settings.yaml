@@ -1,0 +1,51 @@
+# heartbeat-manager 配置文件
+
+# 心跳间隔（分钟）
+heartbeat_interval: 30
+
+# 邮件配置
+email:
+  smtp_host: smtp.gmail.com
+  smtp_port: 587
+  imap_host: imap.gmail.com
+  imap_port: 993
+  sender: eva.agent.0@gmail.com
+  # App Password 从 .env 读取
+  recipients:
+    - rgao28@jh.edu
+    - 2950243695@qq.com
+    - kingrzeus@gmail.com
+  # 高优先级发件人（邮件检查时优先标记）
+  high_priority_senders:
+    - rgao28
+    - evax
+
+# 智能超时分析
+timeout:
+  # 超过 eta 多少小时后触发分析
+  eta_grace_hours: 2
+  # 连续 N 个心跳无进展视为卡死
+  stale_beats: 3
+  # progress 变化阈值（低于此值视为无进展）
+  progress_threshold: 5
+
+# 健康度评分
+health:
+  # 连续低于此分数触发告警
+  alert_threshold: 60
+  # 连续低分次数触发告警
+  alert_consecutive: 3
+
+# 日志
+logging:
+  level: INFO
+  rotate_days: 7
+
+# Git
+git:
+  auto_commit: true
+  auto_push: true
+  commit_prefix: "[heartbeat]"
+
+# 工作区路径（相对于 skill 根目录）
+workspace_dir: workspace

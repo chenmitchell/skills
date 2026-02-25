@@ -1,13 +1,18 @@
 {
   "owner": "0xnyk",
   "slug": "xint-rs",
-  "displayName": "Xint Clawdhub Xint Rs JA8nfE",
+  "displayName": "Tmp.YM3l99mhpq",
   "latest": {
-    "version": "2026.2.20-2",
-    "publishedAt": 1771605668037,
-    "commit": "https://github.com/openclaw/skills/commit/a736e4bafd2bad0d4912c4fd4f9c027bfe6e9fa3"
+    "version": "2026.2.24",
+    "publishedAt": 1771929421005,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2026.2.20-2",
+      "publishedAt": 1771605668037,
+      "commit": "https://github.com/openclaw/skills/commit/a736e4bafd2bad0d4912c4fd4f9c027bfe6e9fa3"
+    },
     {
       "version": "2026.2.19-6",
       "publishedAt": 1771512375143,

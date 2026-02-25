@@ -1,0 +1,11 @@
+{
+  "owner": "nikil511",
+  "slug": "jetson-cuda-voice",
+  "displayName": "Jetson CUDA Voice Pipeline",
+  "latest": {
+    "version": "1.1.0",
+    "publishedAt": 1771969941506,
+    "commit": null
+  },
+  "history": []
+}

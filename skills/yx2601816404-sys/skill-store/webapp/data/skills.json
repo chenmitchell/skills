@@ -209,6 +209,17 @@
     "permissions_found": 0
   },
   {
+    "name": "ai-picture-book",
+    "security_rating": "D",
+    "compliance_rating": "N/A",
+    "recommendation": "do_not_install",
+    "total_findings": 3,
+    "high_findings": 3,
+    "is_doc_only": false,
+    "permissions_declared": 0,
+    "permissions_found": 0
+  },
+  {
     "name": "ai-skill-scanner",
     "security_rating": "C",
     "compliance_rating": "D",
@@ -471,6 +482,17 @@
     "is_doc_only": false,
     "permissions_declared": 3,
     "permissions_found": 1
+  },
+  {
+    "name": "baidu-baike-data",
+    "security_rating": "A",
+    "compliance_rating": "N/A",
+    "recommendation": "install",
+    "total_findings": 0,
+    "high_findings": 0,
+    "is_doc_only": false,
+    "permissions_declared": 0,
+    "permissions_found": 0
   },
   {
     "name": "baidu-scholar-search-skill",
@@ -990,6 +1012,17 @@
     "permissions_found": 0
   },
   {
+    "name": "daily-ai-news-skill",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 0,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 0,
+    "permissions_found": 0
+  },
+  {
     "name": "data-analysis",
     "security_rating": "N/A",
     "compliance_rating": "N/A",
@@ -1012,6 +1045,17 @@
     "permissions_found": 0
   },
   {
+    "name": "database-operations",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 3,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 2,
+    "permissions_found": 0
+  },
+  {
     "name": "dataset-finder",
     "security_rating": "A",
     "compliance_rating": "C",
@@ -1021,6 +1065,17 @@
     "is_doc_only": false,
     "permissions_declared": 0,
     "permissions_found": 2
+  },
+  {
+    "name": "ddg-web-search",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 0,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 3,
+    "permissions_found": 0
   },
   {
     "name": "debug-pro",
@@ -1087,6 +1142,17 @@
     "is_doc_only": false,
     "permissions_declared": 0,
     "permissions_found": 0
+  },
+  {
+    "name": "desktop-control",
+    "security_rating": "A",
+    "compliance_rating": "C",
+    "recommendation": "install_with_review",
+    "total_findings": 1,
+    "high_findings": 0,
+    "is_doc_only": false,
+    "permissions_declared": 0,
+    "permissions_found": 3
   },
   {
     "name": "desktop-guardian",
@@ -1320,6 +1386,17 @@
     "permissions_found": 0
   },
   {
+    "name": "exa-web-search-free",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 0,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 0,
+    "permissions_found": 0
+  },
+  {
     "name": "excalidraw",
     "security_rating": "D",
     "compliance_rating": "A",
@@ -1529,6 +1606,17 @@
     "permissions_found": 0
   },
   {
+    "name": "gcalcli-calendar",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 0,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 4,
+    "permissions_found": 0
+  },
+  {
     "name": "gemini",
     "security_rating": "N/A",
     "compliance_rating": "N/A",
@@ -1661,6 +1749,17 @@
     "permissions_found": 0
   },
   {
+    "name": "google-merchant",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 14,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 3,
+    "permissions_found": 0
+  },
+  {
     "name": "google-play",
     "security_rating": "N/A",
     "compliance_rating": "N/A",
@@ -1747,6 +1846,17 @@
     "is_doc_only": false,
     "permissions_declared": 1,
     "permissions_found": 1
+  },
+  {
+    "name": "himalaya",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 4,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 3,
+    "permissions_found": 0
   },
   {
     "name": "hire",
@@ -1991,6 +2101,17 @@
     "permissions_found": 4
   },
   {
+    "name": "markdown-convert",
+    "security_rating": "A",
+    "compliance_rating": "C",
+    "recommendation": "install_with_review",
+    "total_findings": 0,
+    "high_findings": 0,
+    "is_doc_only": false,
+    "permissions_declared": 1,
+    "permissions_found": 3
+  },
+  {
     "name": "markdown-converter",
     "security_rating": "N/A",
     "compliance_rating": "N/A",
@@ -2197,6 +2318,17 @@
     "high_findings": 0,
     "is_doc_only": true,
     "permissions_declared": 1,
+    "permissions_found": 0
+  },
+  {
+    "name": "myfeed",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 6,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 0,
     "permissions_found": 0
   },
   {
@@ -2563,6 +2695,17 @@
     "permissions_found": 6
   },
   {
+    "name": "oracle",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 0,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 2,
+    "permissions_found": 0
+  },
+  {
     "name": "outlook-api",
     "security_rating": "N/A",
     "compliance_rating": "N/A",
@@ -2758,6 +2901,17 @@
     "high_findings": 0,
     "is_doc_only": false,
     "permissions_declared": 0,
+    "permissions_found": 0
+  },
+  {
+    "name": "prd",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 0,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 1,
     "permissions_found": 0
   },
   {
@@ -3036,6 +3190,17 @@
     "permissions_found": 1
   },
   {
+    "name": "self-reflection",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 0,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 1,
+    "permissions_found": 0
+  },
+  {
     "name": "semantic-router",
     "security_rating": "A",
     "compliance_rating": "N/A",
@@ -3297,6 +3462,17 @@
     "high_findings": 0,
     "is_doc_only": false,
     "permissions_declared": 4,
+    "permissions_found": 4
+  },
+  {
+    "name": "skill-scanner",
+    "security_rating": "A",
+    "compliance_rating": "D",
+    "recommendation": "install_with_review",
+    "total_findings": 15,
+    "high_findings": 0,
+    "is_doc_only": false,
+    "permissions_declared": 0,
     "permissions_found": 4
   },
   {
@@ -3608,6 +3784,17 @@
     "permissions_found": 0
   },
   {
+    "name": "task-status",
+    "security_rating": "B",
+    "compliance_rating": "B",
+    "recommendation": "install",
+    "total_findings": 14,
+    "high_findings": 0,
+    "is_doc_only": false,
+    "permissions_declared": 3,
+    "permissions_found": 2
+  },
+  {
     "name": "tavily",
     "security_rating": "A",
     "compliance_rating": "N/A",
@@ -3795,6 +3982,17 @@
     "permissions_found": 0
   },
   {
+    "name": "ui-ux-design",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 0,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 0,
+    "permissions_found": 0
+  },
+  {
     "name": "upload-post",
     "security_rating": "N/A",
     "compliance_rating": "N/A",
@@ -3837,6 +4035,17 @@
     "is_doc_only": false,
     "permissions_declared": 0,
     "permissions_found": 2
+  },
+  {
+    "name": "voice-wake-say",
+    "security_rating": "N/A",
+    "compliance_rating": "N/A",
+    "recommendation": "documentation_only",
+    "total_findings": 0,
+    "high_findings": 0,
+    "is_doc_only": true,
+    "permissions_declared": 3,
+    "permissions_found": 0
   },
   {
     "name": "weather",

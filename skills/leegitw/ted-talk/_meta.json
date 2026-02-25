@@ -3,9 +3,15 @@
   "slug": "ted-talk",
   "displayName": "TED Talk",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771985663245,
-    "commit": "https://github.com/openclaw/skills/commit/1bd4f7da0ead1c1b7a32b1b76bdcad3e3cdd7a39"
+    "version": "1.0.2",
+    "publishedAt": 1771994890458,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771985663245,
+      "commit": "https://github.com/openclaw/skills/commit/1bd4f7da0ead1c1b7a32b1b76bdcad3e3cdd7a39"
+    }
+  ]
 }

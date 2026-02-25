@@ -2,14 +2,19 @@
 name: OpenCortex
 homepage: https://github.com/JD2005L/opencortex
 description: >
-  Self-improving memory architecture for OpenClaw agents. Transforms the default flat memory
-  into a structured, self-maintaining knowledge system that grows smarter over time.
-  Use when: (1) setting up a new OpenClaw instance, (2) user asks to improve/organize memory,
-  (3) user wants the agent to stop forgetting things, (4) bootstrapping a fresh agent with
-  best practices. NOT for: runtime memory_search queries (use built-in memory tools).
-  Triggers: "set up memory", "organize yourself", "stop forgetting", "memory architecture",
-  "self-improving", "cortex", "bootstrap memory", "memory optimization".
-metadata: {"openclaw":{"requires":{"bins":["grep","sed","find"],"optionalBins":["git","gpg","openssl","openclaw","secret-tool","keyctl"]},"env":{"CLAWD_WORKSPACE":{"description":"Workspace directory (defaults to cwd)","required":false},"CLAWD_TZ":{"description":"Timezone for cron scheduling (defaults to UTC)","required":false},"OPENCORTEX_VAULT_PASS":{"description":"Vault passphrase via env var. Prefer system keyring.","required":false,"sensitive":true}},"sensitiveFiles":[".secrets-map",".vault/.passphrase"],"networkAccess":"Optional git push only (off by default, user must enable during install)"}}
+  Self-improving memory architecture for OpenClaw agents. Structured memory files,
+  nightly distillation, weekly synthesis, and enforced principles — so your agent
+  compounds knowledge instead of forgetting it. Includes opt-in metrics tracking with
+  growth charts and compound scoring to measure effectiveness over time. All sensitive features (voice profiling,
+  infrastructure auto-collection, git push) are OFF by default and require explicit
+  opt-in via environment variable or flag. Safe to install: no network calls during
+  setup, fully auditable bash scripts, isolated cron sessions scoped to workspace only.
+  Use when: (1) setting up a new OpenClaw instance, (2) user asks to improve/organize
+  memory, (3) user wants the agent to stop forgetting things, (4) bootstrapping a fresh
+  agent with best practices. NOT for: runtime memory_search queries (use built-in memory
+  tools). Triggers: "set up memory", "organize yourself", "stop forgetting", "memory
+  architecture", "self-improving", "cortex", "bootstrap memory", "memory optimization".
+metadata: {"openclaw":{"requires":{"bins":["grep","sed","find"],"optionalBins":["git","gpg","openssl","openclaw","secret-tool","keyctl","file"]},"env":{"CLAWD_WORKSPACE":{"description":"Workspace directory (defaults to cwd)","required":false},"CLAWD_TZ":{"description":"Timezone for cron scheduling (defaults to UTC)","required":false},"OPENCORTEX_VAULT_PASS":{"description":"Vault passphrase via env var. Prefer system keyring.","required":false,"sensitive":true},"OPENCORTEX_VOICE_PROFILE":{"description":"Set to 1 to enable voice profiling in the nightly distillation cron. Off by default.","required":false,"sensitive":false},"OPENCORTEX_INFRA_COLLECT":{"description":"Set to 1 to enable infrastructure auto-collection in the nightly distillation cron. Off by default.","required":false,"sensitive":false},"OPENCORTEX_SCRUB_ALL":{"description":"Set to 1 to scrub all tracked files (not just known text types) during git backup. Off by default.","required":false,"sensitive":false},"OPENCORTEX_ALLOW_FILE_PASSPHRASE":{"description":"Set to 1 to allow vault passphrase stored in a file (.vault/.passphrase). Off by default; prefer system keyring.","required":false,"sensitive":false}},"sensitiveFiles":[".secrets-map",".vault/.passphrase"],"networkAccess":"Optional git push only (off by default, requires --push flag)"}}
 ---
 
 # OpenCortex — Self-Improving Memory Architecture
@@ -24,9 +29,10 @@ Transform a default OpenClaw agent into one that compounds knowledge daily.
 2. **Installs nightly maintenance** that distills daily work into permanent knowledge
 3. **Installs weekly synthesis** that catches patterns across days
 4. **Establishes principles** that enforce good memory habits — and backs them up with nightly audits that verify tool documentation, decision capture, sub-agent debriefs, failure analysis, and unnecessary deferrals to the user. Nothing slips through the cracks.
-6. **Builds a voice profile** of your human from daily conversations for authentic ghostwriting
+6. **Builds a voice profile** of your human from daily conversations for authentic ghostwriting (opt-in, requires `OPENCORTEX_VOICE_PROFILE=1`)
 7. **Encrypts sensitive data** in an AES-256 vault with key-only references in docs; supports passphrase rotation (`vault.sh rotate`) and validates key names on `vault.sh set`
-8. **Enables safe git backup** with automatic secret scrubbing
+8. **Enables safe git backup** with secret scrubbing (secrets never modified in your live workspace — scrubbed in an isolated copy only)
+9. **Tracks growth over time** *(opt-in)* — daily metrics snapshots with compound scoring and ASCII growth charts
 
 ## Installation
 
@@ -46,7 +52,14 @@ bash skills/opencortex/scripts/install.sh
 bash skills/opencortex/scripts/install.sh --dry-run
 ```
 
-The installer will ask about optional features (encrypted vault, voice profiling, git backup). It's safe to re-run — it skips anything that already exists. The installer itself makes no network calls — it only creates local files and registers cron jobs.
+The installer will ask about optional features (encrypted vault, voice profiling, infrastructure collection, git backup). It's safe to re-run — it skips anything that already exists. The installer itself makes no network calls — it only creates local files and registers cron jobs.
+
+```bash
+# 3. Verify everything is working (read-only — checks files and cron jobs, changes nothing)
+bash skills/opencortex/scripts/verify.sh
+```
+
+You can also ask your OpenClaw agent "is OpenCortex working?" — it knows how to run the verification and share results.
 
 The script will:
 - Create the file hierarchy (non-destructively — won't overwrite existing files)
@@ -54,13 +67,23 @@ The script will:
 - Set up cron jobs (daily distillation, weekly synthesis)
 - Optionally set up git backup with secret scrubbing
 
-The installer also creates `memory/VOICE.md` — a living profile of how your human communicates. The nightly distillation analyzes each day's conversations and builds up vocabulary, tone, phrasing patterns, and decision style. Use this when ghostwriting on their behalf (community posts, emails, social media) — not for regular conversation.
-
 After install, review and customize:
 - `SOUL.md` — personality and identity (make it yours)
 - `USER.md` — info about your human
 - `MEMORY.md` — principles (add/remove as needed)
 - `.secrets-map` — add your actual secrets for git scrubbing
+
+## Updating
+
+```bash
+# 1. Download the latest version (run from workspace root)
+clawhub install opencortex --force
+
+# 2. Re-run the installer — it detects your existing install and offers to update
+bash skills/opencortex/scripts/install.sh
+```
+
+The installer detects your existing version and offers three options: Update (recommended), Full reinstall, or Cancel. The update path is non-destructive — it adds missing content, refreshes cron messages, and offers any new optional features without overwriting your customized files.
 
 ## Architecture
 
@@ -75,7 +98,10 @@ BOOTSTRAP.md     ← First-run checklist for new sessions
 
 memory/
   projects/      ← One file per project (distilled, not raw)
+  contacts/      ← One file per person/org (role, context, preferences)
+  workflows/     ← One file per workflow/pipeline (services, steps, issues)
   runbooks/      ← Step-by-step procedures (delegatable to sub-agents)
+  preferences.md ← Cross-cutting user preferences by category
   archive/       ← Archived daily logs + weekly summaries
   YYYY-MM-DD.md  ← Today's working log (distilled nightly)
 ```
@@ -87,8 +113,8 @@ memory/
 | P1 | Delegate First | Assess tasks for sub-agent delegation; stay available |
 | P2 | Write It Down | Commit to files, not mental notes |
 | P3 | Ask Before External | Confirm before emails, public posts, destructive ops |
-| P4 | Tool Shed | Document + proactively create tools; enforced by nightly audit |
-| P5 | Capture Decisions | Record decisions with reasoning; enforced by nightly + weekly audit |
+| P4 | Tool Shed & Workflows | Document tools and workflows; enforced by nightly audit |
+| P5 | Capture Decisions & Preferences | Record decisions and preferences; enforced by nightly + weekly audit |
 | P6 | Sub-agent Debrief | Delegated work feeds back to daily log; orphans recovered by distillation |
 | P7 | Log Failures | Tag failures/corrections; root cause analysis enforced by nightly audit |
 | P8 | Check the Shed First | Consult TOOLS.md/INFRA.md/memory before deferring work to user; enforced by nightly audit |
@@ -104,27 +130,29 @@ Both jobs use a shared lockfile (`/tmp/opencortex-distill.lock`) to prevent conf
 
 Customize times by editing cron jobs: `openclaw cron list` then `openclaw cron edit <id> --cron "..."`.
 
-To update OpenCortex manually: `clawhub update opencortex`
-
 ## Git Backup (optional)
 
 If enabled during install, creates:
-- `scripts/git-backup.sh` — auto-commit every 6 hours
-- `scripts/git-scrub-secrets.sh` — replaces secrets with `{{PLACEHOLDER}}` before commit
-- `scripts/git-restore-secrets.sh` — restores secrets after push
+- `scripts/git-backup.sh` — auto-commit every 6 hours, scrubs secrets in an isolated temp copy (workspace files never modified)
 - `.secrets-map` — maps secrets to placeholders (gitignored, 600 perms)
 
 Add secrets to `.secrets-map` in format: `actual_secret|{{PLACEHOLDER_NAME}}`
 
-Before each push, `git-backup.sh` verifies no raw secrets remain in tracked files after scrubbing. If any are found, the push is aborted and secrets are restored — nothing reaches the remote.
+Before each push, `git-backup.sh` verifies no raw secrets remain in the scrubbed copy. If any are found, the backup is aborted — nothing reaches the remote.
 
 ## Customization
 
-**Adding a new project:** Create `memory/projects/my-project.md`, add to MEMORY.md index. Nightly distillation will route relevant daily log entries to it.
+**Adding a project:** Create `memory/projects/my-project.md`, add to MEMORY.md index.
 
-**Adding a new principle:** Append to MEMORY.md under 🔴 PRINCIPLES. Keep it short — one sentence proclamation.
+**Adding a contact:** Create `memory/contacts/name.md`. Distillation auto-creates contacts from conversations.
 
-**Adding a runbook:** Create `memory/runbooks/my-procedure.md` with step-by-step instructions. Sub-agents can follow these directly.
+**Adding a workflow:** Create `memory/workflows/my-pipeline.md`. Distillation auto-creates workflows when described.
+
+**Adding a preference:** Append to `memory/preferences.md` under the right category. Distillation auto-captures from conversation.
+
+**Adding a principle:** Append to MEMORY.md under 🔴 PRINCIPLES. Keep it short.
+
+**Adding a runbook:** Create `memory/runbooks/my-procedure.md`. Sub-agents can follow these directly.
 
 **Adding a tool:** Add to TOOLS.md with: what it is, how to access it, and a goal-oriented abilities description (so future intent-based lookup matches).
 

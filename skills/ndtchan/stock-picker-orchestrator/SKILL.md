@@ -21,6 +21,7 @@ Use this skill to coordinate the full analysis system from user intent to final 
 3. `us-macro-news-monitor` for global macro spillover signals.
 4. `vn-market-news-monitor` for domestic market narrative.
 5. `equity-valuation-framework` for decision-grade valuation and report standard.
+6. `portfolio-risk-manager` for IPS mini + position sizing + risk triggers (no-margin).
 
 ## Trigger conditions
 - "Find best stock(s)"
@@ -97,11 +98,13 @@ Pipeline:
 4. If needed, run `equity-valuation-framework` for decision-critical names.
 
 ### D) Portfolio refresh
-Priority: risk control + monitoring triggers.
+Priority: risk control + monitoring triggers + sizing discipline.
 Pipeline:
 1. Re-score holdings and benchmark against alternatives.
 2. Macro/news stress overlay.
-3. Flag rebalance candidates with confidence and data gaps.
+3. Run `equity-valuation-framework` at least quick depth on key holdings/watchlist.
+4. Run `portfolio-risk-manager` to produce IPS mini + position sizing policy + per-ticker triggers/invalidation.
+5. Flag rebalance candidates with confidence and data gaps.
 
 ## Mandatory output contract
 Always include these sections in final response:
@@ -140,6 +143,7 @@ Aggregation rule:
 4. Always state which module is the bottleneck for confidence.
 
 ## Governance and quality rules
+- Single source of truth: if user provides ACTIVE_WATCHLIST/holdings, do not self-modify it; only propose drafts requiring user confirmation.
 - Never present uncertain outputs as facts.
 - Separate observed data from inference.
 - Prefer reproducible logic over ad-hoc narratives.

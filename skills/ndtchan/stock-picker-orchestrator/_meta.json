@@ -3,9 +3,15 @@
   "slug": "stock-picker-orchestrator",
   "displayName": "Stock Picker Orchestrator",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771841685193,
-    "commit": "https://github.com/openclaw/skills/commit/abec53f01fc0a4cd94e1bb9fb82ddc07df9ab4ef"
+    "version": "1.0.2",
+    "publishedAt": 1771948701311,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771841685193,
+      "commit": "https://github.com/openclaw/skills/commit/abec53f01fc0a4cd94e1bb9fb82ddc07df9ab4ef"
+    }
+  ]
 }

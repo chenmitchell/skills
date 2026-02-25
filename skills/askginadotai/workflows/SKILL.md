@@ -1,4 +1,5 @@
 ---
+id: workflows
 name: "Workflows via Ask Gina"
 description: "Playbook for authoring, running, evaluating, and improving Gina sandbox workflows with safe defaults and repeatable operations."
 ---

@@ -1,13 +1,18 @@
 {
   "owner": "ivangdavila",
   "slug": "seo",
-  "displayName": "SEO",
+  "displayName": "SEO / Search Engine Optimization",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771104379371,
-    "commit": "https://github.com/openclaw/skills/commit/0c3da9b5b0e088ba4100a6948ffb4f0b27f95ec3"
+    "version": "1.0.2",
+    "publishedAt": 1772020679329,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771104379371,
+      "commit": "https://github.com/openclaw/skills/commit/0c3da9b5b0e088ba4100a6948ffb4f0b27f95ec3"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770653504860,

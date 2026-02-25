@@ -1,0 +1,11 @@
+{
+  "owner": "brennerspear",
+  "slug": "system-watchdog",
+  "displayName": "System Watchdog",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771989492206,
+    "commit": null
+  },
+  "history": []
+}

@@ -21,17 +21,30 @@
 
 import WebSocket from 'ws';
 import open from 'open';
+import { statSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { computeBoundingBox, captureSnapshot } from './snapshot.mjs';
+
+const TAB_COOLDOWN_FILE = join(tmpdir(), '.clawdraw-tab-opened');
+const TAB_COOLDOWN_MS = 90_000;
 
 const WS_URL = 'wss://relay.clawdraw.ai/ws';
 const RELAY_HTTP_URL = 'https://relay.clawdraw.ai';
 
 /**
  * Open a URL in the user's default browser. Fire-and-forget.
+ * Enforces a cooldown to prevent multiple tabs opening in rapid succession
+ * (e.g. when agents forget --no-waypoint on sequential draws).
  * @param {string} url
  */
 function openInBrowser(url) {
-  open(url).catch(() => {});  // silently fail in restricted environments
+  try {
+    const stat = statSync(TAB_COOLDOWN_FILE);
+    if (Date.now() - stat.mtimeMs < TAB_COOLDOWN_MS) return;
+  } catch {}
+  try { writeFileSync(TAB_COOLDOWN_FILE, ''); } catch {}
+  open(url).catch(() => {});
 }
 
 const TILE_CDN_URL = 'https://relay.clawdraw.ai/tiles';
@@ -211,6 +224,7 @@ const BATCH_ACK_TIMEOUT_MS = 5000;
  * @property {string[]} errors   - Error codes/messages for rejected batches
  * @property {number} strokesSent  - Total individual strokes transmitted
  * @property {number} strokesAcked - Total individual strokes acknowledged
+ * @property {string[]} ackedStrokeIds - IDs confirmed by stroke/strokes ack responses
  */
 
 /**
@@ -270,6 +284,7 @@ function waitForBatchResponse(ws) {
  * @param {number} [optsOrDelay.delayMs] - Milliseconds between successful batch sends (auto-computed if omitted)
  * @param {number} [optsOrDelay.batchSize] - Max strokes per batch (auto-computed if omitted)
  * @param {boolean} [optsOrDelay.legacy=false] - Use single stroke.add per stroke
+ * @param {boolean} [optsOrDelay.swarm=false] - Swarm mode: use ideal animation pacing with no time cap so each worker animates smoothly
  * @returns {Promise<SendResult>}
  */
 export async function sendStrokes(ws, strokes, optsOrDelay = {}) {
@@ -279,15 +294,23 @@ export async function sendStrokes(ws, strokes, optsOrDelay = {}) {
     : optsOrDelay;
 
   const legacy = opts.legacy ?? false;
+  const swarm = opts.swarm ?? false;
 
   // Auto-compute pacing for animated drawing when not explicitly set.
   // Ideal: batchSize=2, delay=100ms for smooth cursor animation.
-  // If that would exceed MAX_DRAW_SECONDS, scale batch size up to fit.
+  // Solo mode: if that would exceed MAX_DRAW_SECONDS, scale batch size up to fit.
+  // Swarm mode: always use ideal pacing (no time cap) so each worker draws
+  //   with its own smooth cursor animation — viewers see N independent painters.
   let batchSize, delayMs;
   if (opts.batchSize !== undefined || opts.delayMs !== undefined) {
     // Explicit values — use as-is
     batchSize = opts.batchSize ?? BATCH_SIZE;
     delayMs = opts.delayMs ?? 50;
+  } else if (swarm) {
+    // Swarm mode: ideal animation pacing, no time cap.
+    // Each worker animates independently at the smooth cursor rate.
+    batchSize = ANIM_BATCH_SIZE;
+    delayMs = ANIM_DELAY_MS;
   } else {
     // Auto-compute: start with ideal animation pacing
     const idealBatches = Math.ceil(strokes.length / ANIM_BATCH_SIZE);
@@ -306,7 +329,7 @@ export async function sendStrokes(ws, strokes, optsOrDelay = {}) {
     }
   }
 
-  const result = { sent: 0, acked: 0, rejected: 0, errors: [], strokesSent: 0, strokesAcked: 0 };
+  const result = { sent: 0, acked: 0, rejected: 0, errors: [], strokesSent: 0, strokesAcked: 0, ackedStrokeIds: [] };
 
   if (strokes.length === 0) return result;
 
@@ -316,17 +339,21 @@ export async function sendStrokes(ws, strokes, optsOrDelay = {}) {
   const batches = [];
   if (legacy) {
     for (const stroke of strokes) {
-      batches.push({ msg: { type: 'stroke.add', stroke }, count: 1 });
+      const id = stroke && stroke.id !== undefined && stroke.id !== null ? String(stroke.id) : null;
+      batches.push({ msg: { type: 'stroke.add', stroke }, count: 1, strokeIds: id ? [id] : [] });
     }
   } else {
     for (let i = 0; i < strokes.length; i += batchSize) {
       const batch = strokes.slice(i, i + batchSize);
-      batches.push({ msg: { type: 'strokes.add', strokes: batch }, count: batch.length });
+      const strokeIds = batch
+        .map(s => (s && s.id !== undefined && s.id !== null ? String(s.id) : null))
+        .filter(Boolean);
+      batches.push({ msg: { type: 'strokes.add', strokes: batch }, count: batch.length, strokeIds });
     }
   }
 
   for (let bi = 0; bi < batches.length; bi++) {
-    const { msg, count } = batches[bi];
+    const { msg, count, strokeIds = [] } = batches[bi];
     let accepted = false;
     let retries = 0;
 
@@ -351,6 +378,7 @@ export async function sendStrokes(ws, strokes, optsOrDelay = {}) {
         accepted = true;
         result.acked++;
         result.strokesAcked += count;
+        if (strokeIds.length > 0) result.ackedStrokeIds.push(...strokeIds);
       } else if (resp.type === 'error') {
         if (resp.code === 'RATE_LIMITED') {
           retries++;
@@ -622,37 +650,47 @@ async function autoFindSpace(token) {
  * @param {number} [opts.zoom] - Zoom level for links (auto-computed from stroke bounding box if omitted)
  * @param {string} [opts.name] - Waypoint name
  * @param {string} [opts.description] - Waypoint description
- * @param {boolean} [opts.skipWaypoint=false] - Skip waypoint creation, chat post, and browser open
+ * @param {boolean} [opts.skipWaypoint=false] - Skip persistent waypoint, chat post, and browser open (a temporary waypoint is still created for chunk subscription, then deleted)
+ * @param {boolean} [opts.absolute=false] - Strokes are at final absolute coordinates; skip auto-placement and re-centering
+ * @param {boolean} [opts.swarm=false] - Swarm mode: use ideal animation pacing with no time cap
  * @returns {Promise<SendResult>}
  */
-export async function drawAndTrack(ws, strokes, { cx, cy, zoom, name, description, skipWaypoint = false } = {}) {
+export async function drawAndTrack(ws, strokes, { cx, cy, zoom, name, description, skipWaypoint = false, absolute = false, swarm = false } = {}) {
   const drawingName = name || 'Drawing';
 
-  // 1. Auto-placement: find empty spot if no position specified
-  if (cx === undefined || cy === undefined) {
-    const spot = ws._authToken ? await autoFindSpace(ws._authToken) : null;
-    if (spot) {
-      // Add ±500 jitter to prevent concurrent bot collisions
-      if (cx === undefined) cx = spot.x + Math.round((Math.random() - 0.5) * 1000);
-      if (cy === undefined) cy = spot.y + Math.round((Math.random() - 0.5) * 1000);
-    } else {
-      // Fallback: random position in a large range
-      if (cx === undefined) cx = Math.round((Math.random() - 0.5) * 100_000);
-      if (cy === undefined) cy = Math.round((Math.random() - 0.5) * 100_000);
-    }
-  }
-
-  // Translate strokes to the chosen center
   const bbox = computeBoundingBox(strokes);
-  const strokeCx = Math.round((bbox.minX + bbox.maxX) / 2);
-  const strokeCy = Math.round((bbox.minY + bbox.maxY) / 2);
-  const dx = cx - strokeCx;
-  const dy = cy - strokeCy;
-  if (dx !== 0 || dy !== 0) {
-    for (const s of strokes) {
-      for (const pt of s.points) {
-        pt.x += dx;
-        pt.y += dy;
+
+  if (absolute) {
+    // Strokes are at final absolute coordinates — derive viewport from bbox
+    cx = Math.round((bbox.minX + bbox.maxX) / 2);
+    cy = Math.round((bbox.minY + bbox.maxY) / 2);
+    // No stroke translation — coordinates are already correct
+  } else {
+    // 1. Auto-placement: find empty spot if no position specified
+    if (cx === undefined || cy === undefined) {
+      const spot = ws._authToken ? await autoFindSpace(ws._authToken) : null;
+      if (spot) {
+        // Add ±500 jitter to prevent concurrent bot collisions
+        if (cx === undefined) cx = spot.x + Math.round((Math.random() - 0.5) * 1000);
+        if (cy === undefined) cy = spot.y + Math.round((Math.random() - 0.5) * 1000);
+      } else {
+        // Fallback: random position in a large range
+        if (cx === undefined) cx = Math.round((Math.random() - 0.5) * 100_000);
+        if (cy === undefined) cy = Math.round((Math.random() - 0.5) * 100_000);
+      }
+    }
+
+    // Translate strokes to the chosen center
+    const strokeCx = Math.round((bbox.minX + bbox.maxX) / 2);
+    const strokeCy = Math.round((bbox.minY + bbox.maxY) / 2);
+    const dx = cx - strokeCx;
+    const dy = cy - strokeCy;
+    if (dx !== 0 || dy !== 0) {
+      for (const s of strokes) {
+        for (const pt of s.points) {
+          pt.x += dx;
+          pt.y += dy;
+        }
       }
     }
   }
@@ -675,34 +713,46 @@ export async function drawAndTrack(ws, strokes, { cx, cy, zoom, name, descriptio
   ws._currentViewport = drawViewport;
   ws.send(JSON.stringify(drawViewport));
 
-  // 3. Create waypoint BEFORE drawing
+  // 3. Create waypoint BEFORE drawing — always needed to activate chunk
+  //    subscriptions at the drawing coordinates. viewport.update alone is
+  //    fire-and-forget and doesn't guarantee the server has subscribed
+  //    the client to those chunks.
   let waypointUrl = null;
-  if (!skipWaypoint) {
-    try {
-      const wp = await addWaypoint(ws, {
-        name: drawingName,
-        x: cx, y: cy, zoom,
-        description: description || `${strokes.length} strokes`,
-      });
+  let tempWaypointId = null;
+  try {
+    const wp = await addWaypoint(ws, {
+      name: skipWaypoint ? `_tmp_${Date.now()}` : drawingName,
+      x: cx, y: cy, zoom,
+      description: description || `${strokes.length} strokes`,
+    });
+    if (skipWaypoint) {
+      tempWaypointId = wp.id;
+    } else {
       waypointUrl = getWaypointUrl(wp);
       console.log(`Waypoint: ${waypointUrl}`);
-    } catch (wpErr) {
-      console.warn(`[waypoint] Failed: ${wpErr.message}`);
     }
+  } catch (wpErr) {
+    console.warn(`[waypoint] Failed: ${wpErr.message}`);
+  }
 
+  if (!skipWaypoint) {
     // 4. Open waypoint URL in browser (with nomodal for clean viewing)
     if (waypointUrl) {
       openInBrowser(`${waypointUrl}&nomodal=1`);
     }
-  }
-
-  // Wait for browser page to load before sending strokes
-  if (!skipWaypoint) {
+    // Wait for browser page to load before sending strokes
     await new Promise(resolve => setTimeout(resolve, 3000));
   }
 
   // 6. Send strokes
-  const result = await sendStrokes(ws, strokes);
+  const result = await sendStrokes(ws, strokes, { swarm });
+
+  // Clean up temporary waypoint used only for chunk subscription
+  if (tempWaypointId) {
+    try {
+      await deleteWaypoint(ws, tempWaypointId);
+    } catch { /* best-effort cleanup */ }
+  }
 
   // 7. Capture snapshot
   try {

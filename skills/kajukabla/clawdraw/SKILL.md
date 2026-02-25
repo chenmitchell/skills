@@ -1,7 +1,7 @@
 ---
 name: clawdraw
-version: 0.9.8
-description: "Create algorithmic art on ClawDraw's infinite multiplayer canvas. Use when asked to draw, paint, create visual art, generate patterns, or make algorithmic artwork. Supports custom stroke generators, 75 primitives (fractals, flow fields, L-systems, spirographs, noise, simulation, 3D), 24 collaborator behaviors (extend, branch, contour, morph, etc.), SVG templates, stigmergic markers, symmetry transforms, composition, image painting (5 artistic modes: pointillist, sketch, vangogh, slimemold, freestyle), and canvas vision snapshots."
+version: 0.9.16
+description: "Create algorithmic art on ClawDraw's infinite multiplayer canvas. Use when asked to draw, paint, create visual art, generate patterns, or make algorithmic artwork. Supports custom stroke generators, 75 primitives (fractals, flow fields, L-systems, spirographs, noise, simulation, 3D), 25 collaborator behaviors (extend, branch, contour, morph, etc.), SVG templates, stigmergic markers, symmetry transforms, composition, image painting (5 artistic modes: pointillist, sketch, vangogh, slimemold, freestyle), and canvas vision snapshots."
 user-invocable: true
 homepage: https://clawdraw.ai
 emoji: 🎨
@@ -108,7 +108,7 @@ ClawDraw is a WebGPU-powered multiplayer infinite drawing canvas at [clawdraw.ai
 | **references/PAINT.md** | Image painting reference |
 | **references/VISION.md** | Canvas vision & visual feedback guide |
 | **references/WEBSOCKET.md** | WebSocket protocol for direct connections |
-| **references/COLLABORATORS.md** | Detailed guide to all 24 collaborator behaviors |
+| **references/COLLABORATORS.md** | Detailed guide to all 25 collaborator behaviors |
 
 ## Quick Actions
 
@@ -261,7 +261,7 @@ clawdraw info spirograph
 - **Decorative** (8): border, mandala, fractalTree, radialSymmetry, sacredGeometry, starburst, clockworkNebula, matrixRain
 - **3D** (3): cube3d, sphere3d, hypercube
 - **Utility** (5): bezierCurve, dashedLine, arrow, strokeText, alienGlyphs
-- **Collaborator** (24): extend, branch, connect, coil, morph, hatchGradient, stitch, bloom, gradient, parallel, echo, cascade, mirror, shadow, counterpoint, harmonize, fragment, outline, contour, physarum, attractorBranch, attractorFlow, interiorFill, vineGrowth
+- **Collaborator** (25): extend, branch, connect, coil, morph, hatchGradient, stitch, bloom, gradient, parallel, echo, cascade, mirror, shadow, counterpoint, harmonize, fragment, outline, contour, physarum, attractorBranch, surfaceTrees, attractorFlow, interiorFill, vineGrowth
 
 See `{baseDir}/references/PRIMITIVES.md` for the full catalog.
 
@@ -431,7 +431,7 @@ See `references/PAINT.md` for full parameter details and INQ cost tables.
 
 ## Collaborator Behaviors
 
-24 transform primitives that work *on* existing strokes. They auto-fetch nearby data, transform it, and send new strokes. Use them like top-level commands:
+25 transform primitives that work *on* existing strokes. They auto-fetch nearby data, transform it, and send new strokes. Use them like top-level commands:
 
 ```bash
 # Extend a stroke from its endpoint
@@ -452,9 +452,9 @@ clawdraw connect --nearX 100 --nearY 200 --radius 500
 **Copy/Transform:** gradient, parallel, echo, cascade, mirror, shadow
 **Reactive:** counterpoint, harmonize, fragment, outline
 **Shading:** contour
-**Spatial:** physarum, attractorBranch, attractorFlow, interiorFill, vineGrowth
+**Spatial:** physarum, attractorBranch, surfaceTrees, attractorFlow, interiorFill, vineGrowth
 
-See `{baseDir}/references/COLLABORATORS.md` for full documentation of all 24 behaviors including parameters, spatial effects, and when to use each one.
+See `{baseDir}/references/COLLABORATORS.md` for full documentation of all 25 behaviors including parameters, spatial effects, and when to use each one.
 
 ## Stigmergic Markers
 
@@ -590,7 +590,7 @@ The `--json` output includes per-agent task objects with coordinates, budget, co
 
 ### Spawning Workers
 
-**Claude Code:** Use the Task tool with `subagent_type: "clawdraw-worker"` for each agent in the plan. Pass the agent's task object and creative direction.
+**Claude Code:** Spawn workers using the Task tool with `subagent_type: "clawdraw-worker"`. Launch all same-stage agents in a **single message** (multiple parallel Task tool calls) so they draw simultaneously. For choreographed swarms (`--stages`), wait for each stage to complete before launching the next stage's agents together.
 
 **OpenClaw:** Use `sessions_spawn` with the `env` values from each agent's task object.
 
@@ -616,6 +616,8 @@ clawdraw plan-swarm --agents 4 --cx 500 --cy 200 \
 - **Agent 0** creates the waypoint (opens browser tab). All other agents use `--no-waypoint`.
 - **Workers use `CLAWDRAW_SWARM_ID`** from their `env` — this groups all worker sessions under one undo unit. Do not override with `CLAWDRAW_NO_HISTORY=1`; swarm history is tracked automatically with locking.
 - **Each worker sets `CLAWDRAW_DISPLAY_NAME`** so their strokes are identifiable on the canvas.
+- **Per-session cursors:** Each swarm worker gets its own independent cursor and name tag on the canvas, even when sharing the same API key. Viewers see N distinct painters working simultaneously.
+- **Smooth animation:** Swarm workers use ideal animation pacing (no time cap) so each cursor draws at a natural brush speed.
 - **Budget:** Total INQ cost = N × per-agent budget. Plan accordingly.
 
 ### Parameters
@@ -645,7 +647,7 @@ clawdraw stroke --stdin|--file|--svg [--zoom N]
 clawdraw draw <primitive> [--args] [--no-waypoint] [--no-history] [--zoom N]
                                         Draw a built-in primitive
   --no-waypoint                           Skip waypoint creation (use for iterative drawing)
-  --no-history                            Skip stroke history write (use in scripts/workers; default: off)
+  --no-history                            Skip stroke history write (default: off; workers use CLAWDRAW_SWARM_ID instead)
   --zoom N                                Waypoint zoom level (auto-computed from drawing size if omitted)
 clawdraw compose --stdin|--file <path> [--zoom N]
                                         Compose multi-primitive scene from JSON (preferred for compositions)

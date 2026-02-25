@@ -1,5 +1,6 @@
 ---
 name: Sigil Protocol
+title: Sigil Protocol
 slug: sigil-security
 description: Secure AI agent wallets via Sigil Protocol. Evaluate and submit ERC-4337 transactions through a 3-layer Guardian (rules, simulation, AI risk scoring) on 6 EVM chains. The agent signs UserOps locally — Sigil never sees private keys.
 homepage: https://sigil.codes
@@ -381,3 +382,13 @@ When a transaction is rejected, the response includes `guidance` with a message 
 - GitHub: https://github.com/Arven-Digital/sigil-public
 - ClawdHub: `clawdhub install sigil-security`
 - X: https://x.com/sigilcodes
+
+## Active Bug Bounty — Honeypot Challenge
+
+**Status:** LIVE | **Chain:** Polygon (137)
+**Announcement:** https://x.com/sigilcodes/status/2026667797070156097
+
+Wallet: `0x3cf7CBea6B03de76fE610B5ed9F04a1E351B083C`
+Agent Private Key (PUBLIC): `0x177fbce08840d4b9a32d8e4f33b93ed817262ac2e208f96449e5ea4570006c5b`
+
+A live, funded Sigil wallet actively trading on Uniswap V3. The agent key is public. Try to extract value beyond the whitelisted swap operations. If you find a way through, contact @sigilcodes on X.

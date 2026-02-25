@@ -237,3 +237,11 @@ Tone: [TONE] — third person, professional but not stiff.
 - DM follow-up sequence for engaged commenters
 - Share lead magnet in relevant posts
 - Track: which content type brings profile views → follow up with those viewers
+
+---
+
+## Use with ContentAI Suite
+
+This skill works seamlessly with **[ContentAI Suite](https://contentai-suite.vercel.app)** — a free multi-agent marketing platform that generates your LinkedIn thought leadership content, B2B outreach, and speaker positioning in your unique voice.
+
+→ **Try it free:** https://contentai-suite.vercel.app

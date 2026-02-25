@@ -163,6 +163,12 @@ Create an integrated view from:
 - business quality checklist
 - macro/news constraints
 
+If the user is managing a watchlist/portfolio, end with **conditional action framing** suitable for `portfolio-risk-manager`:
+- `Trigger to add risk` (what would increase conviction)
+- `Trigger to reduce risk`
+- `Invalidation` (what would make the thesis wrong)
+- `Horizon` (ngắn/trung/dài)
+
 Conclusion label:
 - `Attractive` (valuation discount + acceptable quality/risk)
 - `Watchlist` (mixed signals, wait for trigger)

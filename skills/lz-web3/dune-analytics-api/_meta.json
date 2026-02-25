@@ -1,11 +1,17 @@
 {
   "owner": "lz-web3",
   "slug": "dune-analytics-api",
-  "displayName": "Dune Analytics API",
+  "displayName": "Dune Analytics Api",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1771688324333,
-    "commit": "https://github.com/openclaw/skills/commit/5cd8d3be7fff230139f6754f17b7347326e7063d"
+    "version": "1.0.2",
+    "publishedAt": 1771923217964,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1771688324333,
+      "commit": "https://github.com/openclaw/skills/commit/5cd8d3be7fff230139f6754f17b7347326e7063d"
+    }
+  ]
 }

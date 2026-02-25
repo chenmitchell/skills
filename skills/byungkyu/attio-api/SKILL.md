@@ -2,7 +2,7 @@
 name: attio
 description: |
   Attio API integration with managed OAuth. Manage CRM data including people, companies, and custom objects.
-  Use this skill when users want to create, read, update, or delete records in Attio, manage tasks, or query CRM data.
+  Use this skill when users want to create, read, update, or delete records in Attio, manage tasks, notes, comments, lists, meetings, or query CRM data.
   For other third party apps, use the api-gateway skill (https://clawhub.ai/byungkyu/api-gateway).
 compatibility: Requires network access and valid Maton API key
 metadata:
@@ -17,7 +17,7 @@ metadata:
 
 # Attio
 
-Access the Attio REST API with managed OAuth authentication. Manage CRM objects, records, tasks, comments, and workspace data.
+Access the Attio REST API with managed OAuth authentication. Manage CRM objects, records, tasks, notes, comments, lists, list entries, meetings, call recordings, and workspace data.
 
 ## Quick Start
 
@@ -291,7 +291,7 @@ Content-Type: application/json
 }
 ```
 
-Required fields: `content`, `format`, `assignees`
+Required fields: `content`, `format`, `deadline_at`, `assignees`, `linked_records`
 
 #### Update Task
 
@@ -338,7 +338,7 @@ Returns workspace info and OAuth scopes for the current access token.
 
 ### Comments
 
-#### Create Comment
+#### Create Comment on Record
 
 ```bash
 POST /attio/v2/comments
@@ -360,7 +360,33 @@ Content-Type: application/json
 }
 ```
 
-### Lists (Requires list_configuration:read scope)
+Required fields: `format`, `content`, `author`
+
+Plus one of:
+- `record`: Object with `object` slug and `record_id` (for record comments)
+- `entry`: Object with `list` slug and `entry_id` (for list entry comments)
+- `thread_id`: UUID of existing thread (for replies)
+
+#### Reply to Comment Thread
+
+```bash
+POST /attio/v2/comments
+Content-Type: application/json
+
+{
+  "data": {
+    "format": "plaintext",
+    "content": "This is a reply",
+    "author": {
+      "type": "workspace-member",
+      "id": "{workspace_member_id}"
+    },
+    "thread_id": "{thread_id}"
+  }
+}
+```
+
+### Lists
 
 #### List All Lists
 
@@ -368,7 +394,77 @@ Content-Type: application/json
 GET /attio/v2/lists
 ```
 
-### Notes (Requires note:read scope)
+#### Get List
+
+```bash
+GET /attio/v2/lists/{list_id}
+```
+
+### List Entries
+
+#### Query List Entries
+
+```bash
+POST /attio/v2/lists/{list}/entries/query
+Content-Type: application/json
+
+{
+  "limit": 50,
+  "offset": 0,
+  "filter": {},
+  "sorts": []
+}
+```
+
+Query parameters in body:
+- `limit`: Maximum results (default 500)
+- `offset`: Number of results to skip
+- `filter`: Filter criteria object
+- `sorts`: Array of sort specifications
+
+#### Create List Entry
+
+```bash
+POST /attio/v2/lists/{list}/entries
+Content-Type: application/json
+
+{
+  "data": {
+    "parent_record_id": "{record_id}",
+    "parent_object": "companies",
+    "entry_values": {}
+  }
+}
+```
+
+#### Get List Entry
+
+```bash
+GET /attio/v2/lists/{list}/entries/{entry_id}
+```
+
+#### Update List Entry
+
+```bash
+PATCH /attio/v2/lists/{list}/entries/{entry_id}
+Content-Type: application/json
+
+{
+  "data": {
+    "entry_values": {
+      "status": "Active"
+    }
+  }
+}
+```
+
+#### Delete List Entry
+
+```bash
+DELETE /attio/v2/lists/{list}/entries/{entry_id}
+```
+
+### Notes
 
 #### List Notes
 
@@ -381,6 +477,81 @@ Query parameters:
 - `offset`: Number to skip
 - `parent_object`: Object slug containing notes
 - `parent_record_id`: Filter by specific record
+
+#### Get Note
+
+```bash
+GET /attio/v2/notes/{note_id}
+```
+
+#### Create Note
+
+```bash
+POST /attio/v2/notes
+Content-Type: application/json
+
+{
+  "data": {
+    "format": "plaintext",
+    "title": "Meeting Summary",
+    "content": "Discussed Q1 goals and roadmap priorities.",
+    "parent_object": "companies",
+    "parent_record_id": "{record_id}",
+    "created_by_actor": {
+      "type": "workspace-member",
+      "id": "{workspace_member_id}"
+    }
+  }
+}
+```
+
+Required fields: `format`, `content`, `parent_object`, `parent_record_id`
+
+#### Delete Note
+
+```bash
+DELETE /attio/v2/notes/{note_id}
+```
+
+### Meetings
+
+#### List Meetings
+
+```bash
+GET /attio/v2/meetings?limit=50
+```
+
+Query parameters:
+- `limit`: Maximum results (default 50, max 200)
+- `cursor`: Pagination cursor from previous response
+
+Uses cursor-based pagination.
+
+#### Get Meeting
+
+```bash
+GET /attio/v2/meetings/{meeting_id}
+```
+
+### Call Recordings
+
+Call recordings are accessed through meetings.
+
+#### List Call Recordings for Meeting
+
+```bash
+GET /attio/v2/meetings/{meeting_id}/call_recordings?limit=50
+```
+
+Query parameters:
+- `limit`: Maximum results (default 50, max 200)
+- `cursor`: Pagination cursor from previous response
+
+#### Get Call Recording
+
+```bash
+GET /attio/v2/meetings/{meeting_id}/call_recordings/{call_recording_id}
+```
 
 ## Pagination
 
@@ -438,14 +609,18 @@ response = requests.post(
 data = response.json()
 ```
 
-## Notes
+## Usage Notes
 
 - Object slugs are lowercase snake_case (e.g., `people`, `companies`)
 - Record IDs and other IDs are UUIDs
 - For personal-name attributes, always include `full_name` when creating records
-- Task creation requires `format: "plaintext"` and `assignees` array (can be empty)
+- Task creation requires `format: "plaintext"`, `deadline_at`, `assignees` array (can be empty), and `linked_records` array (can be empty)
+- Note creation requires `format`, `content`, `parent_object`, and `parent_record_id`
+- Comment creation requires `format`, `content`, `author`, plus one of `record`, `entry`, or `thread_id`
+- Meetings use cursor-based pagination
 - Some endpoints require additional OAuth scopes (lists, notes, webhooks)
 - Rate limits: 100 read requests/second, 25 write requests/second
+- Pagination uses `limit` and `offset` parameters (or `cursor` for meetings)
 - IMPORTANT: When using curl commands, use `curl -g` when URLs contain brackets to disable glob parsing
 - IMPORTANT: When piping curl output to `jq` or other commands, environment variables like `$MATON_API_KEY` may not expand correctly in some shell environments
 

@@ -3,11 +3,16 @@
   "slug": "minimax-understand-image",
   "displayName": "minimax-understand-image",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1771769593635,
-    "commit": "https://github.com/openclaw/skills/commit/7e0bc10231559e7ef678f4005d68ddc744cf5b40"
+    "version": "1.0.3",
+    "publishedAt": 1771917444094,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1771769593635,
+      "commit": "https://github.com/openclaw/skills/commit/7e0bc10231559e7ef678f4005d68ddc744cf5b40"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1771336689221,

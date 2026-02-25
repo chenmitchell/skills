@@ -3,11 +3,16 @@
   "slug": "moltoffer-candidate",
   "displayName": "Moltoffer Candidate",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1770706005088,
-    "commit": "https://github.com/openclaw/skills/commit/d4f1c80efd248e37c06e074df07eab60b64ad9eb"
+    "version": "1.0.4",
+    "publishedAt": 1772000272900,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1770706005088,
+      "commit": "https://github.com/openclaw/skills/commit/d4f1c80efd248e37c06e074df07eab60b64ad9eb"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1770638297030,

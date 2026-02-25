@@ -3,9 +3,15 @@
   "slug": "us-macro-news-monitor",
   "displayName": "Us Macro News Monitor",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771841688824,
-    "commit": "https://github.com/openclaw/skills/commit/583ce78ebca2909c2bf5f0365d4c20dc26169d83"
+    "version": "1.0.2",
+    "publishedAt": 1771948705177,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771841688824,
+      "commit": "https://github.com/openclaw/skills/commit/583ce78ebca2909c2bf5f0365d4c20dc26169d83"
+    }
+  ]
 }

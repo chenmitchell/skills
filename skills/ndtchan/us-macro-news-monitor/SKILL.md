@@ -71,6 +71,12 @@ Always output confidence with:
 - Section 3: Vietnam sector spillover map.
 - Section 4: Actionable watchlist (what to monitor next).
 
+## Watchlist mode (optional)
+If the user provides an `ACTIVE_WATCHLIST` (tickers), extend Sections 3–4:
+- Add a `Watchlist Impact Map` that maps macro themes → transmission channel → each ticker.
+- Provide **monitoring triggers** (what would confirm/negate the impact) and a confidence tag.
+- Never output absolute buy/sell instructions; this skill produces signals and watch items.
+
 ## Trigger examples
 - "What US macro news overnight could move VN stocks today?"
 - "Summarize Fed/CPI signals and their impact on Vietnam sectors."

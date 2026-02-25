@@ -1,0 +1,11 @@
+{
+  "owner": "tjefferson",
+  "slug": "stock-price-query",
+  "displayName": "Stock Price Query",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1772008624465,
+    "commit": null
+  },
+  "history": []
+}

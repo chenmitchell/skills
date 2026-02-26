@@ -1,11 +1,17 @@
 {
   "owner": "arulmozhiv",
   "slug": "x-twitter-scraper",
-  "displayName": "X Twitter Scraper",
+  "displayName": "Twitter Scraper",
   "latest": {
-    "version": "0.1.0",
-    "publishedAt": 1771584854569,
-    "commit": "https://github.com/openclaw/skills/commit/bd9769b3e4ce8e428141c57a7d5555d407603f45"
+    "version": "0.1.2",
+    "publishedAt": 1772103952318,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.0",
+      "publishedAt": 1771584854569,
+      "commit": "https://github.com/openclaw/skills/commit/bd9769b3e4ce8e428141c57a7d5555d407603f45"
+    }
+  ]
 }

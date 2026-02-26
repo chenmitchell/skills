@@ -1,16 +1,16 @@
 ---
 name: API (Stripe, OpenAI, Notion & 100+ more)
 slug: api
-version: 1.2.1
+version: 1.3.0
 homepage: https://clawic.com/skills/api
-description: Integrate 100+ REST APIs with secure multi-account credential management. GitHub, Twilio, Slack, HubSpot, Shopify, and more.
-changelog: Multi-account credential system, dynamic API discovery, 100+ documented APIs.
+description: Integrate 147 REST APIs with multi-account credential management. Payments, AI, CRM, DevOps, and more.
+changelog: Consolidated 147 APIs into category files for easier discovery.
 metadata: {"clawdbot":{"emoji":"🔌","requires":{"anyBins":["curl","jq"]},"os":["linux","darwin","win32"]}}
 ---
 
 # API
 
-Integrate any API fast. 100+ services documented with authentication, endpoints, and gotchas.
+Integrate any API fast. 147 services documented with authentication, endpoints, and gotchas.
 
 ## Setup
 
@@ -27,10 +27,10 @@ User needs to integrate a third-party API. Agent provides:
 ## Architecture
 
 ```
-apis/                    # 100+ API reference files
-  ├── stripe.md
-  ├── openai.md
-  ├── notion.md
+apis/                    # API reference files by category
+  ├── ai-ml.md           # OpenAI, Anthropic, Cohere, etc.
+  ├── payments.md        # Stripe, PayPal, Square, etc.
+  ├── communication.md   # Twilio, SendGrid, Slack, etc.
   └── ...
 
 ~/api/                   # User preferences (created on first use)
@@ -49,11 +49,48 @@ apis/                    # 100+ API reference files
 | `pagination.md` | Pagination pattern traps |
 | `resilience.md` | Retry and error handling |
 | `webhooks.md` | Webhook security patterns |
-| `apis/{service}.md` | API-specific documentation |
+
+## API Categories
+
+| Category | File | APIs |
+|----------|------|------|
+| AI/ML | `apis/ai-ml.md` | anthropic, openai, cohere, groq, mistral, perplexity, huggingface, replicate, stability, elevenlabs, deepgram, assemblyai, together, anyscale |
+| Payments | `apis/payments.md` | stripe, paypal, square, plaid, chargebee, paddle, lemonsqueezy, recurly, wise, coinbase, binance, alpaca, polygon |
+| Communication | `apis/communication.md` | twilio, sendgrid, mailgun, postmark, resend, mailchimp, slack, discord, telegram, zoom |
+| Realtime | `apis/realtime.md` | sendbird, stream-chat, pusher, ably, onesignal, courier, knock, novu |
+| CRM | `apis/crm.md` | salesforce, hubspot, pipedrive, attio, close, apollo, outreach, gong |
+| Marketing | `apis/marketing.md` | drift, crisp, front, customer-io, braze, iterable, klaviyo |
+| Developer | `apis/developer.md` | github, gitlab, bitbucket, vercel, netlify, railway, render, fly, digitalocean, heroku, cloudflare, circleci, pagerduty, launchdarkly, split, statsig |
+| Database | `apis/database.md` | supabase, firebase, planetscale, neon, upstash, mongodb, fauna, xata, convex, appwrite |
+| Auth | `apis/auth-providers.md` | clerk, auth0, workos, stytch |
+| Media | `apis/media.md` | cloudinary, mux, bunny, imgix, uploadthing, uploadcare, transloadit, vimeo, youtube, spotify, unsplash, pexels, giphy, tenor |
+| Social | `apis/social.md` | twitter, linkedin, instagram, tiktok, pinterest, reddit, twitch |
+| Productivity | `apis/productivity.md` | notion, airtable, google-sheets, google-drive, google-calendar, dropbox, linear, jira, asana, trello, monday, clickup, figma, calendly, cal, loom, typeform |
+| Business | `apis/business.md` | shopify, docusign, hellosign, bitly, dub |
+| Geo | `apis/geo.md` | openweather, mapbox, google-maps |
+| Support | `apis/support.md` | intercom, zendesk, freshdesk, helpscout |
+| Analytics | `apis/analytics.md` | mixpanel, amplitude, posthog, segment, sentry, datadog, algolia |
+
+## How to Navigate API Files
+
+Each category file contains multiple APIs and can be large. **DO NOT read the entire file.** Use this efficient approach:
+
+1. **Read the index first** — Each file starts with an index table showing API names and line numbers
+2. **Jump to specific API** — Use the line number to read only that API's section (typically 50-100 lines)
+3. **Example workflow:**
+   ```bash
+   # 1. Find which file has the API (use API Categories table above)
+   # 2. Read just the index (first 20 lines)
+   head -20 apis/ai-ml.md
+   # 3. Read specific API section using line numbers from index
+   sed -n '119,230p' apis/ai-ml.md  # OpenAI starts at line 119
+   ```
+
+**CRITICAL:** Never read a full category file. Always use the index → jump to line approach.
 
 ## Core Rules
 
-1. **Check API docs first** — Read `apis/{service}.md` before making any call. Each file has auth, endpoints, rate limits, and gotchas specific to that service.
+1. **Check API docs first** — Find the API in the category table above, then read that file's index to locate the specific API section.
 
 2. **Use multi-account credentials** — Store credentials with naming format `{SERVICE}_{ACCOUNT}_{TYPE}`. Example: `STRIPE_PROD_API_KEY`, `STRIPE_TEST_API_KEY`, `STRIPE_CLIENT_ACME_API_KEY`.
 
@@ -86,41 +123,6 @@ curl https://api.stripe.com/v1/charges -H "Authorization: Bearer $STRIPE_PROD_AP
 
 See `credentials.md` for persistent storage options and multi-account workflows.
 
-## Available APIs (147)
-
-All API documentation is in `apis/`. Categories include:
-
-**AI/ML:** anthropic, openai, cohere, groq, mistral, perplexity, huggingface, replicate, stability, elevenlabs, deepgram, assemblyai, together, anyscale
-
-**Payments:** stripe, paypal, square, plaid, chargebee, paddle, lemonsqueezy, recurly, wise, coinbase, binance, alpaca, polygon
-
-**Communication:** twilio, sendgrid, mailgun, postmark, resend, mailchimp, slack, discord, telegram, zoom, sendbird, stream-chat, pusher, ably, onesignal, courier, knock, novu
-
-**CRM/Sales:** salesforce, hubspot, pipedrive, attio, close, apollo, outreach, gong, drift, crisp, front, customer-io, braze, iterable, klaviyo
-
-**Developer:** github, gitlab, bitbucket, vercel, netlify, railway, render, fly, digitalocean, heroku, cloudflare, circleci, pagerduty, launchdarkly, split, statsig
-
-**Database/Auth:** supabase, firebase, planetscale, neon, upstash, mongodb, fauna, xata, convex, appwrite, clerk, auth0, workos, stytch
-
-**Media:** cloudinary, mux, bunny, imgix, uploadthing, uploadcare, transloadit, vimeo, youtube, spotify, unsplash, pexels, giphy, tenor
-
-**Social:** twitter, linkedin, instagram, tiktok, pinterest, reddit, twitch
-
-**Productivity:** notion, airtable, google-sheets, google-drive, google-calendar, dropbox, linear, jira, asana, trello, monday, clickup, figma, calendly, cal, loom, typeform
-
-**Other:** shopify, docusign, hellosign, bitly, dub, openweather, mapbox, google-maps, intercom, zendesk, freshdesk, helpscout, mixpanel, amplitude, posthog, segment, sentry, datadog, algolia
-
-```bash
-# List all APIs
-ls apis/
-
-# Search by name
-ls apis/ | grep -i payment
-
-# Read specific API
-cat apis/stripe.md
-```
-
 ## Common Traps
 
 - **Missing Content-Type** — POST without `Content-Type: application/json` causes silent 415 errors
@@ -137,7 +139,7 @@ This skill documents how to call external APIs. Calls go directly from your mach
 
 | Provider | Base URL | Auth |
 |----------|----------|------|
-| Various | See `apis/{service}.md` | API Key / OAuth |
+| Various | See category files | API Key / OAuth |
 
 ## Security & Privacy
 

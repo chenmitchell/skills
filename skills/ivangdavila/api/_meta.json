@@ -3,11 +3,16 @@
   "slug": "api",
   "displayName": "API (Stripe, OpenAI, Notion & 100+ more)",
   "latest": {
-    "version": "1.2.1",
-    "publishedAt": 1771979897399,
-    "commit": "https://github.com/openclaw/skills/commit/5098229990cb935a9bb4d1e8bb9fa7f4437fdc21"
+    "version": "1.3.0",
+    "publishedAt": 1772038236109,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.1",
+      "publishedAt": 1771979897399,
+      "commit": "https://github.com/openclaw/skills/commit/5098229990cb935a9bb4d1e8bb9fa7f4437fdc21"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1771005393696,

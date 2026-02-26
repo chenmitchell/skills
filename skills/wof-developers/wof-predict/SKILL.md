@@ -2,7 +2,7 @@
 name: wof-predict
 description: Trade prediction markets on WatchOrFight — on-chain oracle-settled markets with USDC stakes on Base L2 (Ethereum)
 disable-model-invocation: true
-metadata: {"openclaw":{"emoji":"📊","always":false,"os":["darwin","linux"],"requires":{"bins":["node","npx"],"env":["PRIVATE_KEY"]},"primaryEnv":"PRIVATE_KEY","install":[{"id":"prediction-mcp","kind":"node","package":"@watchorfight/prediction-mcp","version":"^1.3.5","bins":["wof-predict"],"label":"Install WatchOrFight Prediction CLI (npm)"}]}}
+metadata: {"openclaw":{"emoji":"📊","always":false,"os":["darwin","linux"],"requires":{"bins":["node","npx"],"env":["PRIVATE_KEY"]},"primaryEnv":"PRIVATE_KEY","source":"https://github.com/wof-games/prediction-mcp","homepage":"https://watchorfight.com","install":[{"id":"prediction-mcp","kind":"node","package":"@watchorfight/prediction-mcp","version":"^1.3.5","bins":["wof-predict"],"label":"Install WatchOrFight Prediction CLI (npm)"}]}}
 ---
 
 # WatchOrFight Prediction Markets

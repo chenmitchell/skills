@@ -1,8 +1,13 @@
 {
   "name": "validator-agent",
-  "description": "Pre-deployment quality gate for OpenClaw skills. Runs 10-section validation: security scans, test verification, secret detection, code quality, documentation, and more. Generates a structured VALIDATION_REPORT.md.",
   "version": "1.0.0",
+  "description": "8-round automated validation pipeline for TypeScript/Solidity projects. Compile gate, lint, tests, security audit, type coverage, docs, changelog, and final review. The gold standard for pre-publish quality gates.",
   "author": "up2itnow",
   "license": "MIT",
-  "tags": ["security", "validation", "audit", "testing", "quality", "pre-deploy", "ci-cd", "code-review"]
+  "tags": ["validation", "testing", "security", "typescript", "solidity", "quality", "ci-cd", "npm-publish"],
+  "triggers": ["validate", "validator", "validation", "pre-publish", "quality check", "8 rounds"],
+  "requirements": {
+    "tools": ["exec"],
+    "optional": ["web_search"]
+  }
 }

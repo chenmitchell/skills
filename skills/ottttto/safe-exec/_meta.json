@@ -1,11 +1,17 @@
 {
   "owner": "ottttto",
   "slug": "safe-exec",
-  "displayName": "SafeExec",
+  "displayName": "Safe Exec Repo",
   "latest": {
-    "version": "0.3.2",
-    "publishedAt": 1769952725688,
-    "commit": "https://github.com/clawdbot/skills/commit/1d7c1450cb434316c33391939c72fb0464deffc4"
+    "version": "0.3.3",
+    "publishedAt": 1772119881887,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.3.2",
+      "publishedAt": 1769952725688,
+      "commit": "https://github.com/clawdbot/skills/commit/1d7c1450cb434316c33391939c72fb0464deffc4"
+    }
+  ]
 }

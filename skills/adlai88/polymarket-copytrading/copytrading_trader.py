@@ -11,7 +11,7 @@ never sells existing positions. This prevents conflicts with other strategies
 
 Exit handling:
 - --whale-exits: Sell positions when whales exit (strategy-specific exit)
-- SDK Risk Management: Stop-loss/take-profit (generic safety net) - coming soon
+- SDK Risk Management: Stop-loss/take-profit (server-side, auto-set on every buy)
 
 Usage:
     python copytrading_trader.py              # Dry run (show what would trade)
@@ -51,6 +51,7 @@ except ImportError:
 
 # Source tag for tracking
 TRADE_SOURCE = "sdk:copytrading"
+_automaton_reported = False
 
 
 # =============================================================================
@@ -115,6 +116,7 @@ CONFIG_SCHEMA = {
     "top_n": {"env": "SIMMER_COPYTRADING_TOP_N", "default": "", "type": str},  # Empty = auto
     "max_usd": {"env": "SIMMER_COPYTRADING_MAX_USD", "default": 50.0, "type": float},
     "max_trades_per_run": {"env": "SIMMER_COPYTRADING_MAX_TRADES", "default": 10, "type": int},
+    "venue": {"env": "TRADING_VENUE", "default": "", "type": str},  # simmer or polymarket
 }
 
 # Load configuration
@@ -123,7 +125,7 @@ _config = load_config(CONFIG_SCHEMA, __file__)
 # SimmerClient singleton
 _client = None
 
-def get_client():
+def get_client(live=True):
     """Lazy-init SimmerClient singleton."""
     global _client
     if _client is None:
@@ -137,7 +139,8 @@ def get_client():
             print("Error: SIMMER_API_KEY environment variable not set")
             print("Get your API key from: simmer.markets/dashboard -> SDK tab")
             sys.exit(1)
-        _client = SimmerClient(api_key=api_key, venue="polymarket")
+        venue = os.environ.get("TRADING_VENUE", "polymarket")
+        _client = SimmerClient(api_key=api_key, venue=venue, live=live)
     return _client
 
 # Polymarket constraints
@@ -148,6 +151,9 @@ MIN_TICK_SIZE = 0.01        # Minimum price increment
 COPYTRADING_WALLETS = _config["wallets"]
 COPYTRADING_TOP_N = _config["top_n"]
 COPYTRADING_MAX_USD = _config["max_usd"]
+_automaton_max = os.environ.get("AUTOMATON_MAX_BET")
+if _automaton_max:
+    COPYTRADING_MAX_USD = min(COPYTRADING_MAX_USD, float(_automaton_max))
 MAX_TRADES_PER_RUN = _config["max_trades_per_run"]
 
 
@@ -273,7 +279,7 @@ def fetch_wallet_positions(wallet: str) -> list:
     return []
 
 
-def execute_copytrading(wallets: list, top_n: int = None, max_usd: float = 50.0, dry_run: bool = True, buy_only: bool = True, detect_whale_exits: bool = False, max_trades: int = None) -> dict:
+def execute_copytrading(wallets: list, top_n: int = None, max_usd: float = 50.0, dry_run: bool = True, buy_only: bool = True, detect_whale_exits: bool = False, max_trades: int = None, venue: str = None) -> dict:
     """
     Execute copytrading via Simmer SDK.
 
@@ -287,7 +293,16 @@ def execute_copytrading(wallets: list, top_n: int = None, max_usd: float = 50.0,
     - Filters to buy-only by default (prevents selling positions from other strategies)
     - Detects whale exits (sells positions whales no longer hold)
     - Limits trades per run via max_trades
+
+    Venue:
+    - 'simmer': Execute on Simmer LMSR with $SIM (paper trading)
+    - 'polymarket': Execute on Polymarket with real USDC
+    - None: Fall back to TRADING_VENUE env var, then server auto-detect
     """
+    # Default to TRADING_VENUE env var so automaton/cron venue choice propagates
+    if venue is None:
+        venue = os.environ.get("TRADING_VENUE")
+
     data = {
         "wallets": wallets,
         "max_usd_per_position": max_usd,
@@ -298,14 +313,17 @@ def execute_copytrading(wallets: list, top_n: int = None, max_usd: float = 50.0,
 
     if top_n is not None:
         data["top_n"] = top_n
-    
+
     if max_trades is not None:
         data["max_trades"] = max_trades
+
+    if venue is not None:
+        data["venue"] = venue
 
     return get_client()._request("POST", "/api/sdk/copytrading/execute", json=data)
 
 
-def run_copytrading(wallets: list, top_n: int = None, max_usd: float = 50.0, dry_run: bool = True, buy_only: bool = True, detect_whale_exits: bool = False):
+def run_copytrading(wallets: list, top_n: int = None, max_usd: float = 50.0, dry_run: bool = True, buy_only: bool = True, detect_whale_exits: bool = False, venue: str = None):
     """
     Run copytrading scan and execute trades.
 
@@ -320,6 +338,8 @@ def run_copytrading(wallets: list, top_n: int = None, max_usd: float = 50.0, dry
 
     By default, only BUY trades are executed (buy_only=True). This prevents
     copytrading from selling positions opened by other strategies (weather, etc.)
+
+    Venue: 'simmer' for $SIM paper trading, 'polymarket' for real USDC, None for auto-detect.
     """
     print("\n🐋 Starting Copytrading Scan...")
     print("=" * 50)
@@ -338,16 +358,18 @@ def run_copytrading(wallets: list, top_n: int = None, max_usd: float = 50.0, dry
     print(f"  Top N: {top_n if top_n else 'auto (based on balance)'}")
     print(f"  Max per position: ${max_usd:.2f}")
     print(f"  Max trades/run:  {MAX_TRADES_PER_RUN}")
+    venue_label = venue or "auto-detect"
+    print(f"  Venue: {venue_label}")
     print(f"  Mode: {'Buy only (accumulate)' if buy_only else 'Full rebalance (buy + sell)'}")
     print(f"  Whale exits: {'Enabled (sell when whale exits)' if detect_whale_exits else 'Disabled'}")
 
     if dry_run:
-        print("\n  [DRY RUN] No trades will be executed. Use --live to enable trading.")
+        print("\n  [DRY RUN] Trades will be simulated server-side. Use --live for real trades.")
 
     # Execute copytrading via SDK
     print("\n📡 Calling Simmer API...")
     try:
-        result = execute_copytrading(wallets, top_n, max_usd, dry_run, buy_only, detect_whale_exits, MAX_TRADES_PER_RUN)
+        result = execute_copytrading(wallets, top_n, max_usd, dry_run, buy_only, detect_whale_exits, MAX_TRADES_PER_RUN, venue=venue)
     except Exception as e:
         print(f"\n❌ Error: {e}")
         return
@@ -429,6 +451,37 @@ def run_copytrading(wallets: list, top_n: int = None, max_usd: float = 50.0, dry
     else:
         print("\n✅ Scan complete")
 
+    # Structured report for automaton
+    if os.environ.get("AUTOMATON_MANAGED"):
+        global _automaton_reported
+        positions_found = result.get('positions_found', 0) if result else 0
+        _trades_needed = result.get('trades_needed', 0) if result else 0
+        _trades_exec = result.get('trades_executed', 0) if result else 0
+        _total_cost = sum(t.get('estimated_cost', 0) for t in (result.get('trades', []) if result else []) if t.get('success'))
+        report = {"signals": positions_found, "trades_attempted": _trades_needed, "trades_executed": _trades_exec, "amount_usd": round(_total_cost, 2)}
+        if positions_found > 0 and _trades_exec == 0:
+            # Derive skip reasons from server response
+            skip_reasons = []
+            conflicts = result.get('conflicts_skipped', 0) if result else 0
+            if conflicts > 0:
+                skip_reasons.append(f"{conflicts} conflicts skipped")
+            errors = result.get('errors', []) if result else []
+            for err in errors:
+                skip_reasons.append(str(err)[:80])
+            if not result.get('success'):
+                skip_reasons.append("copytrading failed")
+            if skip_reasons:
+                report["skip_reason"] = ", ".join(dict.fromkeys(skip_reasons))
+        # Collect execution errors from failed trades
+        execution_errors = []
+        for t in (result.get('trades', []) if result else []):
+            if not t.get('success') and t.get('error') and 'dry_run' not in str(t.get('error', '')):
+                execution_errors.append(str(t['error'])[:120])
+        if execution_errors:
+            report["execution_errors"] = execution_errors
+        print(json.dumps({"automaton": report}))
+        _automaton_reported = True
+
 
 def show_positions():
     """Show current SDK positions."""
@@ -439,11 +492,12 @@ def show_positions():
         data = get_positions()
         positions = data.get("positions", [])
 
-        # Filter to Polymarket positions
-        poly_positions = [p for p in positions if p.get("venue") == "polymarket"]
+        # Filter to active venue positions
+        active_venue = os.environ.get("TRADING_VENUE", "polymarket")
+        venue_positions = [p for p in positions if p.get("venue") == active_venue]
 
-        if not poly_positions:
-            print("No Polymarket positions found.")
+        if not venue_positions:
+            print(f"No {active_venue} positions found.")
             print("\nTo start copytrading:")
             print("1. Configure target wallets in SIMMER_COPYTRADING_WALLETS")
             print("2. Run: python copytrading_trader.py")
@@ -452,7 +506,7 @@ def show_positions():
         total_value = 0
         total_pnl = 0
 
-        for i, pos in enumerate(poly_positions, 1):
+        for i, pos in enumerate(venue_positions, 1):
             question = pos.get("question", "Unknown market")[:50]
             shares_yes = pos.get("shares_yes", 0)
             shares_no = pos.get("shares_no", 0)
@@ -478,7 +532,7 @@ def show_positions():
         pnl_color = "+" if total_pnl >= 0 else ""
         print(f"Total Value: ${total_value:.2f}")
         print(f"Total P&L: {pnl_color}${total_pnl:.2f}")
-        print(f"Positions: {len(poly_positions)}")
+        print(f"Positions: {len(venue_positions)}")
 
     except Exception as e:
         print(f"❌ Error fetching positions: {e}")
@@ -538,10 +592,21 @@ def main():
         help="Sell positions when whales exit (only affects copytrading-opened positions)"
     )
     parser.add_argument(
+        "--venue",
+        type=str,
+        choices=["simmer", "polymarket"],
+        help="Trading venue: 'simmer' for $SIM paper trading, 'polymarket' for real USDC (default: auto-detect)"
+    )
+    parser.add_argument(
         "--set",
         action="append",
         metavar="KEY=VALUE",
         help="Set config value (e.g., --set wallets=0x123,0x456 --set max_usd=100)"
+    )
+    parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="Only output on trades/errors"
     )
 
     args = parser.parse_args()
@@ -563,12 +628,13 @@ def main():
             updated = update_config(updates, __file__)
             print(f"✅ Config updated: {updates}")
             print(f"   Saved to: {get_config_path(__file__)}")
-            # Reload config
-            _config = load_config(CONFIG_SCHEMA, __file__)
-            globals()["COPYTRADING_WALLETS"] = _config["wallets"]
-            globals()["COPYTRADING_TOP_N"] = _config["top_n"]
-            globals()["COPYTRADING_MAX_USD"] = _config["max_usd"]
-            globals()["MAX_TRADES_PER_RUN"] = _config["max_trades_per_run"]
+            # Reload config into module-level _config
+            reloaded = load_config(CONFIG_SCHEMA, __file__)
+            globals()["_config"] = reloaded
+            globals()["COPYTRADING_WALLETS"] = reloaded["wallets"]
+            globals()["COPYTRADING_TOP_N"] = reloaded["top_n"]
+            globals()["COPYTRADING_MAX_USD"] = reloaded["max_usd"]
+            globals()["MAX_TRADES_PER_RUN"] = reloaded["max_trades_per_run"]
 
     # Show config
     if args.config:
@@ -580,8 +646,11 @@ def main():
         show_positions()
         return
 
+    # Default to dry-run unless --live is explicitly passed
+    dry_run = not args.live
+
     # Validate API key by initializing client
-    get_client()
+    get_client(live=not dry_run)
 
     # Get wallets (from args or env)
     if args.wallets:
@@ -597,8 +666,8 @@ def main():
     # Get max_usd (from args or env)
     max_usd = args.max_usd if args.max_usd else COPYTRADING_MAX_USD
 
-    # Default to dry-run unless --live is explicitly passed
-    dry_run = not args.live
+    # Determine venue: CLI flag > config.json > TRADING_VENUE env var > None (server auto-detect)
+    venue = args.venue or _config.get("venue") or None
 
     # Run copytrading
     run_copytrading(
@@ -607,8 +676,13 @@ def main():
         max_usd=max_usd,
         dry_run=dry_run,
         buy_only=not args.rebalance,  # Default buy_only=True, --rebalance sets it to False
-        detect_whale_exits=args.whale_exits
+        detect_whale_exits=args.whale_exits,
+        venue=venue
     )
+
+    # Fallback report for automaton if the strategy returned early (no signal)
+    if os.environ.get("AUTOMATON_MANAGED") and not _automaton_reported:
+        print(json.dumps({"automaton": {"signals": 0, "trades_attempted": 0, "trades_executed": 0, "skip_reason": "no_signal"}}))
 
 
 if __name__ == "__main__":

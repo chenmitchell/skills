@@ -3,9 +3,15 @@
   "slug": "makesoul",
   "displayName": "MakeSoul Skill",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1771784498011,
-    "commit": "https://github.com/openclaw/skills/commit/996e1056c74b8a9201176a70ba5a8acbcffb1497"
+    "version": "2.0.1",
+    "publishedAt": 1772027222897,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1771784498011,
+      "commit": "https://github.com/openclaw/skills/commit/996e1056c74b8a9201176a70ba5a8acbcffb1497"
+    }
+  ]
 }

@@ -1,8 +1,8 @@
 ---
 name: identity
 description: |
-  UserPool login, TIP token, credential hosting, and tool risk approval. Activate when user needs to check identity (whoami/status), log in, list/add credentials, manage env bindings, or diagnose/approve risky tool calls.
-  Also activates for: 用户说登录、查身份、获取凭据、添加/配置API密钥、绑定环境变量、审批工具调用、风险检查.
+  UserPool login, TIP token, credential hosting, and tool risk approval. Activate when user needs to check identity (whoami/status), log in, list/add credentials, manage env bindings, configure the plugin, or diagnose/approve risky tool calls.
+  Also activates for: 用户说登录、查身份、获取凭据、添加/配置API密钥、绑定环境变量、配置插件、审批工具调用、风险检查.
 metadata:
   {
     "openclaw":
@@ -53,6 +53,7 @@ Use the agent-identity plugin for UserPool OIDC login (入站授权), TIP token 
 | `identity_list_credentials` | `page?`                                        | List providers and credentials (paginated) |
 | `identity_list_tips`        | —                                              | List valid TIP tokens and bindings         |
 | `identity_config`           | —                                              | Show plugin config (secrets redacted)      |
+| `identity_config_suggest`  | `intent?`, `lang?`                             | Generate config snippets for openclaw.json |
 | `identity_fetch`            | `provider`, `flow?`, `redirectUrl?`, `scopes?` | Add credential                             |
 | `identity_set_binding`      | `provider`, `envVar`                           | Bind provider → env var for tool injection |
 | `identity_unset_binding`    | `provider`                                     | Remove env binding                         |
@@ -62,10 +63,10 @@ Use the agent-identity plugin for UserPool OIDC login (入站授权), TIP token 
 
 ## Risk Detection and Approval
 
-When `authz.enable` and `authz.requireRiskApproval` are on, the plugin classifies tool calls (e.g. exec, write, apply_patch) by risk. User-provided commands and file paths are evaluated:
+When `authz.requireRiskApproval` is on, the plugin classifies tool calls (e.g. exec, write, apply_patch) by risk. User-provided commands and file paths are evaluated:
 
 - **Rule-based**: Destructive patterns (rm -rf, sudo, curl|bash), sensitive paths (/etc, ~/.ssh).
-- **LLM-based** (optional): When rules return "medium", an LLM re-evaluates for context (enable `authz.enableLlmRiskCheck`).
+- **LLM-based** (optional): When rules return "medium", an LLM re-evaluates for context (`authz.enableLlmRiskCheck`).
 
 High-risk calls require user approval. The approval message and block reason include the LLM risk explanation when available (e.g. "Pipe-to-shell: network fetch piped to shell execution").
 
@@ -204,6 +205,21 @@ Returns built-in dangerous command patterns and sensitive paths. No params. Use 
 {}
 ```
 
+### identity_config_suggest
+
+Generates config snippets for the agent-identity plugin. **Call when:** user asks to configure identity, login, authz, risk approval, or "如何配置 identity 插件", "帮我配置登录", "怎么开启权限检查".
+
+| Param   | Type   | Required | Description                                                                 |
+| ------- | ------ | -------- | --------------------------------------------------------------------------- |
+| `intent`| string | No       | `identity` (AK/SK), `userpool` (OIDC login), `authz` (permission/approval), `llm_risk` (LLM re-eval), `full` (all). Default: full |
+| `lang`  | string | No       | `en` or `zh` for instructions. Default: en                                  |
+
+Returns: `configPath`, `config` (JSON to merge), `instructions`, `nextSteps`. When `intent` is `identity` or `full`, also returns `identityDefaults` (env vars, credential resolution order, config defaults, credential file format). User must manually add to openclaw.json and restart gateway.
+
+```json
+{ "intent": "userpool", "lang": "zh" }
+```
+
 ## Workflow: Adding a Credential
 
 1. **Check login**: `identity_whoami` (brief) or `identity_status` (full). If not logged in, use `identity_login` first (user opens auth URL).
@@ -221,7 +237,7 @@ Plugin config lives under `plugins.entries.agent-identity.config`:
 
 - `identity`: Identity API (endpoint, credentials, workloadPoolName, workloadName, roleTrn). When `roleTrn` is set (AssumeRole), workload name is omitted; backend uses roleName. When workload not found (404), plugin auto-creates via CreateWorkloadIdentity then retries.
 - `userpool`: OIDC (discoveryUrl, clientId, callbackUrl, or userPoolName+clientName)
-- `authz`: Optional AuthZ (enable, namespaceName, lowRiskBypass, requireRiskApproval, enableLlmRiskCheck, llmRiskCheck). When `enableLlmRiskCheck` is true, rules returning "medium" are re-evaluated via LLM; the risk reason is shown in approval prompts and block messages.
+- `authz`: Optional AuthZ (toolCheck, skillReadCheck, requireRiskApproval, enableLlmRiskCheck, llmRiskCheck, namespaceName, lowRiskBypass). When `enableLlmRiskCheck` is true, rules returning "medium" are re-evaluated via LLM; the risk reason is shown in approval prompts and block messages.
 
 ## Notes
 

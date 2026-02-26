@@ -3,9 +3,15 @@
   "slug": "volcengine-agent-identity",
   "displayName": "Volcengine Agent Identity",
   "latest": {
-    "version": "0.1.9",
-    "publishedAt": 1771766362935,
-    "commit": "https://github.com/openclaw/skills/commit/1c9a5868eaa57dc296073c2d4d1520c3d1578352"
+    "version": "0.2.1",
+    "publishedAt": 1772019011901,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.9",
+      "publishedAt": 1771766362935,
+      "commit": "https://github.com/openclaw/skills/commit/1c9a5868eaa57dc296073c2d4d1520c3d1578352"
+    }
+  ]
 }

@@ -3,11 +3,16 @@
   "slug": "meegle-api-skill",
   "displayName": "Meegle API",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1771913906367,
-    "commit": "https://github.com/openclaw/skills/commit/6ba4d04ed8df44842893bc5dc08daac406ee65b1"
+    "version": "1.0.3",
+    "publishedAt": 1771986864009,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1771913906367,
+      "commit": "https://github.com/openclaw/skills/commit/6ba4d04ed8df44842893bc5dc08daac406ee65b1"
+    },
     {
       "version": "0.2.2",
       "publishedAt": 1771328610540,

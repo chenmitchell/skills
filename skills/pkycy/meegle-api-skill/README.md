@@ -22,6 +22,8 @@ Required credentials are declared in [meegle-api-credentials](./meegle-api-crede
 
 Optional: `authorization_code` and `refresh_token` for obtaining `user_access_token`. Request headers and usage are documented in [meegle-api-credentials](./meegle-api-credentials/SKILL.md).
 
+**Configure once via environment variables** (e.g. `MEEGLE_USER_KEY`, `MEEGLE_PROJECT_KEY`, `MEEGLE_PLUGIN_ID`, `MEEGLE_PLUGIN_SECRET`, `MEEGLE_DOMAIN`) so OpenClaw uses them and does not ask every time. See [Environment variables](meegle-api-credentials/SKILL.md#environment-variables) in the credentials skill.
+
 ## Skill List
 
 | Order | Sub-skill | When to read |
@@ -104,6 +106,8 @@ Meegle API Skill 按功能拆成多个子 skill。调用任何 Meegle API 前，
 | `user_key` | 用户标识（必填） | Meegle 平台：双击头像；或从 user_access_token 响应中获取 |
 
 可选：`authorization_code`、`refresh_token` 用于获取 `user_access_token`。请求头及用法见 [meegle-api-credentials](./meegle-api-credentials/SKILL.md)。
+
+**一次配置：使用环境变量**（如 `MEEGLE_USER_KEY`、`MEEGLE_PROJECT_KEY`、`MEEGLE_PLUGIN_ID`、`MEEGLE_PLUGIN_SECRET`、`MEEGLE_DOMAIN`），OpenClaw 会优先读取，无需每次询问。详见 credentials skill 中的 [Environment variables](meegle-api-credentials/SKILL.md#environment-variables)。
 
 ### Skill 列表
 

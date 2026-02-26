@@ -35,7 +35,7 @@ Generate Meegle **domain**, **access token** (plugin or user), **context** (proj
 
 ## When required credentials are missing
 
-**Do not only report an error.** When the user has not provided a required credential (e.g. `user_key`, `project_key`, `plugin_id`, `plugin_secret`), you must:
+**Do not only report an error.** When a required credential (e.g. `user_key`, `project_key`, `plugin_id`, `plugin_secret`) is missing, **first check [environment variables](#environment-variables)**; if set there, use them and do not ask. Only when the credential is not in the environment (and not otherwise provided), you must:
 
 1. **Proactively remind** the user which credential(s) are missing.
 2. **Tell the user where to get each one**:
@@ -47,7 +47,21 @@ Generate Meegle **domain**, **access token** (plugin or user), **context** (proj
 | `project_key` | Meegle platform: double-click the **project icon** (space name); or from the project URL |
 | `user_key` | Meegle platform: double-click the **avatar**; or from the `user_key` field in the user_access_token API response |
 
-Then ask the user to provide the value(s) and retry after they are supplied.
+Then ask the user to provide the value(s) and retry after they are supplied. **Before asking**, always check [environment variables](#environment-variables) first; if a credential is set there, use it and do not prompt the user.
+
+## Environment variables
+
+To avoid being asked for credentials every time, **store them in environment variables**. OpenClaw (or the agent) should **read these first**; when a value is present, use it and do not prompt the user. The user only needs to configure once (e.g. in `.env`, `~/.zshrc`, or OpenClaw config).
+
+| Environment variable | Purpose | Required |
+|----------------------|---------|----------|
+| `MEEGLE_PLUGIN_ID` | Plugin ID | Yes |
+| `MEEGLE_PLUGIN_SECRET` | Plugin secret | Yes |
+| `MEEGLE_DOMAIN` | API host (e.g. `project.larksuite.com` or `project.feishu.cn`) | Yes (or use default) |
+| `MEEGLE_PROJECT_KEY` | Space identifier (project_key) | Yes |
+| `MEEGLE_USER_KEY` | User identifier (user_key) | Yes |
+
+**Resolution order:** For each credential, use **environment variable** → then user-provided/config default → only then ask the user. Do not ask for a credential that is already set in the environment.
 
 ## Domain (API base host)
 
@@ -388,7 +402,8 @@ inputs:
       Space unique identifier.
       How to get: In Meegle platform, double-click the project icon; or use project_key from project URL.
 behavior:
-  - If default project_key is configured, use it
+  - First check environment variable MEEGLE_PROJECT_KEY; if set, use it (do not prompt user)
+  - Else if default project_key is configured, use it
   - Otherwise ask user to provide
 outputs:
   project_key:
@@ -410,7 +425,8 @@ inputs:
     type: string
     required: false
 behavior:
-  - If user_access_token exists, use its user_key first
+  - First check environment variable MEEGLE_USER_KEY; if set, use it (do not prompt user)
+  - Else if user_access_token exists, use its user_key
   - Otherwise ask user to provide explicitly
 outputs:
   user_key:

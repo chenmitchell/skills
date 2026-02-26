@@ -252,6 +252,17 @@ Pull requests welcome! Please follow existing code style.
 
 ## Changelog
 
+### v1.0.8 (2026-02-25)
+- **Add OpenClaw skill prompt** - Enable `/skill ncloud-maps` command integration
+- Add prompt section to SKILL.md for proper skill recognition
+- Document usage with coordinates and addresses
+
+### v1.0.7 (2026-02-25)
+- **Add CLI binary support** - Register ncloud-maps command globally
+- Enable direct command: `ncloud-maps --start <lon,lat> --goal <lon,lat>`
+- Include dist/ directory in npm package
+- Update .gitignore to track compiled JavaScript
+
 ### v1.0.6 (2026-02-22)
 - **Fix axios dependency issues** - Update to latest stable version
 - Upgrade axios from 1.6.0 to 1.13.5

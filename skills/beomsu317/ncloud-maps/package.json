@@ -1,8 +1,19 @@
 {
   "name": "ncloud-maps-skill",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "description": "Naver Cloud Maps Directions API skill for OpenClaw. Calculate driving routes with distance, duration, tolls, taxi fare, and fuel cost.",
   "main": "scripts/index.ts",
+  "bin": {
+    "ncloud-maps": "./dist/scripts/index.js"
+  },
+  "files": [
+    "dist",
+    "lib",
+    "scripts",
+    "SKILL.md",
+    "README.md",
+    "references"
+  ],
   "scripts": {
     "test": "ts-node scripts/index.ts --start '126.8912,37.5088' --goal '127.4342,36.3323'",
     "build": "tsc"

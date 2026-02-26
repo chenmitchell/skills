@@ -3,11 +3,16 @@
   "slug": "ncloud-maps",
   "displayName": "Ncloud Maps",
   "latest": {
-    "version": "1.0.6",
-    "publishedAt": 1771762017559,
-    "commit": "https://github.com/openclaw/skills/commit/565750e8655b1aa1036bca04353347b4f2c61603"
+    "version": "1.0.8",
+    "publishedAt": 1772015899547,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.6",
+      "publishedAt": 1771762017559,
+      "commit": "https://github.com/openclaw/skills/commit/565750e8655b1aa1036bca04353347b4f2c61603"
+    },
     {
       "version": "1.0.4",
       "publishedAt": 1771687651593,

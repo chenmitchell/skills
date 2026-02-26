@@ -1,32 +1,53 @@
-# Reflection Dimensions by Domain
+# 7-Dimension Evaluation
 
-## Code
-- Does it handle errors gracefully?
-- Are there obvious security issues?
-- Would I understand this in 6 months?
-- Is there duplicated logic?
-- Are the names self-documenting?
+Use this as a quick checklist before delivering important work. Takes 30 seconds.
 
-## Analysis / Research
-- Did I consider opposing viewpoints?
-- Are my sources reliable and cited?
-- Did I distinguish fact from inference?
-- What data would change my conclusion?
+## The Dimensions
 
-## Writing / Communication
-- Does the first sentence hook attention?
-- Is the structure scannable?
-- Did I answer the actual question asked?
-- Is anything redundant?
+| # | Dimension | Core Question | Red Flags |
+|---|-----------|--------------|-----------|
+| 1 | **Correctness** | Does it solve the stated problem? | Solving wrong problem, misread requirements |
+| 2 | **Completeness** | Edge cases covered? | Missing null checks, unhappy paths ignored |
+| 3 | **Clarity** | Immediately understandable? | Dense code, no comments on complex logic |
+| 4 | **Robustness** | What could break this? | No error handling, brittle assumptions |
+| 5 | **Efficiency** | Unnecessary complexity? | Over-engineering, premature optimization |
+| 6 | **Alignment** | What user actually wants? | Letter vs spirit of request |
+| 7 | **Pride** | Would I sign my name? | Gut check on quality |
 
-## Architecture / Design
-- What's the simplest version that works?
-- Where are the coupling points?
-- How does this scale/evolve?
-- What's the failure mode?
+## Quick Scoring
 
-## Strategy / Recommendations
-- What are the second-order effects?
-- Who loses if this succeeds?
-- What's the reversibility cost?
-- Am I recommending what's easy or what's right?
+For each dimension: 1-10 score (10 = excellent)
+
+- **All ≥7** → Clear to deliver
+- **Any <7** → Address before delivering
+- **Any <5** → Major revision needed
+
+## Common Failure Modes
+
+### Correctness
+- Solved the problem I assumed, not the one stated
+- Optimized for wrong metric
+
+### Completeness  
+- "Happy path only" implementation
+- Missing input validation
+
+### Clarity
+- Future-me won't understand this
+- Magic numbers without explanation
+
+### Robustness
+- Works on my machine™
+- No timeout, no retry, no fallback
+
+### Efficiency
+- 200 lines when 20 would do
+- Premature abstraction
+
+### Alignment
+- Technically correct, practically useless
+- User asked for X, I delivered adjacent Y
+
+### Pride
+- "It works" ≠ "It's good"
+- Would be embarrassed if someone reviewed this

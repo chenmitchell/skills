@@ -3,11 +3,16 @@
   "slug": "securevibes-scanner",
   "displayName": "SecureVibes Scanner",
   "latest": {
-    "version": "0.5.2",
-    "publishedAt": 1771923154032,
-    "commit": "https://github.com/openclaw/skills/commit/105056f118bf8f2eef494914958843ccd8c67ce5"
+    "version": "0.5.3",
+    "publishedAt": 1771986187419,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.5.2",
+      "publishedAt": 1771923154032,
+      "commit": "https://github.com/openclaw/skills/commit/105056f118bf8f2eef494914958843ccd8c67ce5"
+    },
     {
       "version": "0.4.0",
       "publishedAt": 1771235106301,

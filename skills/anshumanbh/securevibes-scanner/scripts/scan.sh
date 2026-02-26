@@ -25,8 +25,21 @@ fi
 
 # Check securevibes is installed
 if ! command -v securevibes &>/dev/null; then
-    echo "❌ securevibes not found. Install with: pip install securevibes"
+    echo "❌ securevibes not found. Install with: pipx install securevibes"
     echo "  https://pypi.org/project/securevibes/"
+    exit 1
+fi
+
+# Verify minimum version (protects against stale shims from dual installs)
+MIN_VERSION="0.4.0"
+INSTALLED_VERSION="$(securevibes --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "0.0.0")"
+version_gte() {
+    [ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" = "$2" ]
+}
+if ! version_gte "$INSTALLED_VERSION" "$MIN_VERSION"; then
+    echo "❌ securevibes $INSTALLED_VERSION found, but >= $MIN_VERSION required."
+    echo "   The binary at $(which securevibes) may be stale from a previous install."
+    echo "   Fix: pipx install securevibes>=$MIN_VERSION (or pipx upgrade securevibes)"
     exit 1
 fi
 

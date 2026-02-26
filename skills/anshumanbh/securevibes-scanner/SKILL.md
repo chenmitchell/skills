@@ -9,7 +9,7 @@ AI-native security platform that detects vulnerabilities using Claude AI. Multi-
 
 ## Prerequisites
 
-1. Install the CLI: `pip install securevibes`
+1. Install the CLI: `pipx install securevibes` (preferred) or `uv tool install securevibes`. Avoid `pip install` — it can create stale shims if you have multiple Python environments.
 2. Authenticate with Anthropic (one of):
    - **Max/Pro subscription (recommended):** If you're authenticated via Claude Code or Claude CLI OAuth, no API key is needed. The Claude Agent SDK picks up your OAuth session automatically. When running inside OpenClaw, leave `ANTHROPIC_API_KEY` unset or blank — the SDK handles auth.
    - **API key:** `export ANTHROPIC_API_KEY=your-key-here` (from console.anthropic.com)

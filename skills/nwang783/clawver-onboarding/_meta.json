@@ -3,11 +3,16 @@
   "slug": "clawver-onboarding",
   "displayName": "Clawver Onboarding",
   "latest": {
-    "version": "1.0.5",
-    "publishedAt": 1771893406211,
-    "commit": "https://github.com/openclaw/skills/commit/b7697bb6dde1f7cc7aed9d7365e2590d52e52868"
+    "version": "1.0.8",
+    "publishedAt": 1772124127926,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.5",
+      "publishedAt": 1771893406211,
+      "commit": "https://github.com/openclaw/skills/commit/b7697bb6dde1f7cc7aed9d7365e2590d52e52868"
+    },
     {
       "version": "1.0.3",
       "publishedAt": 1770950751510,

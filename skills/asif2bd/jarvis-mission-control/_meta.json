@@ -3,9 +3,15 @@
   "slug": "jarvis-mission-control",
   "displayName": "Free Mission Control for OpenClaw AI Agents",
   "latest": {
-    "version": "1.0.4",
-    "publishedAt": 1771668476864,
-    "commit": "https://github.com/openclaw/skills/commit/51788deb6162af89d025e3d2e7283b4f26170d84"
+    "version": "1.0.6",
+    "publishedAt": 1772016012410,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.4",
+      "publishedAt": 1771668476864,
+      "commit": "https://github.com/openclaw/skills/commit/51788deb6162af89d025e3d2e7283b4f26170d84"
+    }
+  ]
 }

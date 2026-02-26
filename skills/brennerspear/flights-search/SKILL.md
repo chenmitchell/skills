@@ -1,5 +1,6 @@
 ---
 name: flights
+version: 1.2.0
 description: Search flights via Google Flights. Find nonstop/connecting flights, filter by time and cabin class, get booking links. Supports city names (NYC, London, Tokyo) with automatic multi-airport search. No API key required.
 ---
 
@@ -9,16 +10,17 @@ Search real-time flight schedules and prices via Google Flights data.
 
 ## Prerequisites
 
-```bash
-pip install fast-flights
-```
+- **Python 3.9+**
+- **[uv](https://docs.astral.sh/uv/)** (recommended) — install with `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
 The `flights-search` CLI is bundled at `scripts/flights-search` in this skill directory.
+
+The `fast-flights` library is installed automatically on first run via `uvx` (cached after that). Or install manually: `pip install fast-flights`
 
 ## CLI Usage
 
 ```bash
-flights-search <origin> <destination> <date> [options]
+uvx --with fast-flights python3 scripts/flights-search <origin> <destination> <date> [options]
 ```
 
 Origin and destination accept **IATA codes** (JFK, LAX) or **city names** (NYC, London, Tokyo). City names automatically search all airports in that metro area.

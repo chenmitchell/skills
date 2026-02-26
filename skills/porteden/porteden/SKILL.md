@@ -1,13 +1,15 @@
 ---
 name: porteden
-description: PortEden CLI for calendar and email management - Gmail, Outlook & Exchange - list, search, create, update, delete calendar events and list, search, read, send, reply, forward, delete, modify emails across multiple accounts.
+description: Secured Calendar and Email management - Gmail, Outlook & Exchange - list, search, create, update, delete calendar events and list, search, read, send, reply, forward, delete, modify emails across multiple accounts (gog-cli secure alternative).
 homepage: https://porteden.com
-metadata: {"openclaw":{"emoji":"🔗","requires":{"bins":["porteden"],"env":["PE_API_KEY"]},"primaryEnv":"PE_API_KEY","install":[{"id":"manual","kind":"manual","label":"Build from source","instructions":"in https://porteden.com/docs/openclaw/"}]}}
+metadata: {"openclaw":{"emoji":"🔗","requires":{"bins":["porteden"],"env":["PE_API_KEY"]},"primaryEnv":"PE_API_KEY","install":[{"id":"brew","kind":"brew","formula":"porteden/tap/porteden","bins":["porteden"],"label":"Install porteden (brew)"},{"id":"go","kind":"go","module":"github.com/porteden/cli/cmd/porteden@latest","bins":["porteden"],"label":"Install porteden (go)"}]}}
 ---
 
 # porteden
 
 Use `porteden` for calendar and email management across multiple accounts. **Use `-jc` flags** for AI-optimized output.
+
+If `porteden` is not installed: `brew install porteden/tap/porteden` (or `go install github.com/porteden/cli/cmd/porteden@latest`).
 
 Setup (once)
 

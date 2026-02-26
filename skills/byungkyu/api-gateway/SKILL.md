@@ -266,6 +266,7 @@ If omitted, the gateway uses the default (oldest) active connection for that app
 | Slack | `slack` | `slack.com` |
 | Snapchat | `snapchat` | `adsapi.snapchat.com` |
 | Square | `squareup` | `connect.squareup.com` |
+| Squarespace | `squarespace` | `api.squarespace.com` |
 | Stripe | `stripe` | `api.stripe.com` |
 | Systeme.io | `systeme` | `api.systeme.io` |
 | Tally | `tally` | `api.tally.so` |
@@ -383,6 +384,7 @@ See [references/](references/) for detailed routing guides per provider:
 - [Slack](references/slack.md) - Messages, channels, users
 - [Snapchat](references/snapchat.md) - Ad accounts, campaigns, ad squads, ads, creatives, audiences
 - [Square](references/squareup.md) - Payments, customers, orders, catalog, inventory, invoices
+- [Squarespace](references/squarespace.md) - Products, inventory, orders, profiles, transactions
 - [Stripe](references/stripe.md) - Customers, subscriptions, payments
 - [Systeme.io](references/systeme.md) - Contacts, tags, courses, communities, webhooks
 - [Tally](references/tally.md) - Forms, submissions, workspaces, webhooks

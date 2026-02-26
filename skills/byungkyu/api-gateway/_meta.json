@@ -3,11 +3,16 @@
   "slug": "api-gateway",
   "displayName": "API Gateway",
   "latest": {
-    "version": "1.0.50",
-    "publishedAt": 1771974314288,
-    "commit": "https://github.com/openclaw/skills/commit/e7d95194e1f6b97df05b051119581c5abe1651fa"
+    "version": "1.0.51",
+    "publishedAt": 1772102946067,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.50",
+      "publishedAt": 1771974314288,
+      "commit": "https://github.com/openclaw/skills/commit/e7d95194e1f6b97df05b051119581c5abe1651fa"
+    },
     {
       "version": "1.0.47",
       "publishedAt": 1771887936862,

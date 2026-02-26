@@ -1,13 +1,18 @@
 {
   "owner": "antoinedc",
   "slug": "renderkit",
-  "displayName": "RenderKit",
+  "displayName": "Clawhub Renderkit Skill",
   "latest": {
-    "version": "1.3.5",
-    "publishedAt": 1770974792742,
-    "commit": "https://github.com/openclaw/skills/commit/3ab96bf12a7b3099e5cf01691002b447f93fde23"
+    "version": "1.4.0",
+    "publishedAt": 1772017880947,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.3.5",
+      "publishedAt": 1770974792742,
+      "commit": "https://github.com/openclaw/skills/commit/3ab96bf12a7b3099e5cf01691002b447f93fde23"
+    },
     {
       "version": "1.3.4",
       "publishedAt": 1770924371052,

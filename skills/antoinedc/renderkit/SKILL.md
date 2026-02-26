@@ -1,6 +1,6 @@
 ---
 name: renderkit
-version: "1.3.5"
+version: "1.4.0"
 description: Render structured data as beautiful hosted web pages, and create hosted forms for data collection, using the RenderKit API. Use this for visual pages, surveys, RSVPs, feedback forms, or any structured data.
 metadata:
   openclaw:

@@ -2,7 +2,8 @@
 name: publora-instagram
 description: >
   Post or schedule content to Instagram using the Publora API. Use this skill
-  when the user wants to publish images, carousels, or reels to Instagram via Publora.
+  when the user wants to publish images, reels, stories, or carousels to
+  Instagram via Publora.
 ---
 
 # Publora — Instagram
@@ -11,16 +12,42 @@ Post and schedule Instagram content via the Publora API.
 
 > **Prerequisite:** Install the `publora` core skill for auth setup and getting platform IDs.
 
-## Get Your Instagram Platform ID
+## Platform ID Format
 
-```bash
-GET https://api.publora.com/api/v1/platform-connections
-# Look for entries like "instagram-456"
-```
+`instagram-{accountId}` — get your exact ID from `GET /api/v1/platform-connections`.
 
-## Post to Instagram (with Image — required)
+## Account Requirements
 
-Instagram requires media. Always upload an image or video with your post.
+- **Business or Creator account required** — personal accounts are NOT supported
+- Must be **linked to a Facebook Page** in Meta Business Suite
+- Text-only posts are **NOT supported** — every Instagram post must include media
+
+## Supported Content
+
+| Type | Supported | Notes |
+|------|-----------|-------|
+| Text only | ❌ | Must have media |
+| Single image | ✅ | JPEG or PNG |
+| Carousel | ✅ | 2–10 images (minimum 2), same `postGroupId` |
+| Reels (video) | ✅ | MP4, default video type |
+| Stories (video) | ✅ | MP4, set `videoType: "STORIES"` in platformSettings |
+| WebP images | ✅ | Auto-converted to JPEG |
+
+## Caption Limits
+
+| Element | Limit |
+|---------|-------|
+| Caption | 2,200 characters max |
+| Hashtags | 30 max |
+
+## Aspect Ratios
+
+Instagram enforces aspect ratio requirements:
+- **Portrait:** 4:5 (0.8) minimum
+- **Landscape:** 1.91:1 maximum
+- Content outside this range **may be cropped** by Instagram
+
+## Post a Single Image
 
 ```python
 import requests
@@ -29,65 +56,112 @@ HEADERS = { 'Content-Type': 'application/json', 'x-publora-key': 'sk_YOUR_KEY' }
 
 # Step 1: Create post
 post = requests.post('https://api.publora.com/api/v1/create-post', headers=HEADERS, json={
-    'content': 'Morning light ☀️ #photography #nature',
-    'platforms': ['instagram-456'],
-    'scheduledTime': '2026-03-16T09:00:00.000Z'
+    'content': 'New product drop 🔥 Available now! #launch #product #design',
+    'platforms': ['instagram-456789']
 }).json()
+post_group_id = post['postGroupId']
 
 # Step 2: Get upload URL
 upload = requests.post('https://api.publora.com/api/v1/get-upload-url', headers=HEADERS, json={
-    'fileName': 'photo.jpg', 'contentType': 'image/jpeg',
-    'type': 'image', 'postGroupId': post['postGroupId']
+    'fileName': 'product.jpg', 'contentType': 'image/jpeg',
+    'type': 'image', 'postGroupId': post_group_id
 }).json()
 
-# Step 3: Upload
-with open('photo.jpg', 'rb') as f:
+# Step 3: Upload to S3 (no auth needed)
+with open('product.jpg', 'rb') as f:
     requests.put(upload['uploadUrl'], headers={'Content-Type': 'image/jpeg'}, data=f)
 ```
 
-## Schedule Instagram Video / Reel
+## Post a Carousel (Multiple Images)
+
+Carousel requires **2–10 images**. Upload all images to the same `postGroupId` — Publora handles the Instagram multi-step carousel API internally.
 
 ```python
+import requests
+
+HEADERS = { 'Content-Type': 'application/json', 'x-publora-key': 'sk_YOUR_KEY' }
+
+# Step 1: Create post
 post = requests.post('https://api.publora.com/api/v1/create-post', headers=HEADERS, json={
-    'content': 'How we ship features in 60 seconds 🚀 #startup #buildinpublic',
-    'platforms': ['instagram-456'],
-    'scheduledTime': '2026-03-16T18:00:00.000Z'
+    'content': 'Behind the scenes of our launch week 👀 Swipe to see it all! #buildinpublic',
+    'platforms': ['instagram-456789']
 }).json()
+post_group_id = post['postGroupId']
 
-upload = requests.post('https://api.publora.com/api/v1/get-upload-url', headers=HEADERS, json={
-    'fileName': 'reel.mp4', 'contentType': 'video/mp4',
-    'type': 'video', 'postGroupId': post['postGroupId']
-}).json()
-
-with open('reel.mp4', 'rb') as f:
-    requests.put(upload['uploadUrl'], headers={'Content-Type': 'video/mp4'}, data=f)
-```
-
-## Carousel (Multiple Images)
-
-Upload multiple images to the same `postGroupId`:
-
-```python
-post = requests.post('https://api.publora.com/api/v1/create-post', headers=HEADERS, json={
-    'content': '5 things we learned building our product 👇',
-    'platforms': ['instagram-456'],
-    'scheduledTime': '2026-03-16T12:00:00.000Z'
-}).json()
-
-for filename in ['slide1.jpg', 'slide2.jpg', 'slide3.jpg', 'slide4.jpg', 'slide5.jpg']:
+# Steps 2+3: Upload each image (2-10 images, all same postGroupId)
+images = ['slide1.jpg', 'slide2.jpg', 'slide3.jpg', 'slide4.jpg']
+for img in images:
     upload = requests.post('https://api.publora.com/api/v1/get-upload-url', headers=HEADERS, json={
-        'fileName': filename, 'contentType': 'image/jpeg',
-        'type': 'image', 'postGroupId': post['postGroupId']
+        'fileName': img, 'contentType': 'image/jpeg',
+        'type': 'image', 'postGroupId': post_group_id
     }).json()
-    with open(filename, 'rb') as f:
+    with open(img, 'rb') as f:
         requests.put(upload['uploadUrl'], headers={'Content-Type': 'image/jpeg'}, data=f)
 ```
 
+## Post a Reel (Video)
+
+Default video type is REELS. Use `platformSettings.instagram.videoType` to control.
+
+```javascript
+await fetch('https://api.publora.com/api/v1/create-post', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'x-publora-key': 'sk_YOUR_KEY' },
+  body: JSON.stringify({
+    content: 'How we 10x our productivity in 60 seconds ⚡ #productivityhacks #startup',
+    platforms: ['instagram-456789'],
+    platformSettings: {
+      instagram: {
+        videoType: 'REELS'
+      }
+    }
+  })
+});
+// Then upload video using 3-step media workflow with returned postGroupId
+```
+
+## Post a Story
+
+Stories disappear after 24 hours. Set `videoType: "STORIES"`:
+
+```javascript
+await fetch('https://api.publora.com/api/v1/create-post', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'x-publora-key': 'sk_YOUR_KEY' },
+  body: JSON.stringify({
+    content: 'Flash sale — 24 hours only! 🔥',
+    platforms: ['instagram-456789'],
+    platformSettings: {
+      instagram: {
+        videoType: 'STORIES'
+      }
+    }
+  })
+});
+// Then upload video using 3-step media workflow
+```
+
+## platformSettings Reference
+
+```json
+{
+  "platformSettings": {
+    "instagram": {
+      "videoType": "REELS"
+    }
+  }
+}
+```
+
+| Setting | Values | Default | Description |
+|---------|--------|---------|-------------|
+| `videoType` | `"REELS"`, `"STORIES"` | `"REELS"` | Video post type |
+
 ## Tips for Instagram
 
-- **Media required** — text-only posts are not supported
-- **Square (1:1) or portrait (4:5)** images perform best in feed
-- **Reels (9:16)** get significantly more reach than static posts
-- **Best times:** Tuesday–Friday, 9 AM–1 PM
-- **Hashtags:** 5–10 relevant hashtags; put them in the caption or first comment
-- **Caption hook:** First line shows in feed before "more" — make it count
+- **No text-only posts** — always include media
+- **Carousel minimum is 2 images** — a single image upload is not a carousel
+- **Stories expire in 24h** — use for time-sensitive content
+- **30 hashtag max** — over this limit may reduce reach
+- **Aspect ratio matters** — shoot/crop to 4:5 portrait for feed, 9:16 for Stories/Reels
+- **Caption first 125 chars** shown before "more" — put the hook there

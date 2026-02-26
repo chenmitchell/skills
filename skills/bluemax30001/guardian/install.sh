@@ -53,6 +53,11 @@ if errors:
 print("Definition validation OK")
 PY
 
+# Write activation marker for self-activation flow
+MARKER_PATH="${ROOT_DIR}/../../.guardian-activate-pending"
+touch "$MARKER_PATH" 2>/dev/null || true
+echo "  ✅ Activation marker written: .guardian-activate-pending"
+
 echo ""
 echo "✅ Guardian installation complete."
 echo ""

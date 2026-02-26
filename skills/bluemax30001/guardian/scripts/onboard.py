@@ -345,7 +345,7 @@ def build_human_notification(
         f"  • Config file: `skills/guardian/config.json`",
         f"  • DB: `{db_path.name}` (in workspace root)",
         f"  • Block threshold: **{threshold}** and above",
-        f"  • Trusted channels: {', '.join(trusted)}",
+        f"  • Trusted channels: {', '.join(trusted) if trusted else '(none — see config-review to set this)'}",
         "",
         "🔔 **Alerts configured:**",
     ]
@@ -1014,8 +1014,12 @@ def main() -> None:
         print("\n" + "="*60)
         print("SECTION 1 — AGENT BRIEFING")
         print("="*60)
-        print(f"✅ GUARDIAN.md written to: {workspace / 'GUARDIAN.md'}")
-        print(f"   The AI agent loads this every session — no further action needed.\n")
+        if args.dry_run:
+            print(f"[DRY RUN] GUARDIAN.md written to: {workspace / 'GUARDIAN.md'}")
+            print(f"   (dry-run: file was NOT written)\n")
+        else:
+            print(f"✅ GUARDIAN.md written to: {workspace / 'GUARDIAN.md'}")
+            print(f"   The AI agent loads this every session — no further action needed.\n")
         print("="*60)
         print("SECTION 2 — ADMIN NOTIFICATION  [send this to the user]")
         print("="*60)

@@ -7,7 +7,10 @@
   "db_path": "auto",
   "scan_interval_minutes": 2,
   "severity_threshold": "medium",
-  "dismissed_signatures": [],
+  "dismissed_signatures": [
+    "INJ-004",
+    "INJ-015"
+  ],
   "custom_definitions_dir": null,
   "channels": {
     "monitor_all": true,
@@ -17,7 +20,8 @@
     "notify_on_critical": true,
     "notify_on_high": false,
     "daily_digest": true,
-    "daily_digest_time": "09:00"
+    "daily_digest_time": "09:00",
+    "primary_notify_command": "python3 /home/bluemax/.openclaw/workspace/skills/guardian/scripts/telegram_notify.py"
   },
   "admin": {
     "bypass_token": null,

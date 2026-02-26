@@ -1,6 +1,6 @@
 # 🛡️ Guardian — Security scanner for OpenClaw agents
 
-Detects prompt injection, credential exfiltration, tool abuse, and social engineering in real time. Runs locally with bundled signatures; optional webhook + HTTP API.
+Detects prompt injection, credential exfiltration, tool abuse, and social engineering in real time. Runs locally with bundled signatures.
 
 ---
 ## Install
@@ -18,8 +18,7 @@ Review `install.sh` before running in production environments.
 1) Optional: `python3 scripts/onboard.py --setup-crons` (scanner/report/digest crons)
 2) `python3 scripts/admin.py status` (confirm running)
 3) `python3 scripts/admin.py threats` (confirm signatures loaded; should show 0/blocked)
-4) Optional: `python3 scripts/serve.py --port 8090` (HTTP API)
-5) Optional: set `webhook_url` in `config.json` (outbound alerts)
+4) Optional: review `config.json` scan paths and thresholds
 
 ## Scan scope
 Guardian scans configured workspace paths and may read other skill/config files under those paths for detection. Use narrow `scan_paths` in `config.json` if needed.
@@ -40,8 +39,6 @@ cd skills/guardian/dashboard && python3 -m http.server 8091
 ```
 
 ## Optional components
-- **Webhook alerts**: `integrations/webhook.py` (POSTs scan results to `webhook_url` if configured)
-- **HTTP API**: `scripts/serve.py` (scan/report endpoints when you start it)
 - **Cron helper**: `scripts/onboard.py --setup-crons` (scanner/report/digest crons)
 
 ## Python API

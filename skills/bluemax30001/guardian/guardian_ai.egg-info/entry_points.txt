@@ -1,0 +1,4 @@
+[console_scripts]
+guardian-admin = scripts.admin:main
+guardian-scan = scripts.guardian:main
+guardian-serve = scripts.serve:main

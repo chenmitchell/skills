@@ -1,12 +1,17 @@
 ---
-name: guardian
-description: Security scanner for OpenClaw agents. Detects prompt injection, credential exfiltration, and social engineering attacks in real time.
-version: 2.0.14
+name: clawguardian
+description: Local-first security scanner for OpenClaw agents. Detects prompt injection, exfiltration patterns, tool abuse, and social engineering using bundled signatures.
+version: 2.0.19
 metadata:
   openclaw:
     requires:
       bins:
         - python3
+      env:
+        - GUARDIAN_WORKSPACE
+        - GUARDIAN_CONFIG
+        - OPENCLAW_WORKSPACE
+        - OPENCLAW_CONFIG_PATH
     permissions:
       - read_workspace
       - write_workspace
@@ -25,10 +30,8 @@ Guardian provides two scanning modes:
 - **Real-time pre-scan** — checks each incoming message before it reaches the model
 - **Batch scan** — periodic sweep of workspace files and conversation logs
 
-All data stays local by default. Optional components:
-- **Webhook notifications**: `integrations/webhook.py` (sends JSON payloads to a configured URL)
-- **HTTP API server**: `scripts/serve.py` (exposes scan/report endpoints)
-- **Cron setup**: `scripts/onboard.py --setup-crons` (configures scanner/report/digest crons)
+All data stays local. This release removes optional webhook/API networking paths to reduce moderation risk.
+Cron setup remains optional via `scripts/onboard.py --setup-crons`.
 
 Scan results are stored in a SQLite database (`guardian.db`).
 
@@ -42,14 +45,20 @@ cd ~/.openclaw/skills/guardian
 ## Install mechanism and review
 This package includes executable scripts (including `install.sh`) and Python modules.
 Review `install.sh` before running in production.
-`install.sh` performs local setup/validation; optional helpers (`onboard.py`, `serve.py`, `integrations/webhook.py`) are opt-in and require explicit operator action.
+`install.sh` performs local setup/validation; optional helper `onboard.py` is opt-in for cron setup.
 
 ## Onboarding checklist
 1) Optional: `python3 scripts/onboard.py --setup-crons` (scanner/report/digest crons)
 2) `python3 scripts/admin.py status` (confirm running)
 3) `python3 scripts/admin.py threats` (confirm signatures loaded; should show 0/blocked)
-4) Optional: `python3 scripts/serve.py --port 8090` (start HTTP API)
-5) Optional: set `webhook_url` in `config.json` (enable outbound alerts)
+4) Optional: review `config.json` scan_paths and threshold for your environment
+
+### First-load / self-activation
+After `install.sh` completes, it writes `.guardian-activate-pending` to the workspace root
+(`~/.openclaw/workspace/.guardian-activate-pending`). When OpenClaw detects this marker on
+next load, it triggers `onboard.py` automatically for the self-activation flow. The marker is
+removed once `onboard.py` has run. If you prefer manual onboarding, simply delete the marker
+before reloading (`rm ~/.openclaw/workspace/.guardian-activate-pending`).
 
 ## Scan scope and privacy
 Guardian scans configured workspace paths to detect threats. Depending on `scan_paths`, this can include other skill/config files in your OpenClaw workspace.
@@ -111,8 +120,6 @@ Edit `config.json`:
 | `severity_threshold` | Blocking threshold: `low` / `medium` / `high` / `critical` |
 | `scan_paths` | Paths to scan (`["auto"]` for common folders) |
 | `db_path` | SQLite location (`"auto"` = `<workspace>/guardian.db`) |
-| `webhook_url` | Optional: POST scan results here |
-| `http_server.port` | Optional: port for scripts/serve.py |
 
 ## How It Works
 

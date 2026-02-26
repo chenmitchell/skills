@@ -18,7 +18,6 @@
 | `read_workspace` | `core/scanner.py` | Read files to scan for threats |
 | `write_workspace` | `core/guardian_db.py` | Write scan results to SQLite |
 | `shell_optional` | `scripts/onboard.py` | Optional cron setup via subprocess/crontab |
-| `network_optional` | `integrations/webhook.py`, `scripts/serve.py` | Optional outbound webhooks / HTTP server |
 
 ## No credentials required
 

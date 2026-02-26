@@ -1,46 +1,42 @@
-#!/usr/bin/env python3
-"""Webhook notifier for Guardian threat events."""
+"""Guardian webhook notifier integration."""
 
 from __future__ import annotations
 
 import json
 import urllib.request
-from dataclasses import asdict, is_dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict
+
+from core.api import ScanResult
 
 
 class GuardianWebhook:
-    """Send threat notifications to HTTP webhook endpoints."""
+    """Posts Guardian scan results to a webhook URL as JSON."""
 
-    def __init__(self, url: str, timeout_seconds: float = 3.0) -> None:
+    def __init__(self, url: str, timeout: int = 5) -> None:
         self.url = url
-        self.timeout_seconds = timeout_seconds
+        self.timeout = timeout
 
-    def notify(self, result: Any, extra: Optional[Dict[str, Any]] = None) -> int:
-        """POST scan result to configured webhook URL and return status code."""
-        payload: Dict[str, Any]
-        if is_dataclass(result):
-            payload = asdict(result)
-        elif hasattr(result, "to_dict"):
-            payload = result.to_dict()
-        elif isinstance(result, dict):
-            payload = result
-        else:
-            raise TypeError("result must be dataclass, dict, or expose to_dict()")
+    def notify(self, result: ScanResult) -> int:
+        """Send a threat-detected event to the configured webhook URL.
 
-        body = {
-            "event": "guardian.threat.detected" if payload.get("threats") else "guardian.scan.clean",
-            "result": payload,
+        Returns the HTTP response status code.
+        """
+        payload: Dict[str, Any] = {
+            "event": "guardian.threat.detected",
+            "clean": result.clean,
+            "blocked": result.blocked,
+            "score": result.score,
+            "threats": result.threats,
+            "channel": result.channel,
+            "timestamp": result.timestamp,
+            "summary": result.summary,
         }
-        if extra:
-            body["meta"] = extra
-
-        raw = json.dumps(body).encode("utf-8")
+        data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
             self.url,
-            data=raw,
+            data=data,
+            headers={"Content-Type": "application/json"},
             method="POST",
-            headers={"Content-Type": "application/json", "User-Agent": "guardian/2.0"},
         )
-        with urllib.request.urlopen(req, timeout=self.timeout_seconds) as resp:
-            return int(resp.status)
+        with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            return resp.status

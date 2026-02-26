@@ -6,11 +6,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import secrets
+import shlex
+import subprocess
 import sys
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -42,6 +45,46 @@ def _save_guardian_config(cfg: Dict[str, Any], path: Path | None = None) -> None
     target.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
 
 
+def _notify_primary_channel(scanner: GuardianScanner, result: Dict[str, Any], channel: str, approval_token: str | None = None) -> None:
+    """Optional local notifier for blocked content.
+
+    Configure via `alerts.primary_notify_command` in config.json.
+    The command receives one argument: a compact JSON payload string.
+    """
+    try:
+        cfg = scanner._scanner.config or {}
+        cmd = (((cfg.get("alerts") or {}).get("primary_notify_command")) or "").strip()
+        if not cmd:
+            # Fallback: read directly from config file
+            try:
+                file_cfg = load_guardian_config(config_path=str(DEFAULT_CONFIG_PATH))
+                cmd = (((file_cfg.get("alerts") or {}).get("primary_notify_command")) or "").strip()
+            except Exception:
+                pass
+        if not cmd:
+            return
+        top = result.get("top_threat") or {}
+        raw_evidence = str(top.get("evidence") or "").strip()
+        payload = {
+            "event": "guardian_blocked",
+            "severity": top.get("severity"),
+            "sig_id": top.get("id"),
+            "channel": channel,
+            "summary": result.get("summary"),
+            "threat_count": len(result.get("threats") or []),
+            "evidence": raw_evidence[:300] if raw_evidence else "",
+            "approval_token": approval_token,
+            "approval_hint": "Approve via /approve-request?token=<token> endpoint or dashboard pending approvals",
+        }
+        cmd_parts = shlex.split(cmd)
+        if not cmd_parts:
+            return
+        subprocess.run(cmd_parts + [json.dumps(payload)], check=False, timeout=5)
+    except Exception:
+        # Notifications are best-effort only
+        pass
+
+
 def handle_scan_payload(scanner: GuardianScanner, data: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
     """Validate and process /scan payload."""
     text = str(data.get("text", ""))
@@ -50,8 +93,38 @@ def handle_scan_payload(scanner: GuardianScanner, data: Dict[str, Any]) -> Tuple
         return HTTPStatus.BAD_REQUEST, {"error": "text is required"}
 
     result = scanner.scan(text=text, channel=channel)
+    payload = result.to_dict()
+    if payload.get("blocked"):
+        db = scanner._scanner.db
+        approval_token = None
+        if db:
+            top = payload.get("top_threat") or {}
+            evidence = top.get("evidence") or ""
+            # BL-039: resolve threat_id from DB (most-recent match for this sig+channel)
+            threat_id: Optional[int] = None
+            try:
+                row = db.conn.execute(
+                    "SELECT id FROM threats WHERE sig_id=? AND channel=? ORDER BY detected_at DESC LIMIT 1",
+                    (top.get("id"), channel),
+                ).fetchone()
+                if row:
+                    threat_id = int(row["id"])
+            except Exception:
+                pass
+            approval_token = secrets.token_urlsafe(16)
+            db.create_approval_request(
+                threat_id=threat_id,
+                token=approval_token,
+                channel=channel,
+                source=channel,
+                sig_id=top.get("id"),
+                severity=top.get("severity"),
+                evidence=str(evidence)[:240],
+            )
+        _notify_primary_channel(scanner, payload, channel, approval_token)
+        payload["approval_token"] = approval_token
     status = HTTPStatus.FORBIDDEN if result.blocked else HTTPStatus.OK
-    return status, result.to_dict()
+    return status, payload
 
 
 def handle_dismiss_payload(scanner: GuardianScanner, data: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
@@ -146,7 +219,7 @@ def extract_allowlist_pattern(evidence: str) -> str:
 def handle_approve_payload(
     scanner: GuardianScanner, data: Dict[str, Any], config_path: Path | None = None
 ) -> Tuple[int, Dict[str, Any]]:
-    """Approve a threat as safe: extract pattern, add to allowlist, dismiss threat."""
+    """Approve a threat as safe, add allowlist pattern, dismiss threat, and log override event."""
     raw_id = data.get("id")
     if raw_id is None:
         return HTTPStatus.BAD_REQUEST, {"error": "id is required"}
@@ -162,14 +235,14 @@ def handle_approve_payload(
     
     # Get the threat details
     cursor = db.conn.execute(
-        "SELECT evidence, description, sig_id FROM threats WHERE id=?",
+        "SELECT evidence, description, sig_id, channel, source_file FROM threats WHERE id=?",
         (threat_id,)
     )
     row = cursor.fetchone()
     if not row:
         return HTTPStatus.NOT_FOUND, {"error": f"Threat {threat_id} not found"}
     
-    evidence, description, sig_id = row
+    evidence, description, sig_id, channel, source_file = row
     
     # Extract pattern from evidence (the actual matched text)
     if not evidence or not evidence.strip():
@@ -190,15 +263,31 @@ def handle_approve_payload(
     
     allowlist = fps["allowlist_patterns"]
     
+    scope = str(data.get("scope", "once")).strip() or "once"
+    actor = str(data.get("actor", "dashboard")).strip() or "dashboard"
+    reason = str(data.get("reason", "Approved from dashboard")).strip()
+
     # Check if pattern already exists
     if pattern in allowlist:
         # Still dismiss the threat even if pattern exists
         db.dismiss_threat(threat_id)
+        event_id = db.log_override_event(
+            threat_id=threat_id,
+            action="approve",
+            scope=scope,
+            actor=actor,
+            reason=reason,
+            channel=channel,
+            source=source_file,
+            sig_id=sig_id,
+            evidence=evidence,
+        )
         return HTTPStatus.OK, {
             "ok": True,
             "pattern": pattern,
             "already_exists": True,
             "dismissed": threat_id,
+            "override_event_id": event_id,
         }
     
     # Add pattern to allowlist
@@ -207,6 +296,17 @@ def handle_approve_payload(
     
     # Dismiss this threat
     db.dismiss_threat(threat_id)
+    event_id = db.log_override_event(
+        threat_id=threat_id,
+        action="approve",
+        scope=scope,
+        actor=actor,
+        reason=reason,
+        channel=channel,
+        source=source_file,
+        sig_id=sig_id,
+        evidence=evidence,
+    )
     
     # Refresh in-memory patterns so the allowlist takes effect immediately
     try:
@@ -220,6 +320,7 @@ def handle_approve_payload(
         "pattern": pattern,
         "dismissed": threat_id,
         "evidence": evidence,
+        "override_event_id": event_id,
     }
 
 
@@ -330,6 +431,74 @@ def handle_report_false_positive_payload(
     }
 
 
+def handle_approve_override_payload(
+    scanner: GuardianScanner, data: Dict[str, Any]
+) -> Tuple[int, Dict[str, Any]]:
+    """Process a primary-channel approve-override action (BL-039).
+
+    Accepts either ``token`` (from notification) or ``threat_id`` directly.
+    Records the approval in the DB:
+      - Updates approval_request status → 'approved_override'
+      - Sets threats.approved_override=1, approved_by, approved_at
+      - Logs to override_events for full audit trail
+    """
+    token = str(data.get("token", "")).strip()
+    raw_id = data.get("threat_id")
+    actor = str(data.get("actor", "primary-channel")).strip() or "primary-channel"
+    reason = str(data.get("reason", "user-approved")).strip() or "user-approved"
+
+    db = scanner._scanner.db
+    if not db:
+        return HTTPStatus.BAD_REQUEST, {"error": "DB persistence disabled"}
+
+    threat_id: Optional[int] = None
+    req: Optional[Dict[str, Any]] = None
+
+    if token:
+        req = db.get_approval_request_by_token(token)
+        if not req or req.get("status") != "pending":
+            return HTTPStatus.NOT_FOUND, {"error": "pending approval request not found for token"}
+        threat_id = req.get("threat_id")
+        db.decide_approval_request(token, "approved_override", actor, reason)
+    elif raw_id is not None:
+        try:
+            threat_id = int(raw_id)
+        except (TypeError, ValueError):
+            return HTTPStatus.BAD_REQUEST, {"error": "threat_id must be an integer"}
+    else:
+        return HTTPStatus.BAD_REQUEST, {"error": "token or threat_id is required"}
+
+    # Update the threat record with approved_override audit columns
+    if threat_id is not None:
+        db.approve_override_threat(threat_id, approved_by=actor, reason=reason)
+
+    # Log override event for audit trail
+    req_data = req or {}
+    event_id = db.log_override_event(
+        threat_id=threat_id,
+        action="approved_override",
+        scope="once",
+        actor=actor,
+        reason=reason,
+        channel=req_data.get("channel"),
+        source=req_data.get("source"),
+        sig_id=req_data.get("sig_id"),
+        evidence=req_data.get("evidence"),
+    )
+
+    approved_at = db._now()
+    return HTTPStatus.OK, {
+        "ok": True,
+        "status": "approved_override",
+        "token": token or None,
+        "threat_id": threat_id,
+        "approved_by": actor,
+        "approved_at": approved_at,
+        "override_event_id": event_id,
+        "reason": reason,
+    }
+
+
 def list_threats_payload(scanner: GuardianScanner, query: str) -> Dict[str, Any]:
     """Return filtered threats payload for /threats route."""
     db = scanner._scanner.db
@@ -362,6 +531,9 @@ class GuardianHTTPHandler(BaseHTTPRequestHandler):
         raw = json.dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         self.wfile.write(raw)
@@ -378,6 +550,13 @@ class GuardianHTTPHandler(BaseHTTPRequestHandler):
             return {}, "JSON body must be an object"
         return data, ""
 
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        self.send_response(HTTPStatus.NO_CONTENT)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
+
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         if parsed.path == "/health":
@@ -390,6 +569,35 @@ class GuardianHTTPHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/threats":
             self._json_response(HTTPStatus.OK, list_threats_payload(self.scanner, parsed.query))
+            return
+
+        if parsed.path == "/threats-lite":
+            payload = list_threats_payload(self.scanner, parsed.query)
+            rows = payload.get("threats", [])
+            lite = []
+            for t in rows[:80]:
+                lite.append({
+                    "id": t.get("id"),
+                    "severity": t.get("severity"),
+                    "source": t.get("source") or t.get("channel"),
+                    "channel": t.get("channel"),
+                    "description": t.get("description"),
+                    "sig_id": t.get("sig_id"),
+                    "blocked": t.get("blocked"),
+                    "dismissed": t.get("dismissed"),
+                    "detected_at": t.get("detected_at") or t.get("timestamp"),
+                    "evidence": (t.get("evidence") or "")[:400],
+                    "context": (t.get("context") or "")[:3000],
+                    # BL-039: approved_override audit fields
+                    "approved_override": t.get("approved_override", 0),
+                    "approved_by": t.get("approved_by"),
+                    "approved_at": t.get("approved_at"),
+                })
+            self._json_response(HTTPStatus.OK, {
+                "generated_at": payload.get("generated_at"),
+                "threats": lite,
+                "count": len(lite),
+            })
             return
 
         if parsed.path == "/allowlist":
@@ -438,6 +646,41 @@ class GuardianHTTPHandler(BaseHTTPRequestHandler):
             self._json_response(HTTPStatus.OK, {"reports": reports})
             return
 
+        if parsed.path == "/overrides":
+            db = self.scanner._scanner.db
+            if not db:
+                self._json_response(HTTPStatus.BAD_REQUEST, {"error": "DB persistence disabled"})
+                return
+            qs = parse_qs(parsed.query)
+            limit = int((qs.get("limit", ["50"]) or ["50"])[0])
+            events = db.get_override_events(limit=limit)
+            self._json_response(HTTPStatus.OK, {"events": events, "count": len(events)})
+            return
+
+        if parsed.path == "/approval-requests":
+            db = self.scanner._scanner.db
+            if not db:
+                self._json_response(HTTPStatus.BAD_REQUEST, {"error": "DB persistence disabled"})
+                return
+            qs = parse_qs(parsed.query)
+            limit = int((qs.get("limit", ["50"]) or ["50"])[0])
+            status_filter = str((qs.get("status", ["pending"]) or ["pending"])[0])
+            events = db.list_approval_requests(status=status_filter, limit=limit)
+            self._json_response(HTTPStatus.OK, {"requests": events, "count": len(events)})
+            return
+
+        if parsed.path == "/approved-overrides":
+            # BL-039: Return threats with approved_override=1 for dashboard audit trail
+            db = self.scanner._scanner.db
+            if not db:
+                self._json_response(HTTPStatus.BAD_REQUEST, {"error": "DB persistence disabled"})
+                return
+            qs = parse_qs(parsed.query)
+            limit = int((qs.get("limit", ["50"]) or ["50"])[0])
+            overrides = db.get_approved_overrides(limit=limit)
+            self._json_response(HTTPStatus.OK, {"overrides": overrides, "count": len(overrides)})
+            return
+
         self._json_response(HTTPStatus.NOT_FOUND, {"error": "Not found"})
 
     def do_POST(self) -> None:  # noqa: N802
@@ -450,6 +693,73 @@ class GuardianHTTPHandler(BaseHTTPRequestHandler):
                 return
 
             status, payload = handle_scan_payload(self.scanner, data)
+            self._json_response(status, payload)
+            return
+
+        if parsed.path == "/approve-request":
+            data, err = self._read_json_body()
+            if err:
+                self._json_response(HTTPStatus.BAD_REQUEST, {"error": err})
+                return
+            token = str(data.get("token", "")).strip()
+            actor = str(data.get("actor", "primary-channel")).strip() or "primary-channel"
+            reason = str(data.get("reason", "Approved from primary channel")).strip()
+            if not token:
+                self._json_response(HTTPStatus.BAD_REQUEST, {"error": "token is required"})
+                return
+            db = self.scanner._scanner.db
+            if not db:
+                self._json_response(HTTPStatus.BAD_REQUEST, {"error": "DB persistence disabled"})
+                return
+            req = db.get_approval_request_by_token(token)
+            if not req or req.get("status") != "pending":
+                self._json_response(HTTPStatus.NOT_FOUND, {"error": "pending approval request not found"})
+                return
+            db.decide_approval_request(token, "approved", actor, reason)
+            db.log_override_event(
+                threat_id=req.get("threat_id"),
+                action="approve",
+                scope="once",
+                actor=actor,
+                reason=reason,
+                channel=req.get("channel"),
+                source=req.get("source"),
+                sig_id=req.get("sig_id"),
+                evidence=req.get("evidence"),
+            )
+            self._json_response(HTTPStatus.OK, {"ok": True, "token": token, "status": "approved"})
+            return
+
+        if parsed.path == "/deny-request":
+            data, err = self._read_json_body()
+            if err:
+                self._json_response(HTTPStatus.BAD_REQUEST, {"error": err})
+                return
+            token = str(data.get("token", "")).strip()
+            actor = str(data.get("actor", "primary-channel")).strip() or "primary-channel"
+            reason = str(data.get("reason", "Denied from primary channel")).strip()
+            if not token:
+                self._json_response(HTTPStatus.BAD_REQUEST, {"error": "token is required"})
+                return
+            db = self.scanner._scanner.db
+            if not db:
+                self._json_response(HTTPStatus.BAD_REQUEST, {"error": "DB persistence disabled"})
+                return
+            req = db.get_approval_request_by_token(token)
+            if not req or req.get("status") != "pending":
+                self._json_response(HTTPStatus.NOT_FOUND, {"error": "pending approval request not found"})
+                return
+            db.decide_approval_request(token, "denied", actor, reason)
+            self._json_response(HTTPStatus.OK, {"ok": True, "token": token, "status": "denied"})
+            return
+
+        if parsed.path == "/api/approve-override":
+            # BL-039: Primary-channel approve-override endpoint
+            data, err = self._read_json_body()
+            if err:
+                self._json_response(HTTPStatus.BAD_REQUEST, {"error": err})
+                return
+            status, payload = handle_approve_override_payload(self.scanner, data)
             self._json_response(status, payload)
             return
 
@@ -556,7 +866,7 @@ def create_server(
 ) -> ThreadingHTTPServer:
     """Create configured Guardian HTTP server instance."""
     effective_db = db_path or str((Path.cwd() / "guardian.db").resolve())
-    scanner = GuardianScanner(severity=severity, db_path=effective_db, record_to_db=True)
+    scanner = GuardianScanner(severity=severity, db_path=effective_db, record_to_db=True, config_path=str(DEFAULT_CONFIG_PATH))
 
     class _ConfiguredHandler(GuardianHTTPHandler):
         pass
@@ -569,7 +879,7 @@ def create_server(
 def main() -> None:
     """CLI entrypoint for guardian-serve."""
     parser = argparse.ArgumentParser(description="Guardian HTTP API server")
-    parser.add_argument("--host", default="127.0.0.1", help="Bind host")
+    parser.add_argument("--host", default="0.0.0.0", help="Bind host")
     parser.add_argument("--port", type=int, default=8080, help="Bind port")
     parser.add_argument("--severity", default="medium", help="low|medium|high|critical")
     parser.add_argument("--db", dest="db_path", help="SQLite DB path")

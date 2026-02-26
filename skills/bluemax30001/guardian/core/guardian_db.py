@@ -147,7 +147,38 @@ class GuardianDB:
             CREATE INDEX IF NOT EXISTS idx_metrics_period ON metrics(period, period_start);
             CREATE INDEX IF NOT EXISTS idx_allowlist_sig ON allowlist(signature_id, active);
             CREATE INDEX IF NOT EXISTS idx_blocklist_source ON blocklist(source, active);
+            CREATE TABLE IF NOT EXISTS override_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_at TEXT NOT NULL,
+                threat_id INTEGER,
+                action TEXT NOT NULL,
+                scope TEXT,
+                actor TEXT,
+                reason TEXT,
+                expires_at TEXT,
+                channel TEXT,
+                source TEXT,
+                sig_id TEXT,
+                evidence TEXT
+            );
+            CREATE TABLE IF NOT EXISTS approval_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TEXT NOT NULL,
+                status TEXT NOT NULL,
+                threat_id INTEGER,
+                token TEXT NOT NULL UNIQUE,
+                channel TEXT,
+                source TEXT,
+                sig_id TEXT,
+                severity TEXT,
+                evidence TEXT,
+                decided_at TEXT,
+                decided_by TEXT,
+                decision_reason TEXT
+            );
             CREATE INDEX IF NOT EXISTS idx_fp_reports_threat ON false_positive_reports(threat_id);
+            CREATE INDEX IF NOT EXISTS idx_override_events_time ON override_events(event_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_approval_requests_status ON approval_requests(status);
             """
         )
 
@@ -158,6 +189,10 @@ class GuardianDB:
         self._ensure_column("threats", "context_match", "TEXT")
         self._ensure_column("threats", "escalated", "INTEGER DEFAULT 0")
         self._ensure_column("threats", "escalated_at", "TEXT")
+        # BL-039: approved_override audit trail
+        self._ensure_column("threats", "approved_override", "INTEGER DEFAULT 0")
+        self._ensure_column("threats", "approved_by", "TEXT")
+        self._ensure_column("threats", "approved_at", "TEXT")
         c.commit()
 
     def _now(self) -> str:
@@ -272,6 +307,27 @@ class GuardianDB:
             (self._now(), threat_id)
         )
         self.conn.commit()
+
+    def approve_override_threat(
+        self,
+        threat_id: int,
+        approved_by: str = "user",
+        reason: str = "user-approved",
+    ) -> None:
+        """Mark a blocked threat as an approved override with full audit trail (BL-039)."""
+        self.conn.execute(
+            "UPDATE threats SET approved_override=1, approved_by=?, approved_at=? WHERE id=?",
+            (approved_by, self._now(), threat_id),
+        )
+        self.conn.commit()
+
+    def get_approved_overrides(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Return threats that were blocked but approved as overrides (BL-039)."""
+        rows = self.conn.execute(
+            "SELECT * FROM threats WHERE approved_override=1 ORDER BY approved_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
 
     def add_blocklist_entry(
         self,
@@ -566,6 +622,94 @@ class GuardianDB:
             if scope == "exact" and scope_value and scope_value in message_text:
                 return True
         return False
+
+    def log_override_event(
+        self,
+        threat_id: Optional[int],
+        action: str,
+        scope: str,
+        actor: str = "dashboard",
+        reason: str = "",
+        expires_at: Optional[str] = None,
+        channel: Optional[str] = None,
+        source: Optional[str] = None,
+        sig_id: Optional[str] = None,
+        evidence: Optional[str] = None,
+    ) -> int:
+        """Record an explicit allow/deny override event for audit and dashboard visibility."""
+        cur = self.conn.execute(
+            """
+            INSERT INTO override_events (event_at, threat_id, action, scope, actor, reason, expires_at, channel, source, sig_id, evidence)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                self._now(),
+                threat_id,
+                action,
+                scope,
+                actor,
+                reason,
+                expires_at,
+                channel,
+                source,
+                sig_id,
+                evidence,
+            ),
+        )
+        self.conn.commit()
+        return int(cur.lastrowid)
+
+    def get_override_events(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Return recent override events for dashboard/audit."""
+        rows = self.conn.execute(
+            "SELECT * FROM override_events ORDER BY event_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def create_approval_request(
+        self,
+        threat_id: Optional[int],
+        token: str,
+        channel: Optional[str],
+        source: Optional[str],
+        sig_id: Optional[str],
+        severity: Optional[str],
+        evidence: Optional[str],
+    ) -> int:
+        """Create pending approval request for primary-channel review."""
+        cur = self.conn.execute(
+            """
+            INSERT INTO approval_requests (created_at, status, threat_id, token, channel, source, sig_id, severity, evidence)
+            VALUES (?,?,?,?,?,?,?,?,?)
+            """,
+            (self._now(), "pending", threat_id, token, channel, source, sig_id, severity, evidence),
+        )
+        self.conn.commit()
+        return int(cur.lastrowid)
+
+    def list_approval_requests(self, status: str = "pending", limit: int = 50) -> List[Dict[str, Any]]:
+        """Return approval requests, defaulting to pending only."""
+        rows = self.conn.execute(
+            "SELECT * FROM approval_requests WHERE status=? ORDER BY created_at DESC LIMIT ?",
+            (status, limit),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_approval_request_by_token(self, token: str) -> Optional[Dict[str, Any]]:
+        row = self.conn.execute("SELECT * FROM approval_requests WHERE token=?", (token,)).fetchone()
+        return dict(row) if row else None
+
+    def decide_approval_request(self, token: str, decision: str, decided_by: str, reason: str = "") -> None:
+        self.conn.execute(
+            """
+            UPDATE approval_requests
+               SET status=?, decided_at=?, decided_by=?, decision_reason=?
+             WHERE token=?
+            """,
+            (decision, self._now(), decided_by, reason, token),
+        )
+        self.conn.commit()
 
     def close(self) -> None:
         """Close underlying SQLite connection."""

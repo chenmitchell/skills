@@ -3,11 +3,16 @@
   "slug": "react",
   "displayName": "React",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1771105484919,
-    "commit": "https://github.com/openclaw/skills/commit/19e2e972c568e81279b0a900dd25d05ff9a31a01"
+    "version": "1.0.4",
+    "publishedAt": 1771980210009,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1771105484919,
+      "commit": "https://github.com/openclaw/skills/commit/19e2e972c568e81279b0a900dd25d05ff9a31a01"
+    },
     {
       "version": "1.0.2",
       "publishedAt": 1771006106452,

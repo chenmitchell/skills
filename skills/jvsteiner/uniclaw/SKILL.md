@@ -52,11 +52,11 @@ Use the plugin for wallet operations:
    npx tsx scripts/register.ts <your-agent-name>
    ```
 
-3. **Deposit UCT** — get the server's deposit address, then send tokens via the plugin:
+3. **Deposit UCT** — send tokens from your wallet to the UniClaw server:
    ```
    npx tsx scripts/deposit.ts --amount 50
    ```
-   This prints the server address. Then use `uniclaw_send_tokens` to send the tokens.
+   This sends tokens directly to the server and credits your trading balance.
 
 ## Trading
 

@@ -1,7 +1,7 @@
 ---
 name: agent-passport
-version: 2.3.2
-description: "OAuth for the agentic era — consent-gating for ALL sensitive agent actions including purchases, emails, file operations, system commands, and API calls. Provides spending caps, rate limits, allowlists, TTL expiry, audit trails, KYA (Know Your Agent) metadata, SSRF Shield, Path Traversal Guard, Webhook Origin Verification, Skill Scanner, and Injection Shield."
+version: 2.4.0
+description: "OAuth for the agentic era. Consent-gating for ALL sensitive agent actions. 75+ data-driven threat definitions with auto-updates (like antivirus signatures). Includes Skill Scanner, Injection Shield, SSRF Shield, Path Traversal Guard, spending caps, rate limits, allowlists, TTL expiry, audit trails, and KYA metadata. Pro tier adds real-time threat definition updates every 6 hours."
 metadata: {"openclaw":{"requires":{"bins":["jq","bc","xxd","head","date","mkdir"],"env":["AGENT_PASSPORT_LEDGER_DIR"]}}}
 user-invocable: true
 ---
@@ -175,9 +175,9 @@ Allowlists and deny lists support three wildcard styles:
 
 ## Modes
 
-- **Local mode** (default): Full offline operation. Mandates stored in `~/.openclaw/agent-passport/`.
+- **Local mode** (default): Mandates stored in `~/.openclaw/agent-passport/`. Free tier is fully offline. Pro tier makes periodic API calls to `api.agentpassportai.com` for license validation and threat definition updates.
 - **Preview mode:** No storage, no network. Generates validated payloads and curl templates.
-- **Live mode (roadmap):** Future connection to Agent Bridge backend for multi-agent sync and compliance. Not yet implemented — this skill is fully offline.
+- **Live mode (roadmap):** Future connection to Agent Bridge backend for multi-agent sync and compliance. Not yet implemented.
 
 ## Quick Start Commands
 
@@ -207,6 +207,11 @@ Allowlists and deny lists support three wildcard styles:
 # Audit
 ./mandate-ledger.sh audit [limit]
 ./mandate-ledger.sh summary
+
+# Threat definitions
+./mandate-ledger.sh init-definitions
+./mandate-ledger.sh update-definitions
+./mandate-ledger.sh definitions-status
 ```
 
 ## Commands Reference
@@ -251,6 +256,14 @@ summary                    # Show overall ledger stats
 export                     # Export full ledger as JSON
 ```
 
+### Threat Definitions
+```bash
+init-definitions           # Write bundled threat-definitions.json to LEDGER_DIR
+update-definitions         # Refresh definitions (Pro: API pull, Free: bundled copy)
+  [--force] [--offline]
+definitions-status         # Show version, pattern counts, and last update
+```
+
 ### KYA (Know Your Agent)
 ```bash
 kya-register <agent_id> <principal> <scope> [provider]
@@ -282,7 +295,7 @@ kya-revoke <agent_id> [why]
 
 ## Agent Bridge (Future Roadmap)
 
-> **Note:** This skill is 100% local. It makes NO network calls. Agent Bridge is a planned future service — no networking code is included in this release. No API keys are required.
+> **Note:** Free tier is fully local with no network calls. Pro tier (`AGENT_PASSPORT_LICENSE_KEY` set) makes periodic HTTPS calls to `api.agentpassportai.com` for license validation and threat definition updates. No usage data or scan results are transmitted. Agent Bridge is a planned future service.
 
 Local mode handles single-user, single-agent scenarios. A future Agent Bridge service would add:
 
@@ -321,6 +334,9 @@ All data stored locally in `~/.openclaw/agent-passport/`:
 - `mandates.json` — mandate ledger
 - `agents.json` — KYA registry
 - `audit.json` — action audit trail
+- `threat-definitions.json` — active threat pattern definitions
+- `threat-definitions.bak` — previous definitions backup
+- `.threat-meta.json` — last update/version/source metadata
 
 ## Safety
 

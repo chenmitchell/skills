@@ -77,13 +77,6 @@ cat ~/.openclaw/config/minimax.json 2>/dev/null | python3 -c "import json,sys; d
 
 ### 步骤 3: 配置 API Key（如果未配置）
 
-#### 3.1 尝试从 ~/.openclaw/agents/main/agent/auth-profiles.json 中的配置文件中获取
-
-根据返回的判断：
-- 名称包含 "minimax" 或 "MiniMax"
-
-找到匹配的 Key 后，询问用户确认是否使用。
-
 #### 3.2 如果没有找到 Key，向用户索要
 
 直接询问用户提供 MiniMax API Key。

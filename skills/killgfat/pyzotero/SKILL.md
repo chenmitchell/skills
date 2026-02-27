@@ -1,7 +1,7 @@
 ---
 name: pyzotero-cli
-version: 2.0.0
-description: Python scripts for Zotero - supports both local API and online Web API, with ZOTERO_LOCAL environment variable for mode switching.
+version: 2.2.0
+description: Python scripts for Zotero - supports search, browse, add items, and full collection management. Both local API and online Web API modes.
 homepage: https://github.com/urschrei/pyzotero
 metadata:
   {
@@ -136,6 +136,14 @@ export PATH="$HOME/.local/bin:$PATH"
 | `python3 scripts/zotero_tool.py listcollections` | 列出所有集合 |
 | `python3 scripts/zotero_tool.py itemtypes` | 列出项目类型 |
 | `python3 scripts/zotero_tool.py item KEY` | 获取单个项目详情 |
+| `python3 scripts/zotero_tool.py add -t "标题"` | **添加单个项目** |
+| `python3 scripts/zotero_tool.py add-from-json file.json` | **批量添加项目** |
+| `python3 scripts/zotero_tool.py collection-create -n "名称"` | **创建新集合** |
+| `python3 scripts/zotero_tool.py collection-rename KEY -n "新名"` | **重命名集合** |
+| `python3 scripts/zotero_tool.py collection-delete KEY -y` | **删除集合** |
+| `python3 scripts/zotero_tool.py collection-add-item ITEM -c COLL` | **添加项目到集合** |
+| `python3 scripts/zotero_tool.py collection-remove-item ITEM -c COLL` | **从集合移除项目** |
+| `python3 scripts/zotero_tool.py collection-list KEY` | **列出集合中的项目** |
 
 ## 使用示例
 
@@ -170,6 +178,64 @@ python3 scripts/zotero_tool.py search -q "python" -l 10
 ```bash
 # 获取单个项目
 python3 scripts/zotero_tool.py item ABC123XYZ
+```
+
+### 添加单个项目
+```bash
+# 添加期刊文章
+python3 scripts/zotero_tool.py add -t "文章标题" -a "FirstName LastName" -p "期刊名" -d "2024"
+
+# 添加带 DOI 和标签的文章
+python3 scripts/zotero_tool.py add -t "AI 在医学中的应用" -a "张三" "李四" -p "中华医学杂志" -d "2024" --doi "10.xxxx/xxxxx" --tags AI 医学 machine-learning
+
+# 添加带摘要和 URL 的文章
+python3 scripts/zotero_tool.py add -t "Python 数据分析" -a "王五" -p "计算机学报" -d "2024" --url "https://example.com" --abstract "本文介绍了..." --tags python 数据分析
+```
+
+### 批量添加项目
+```bash
+# 从 JSON 文件批量添加
+python3 scripts/zotero_tool.py add-from-json papers.json
+
+# JSON 文件格式示例:
+[
+  {
+    "itemType": "journalArticle",
+    "title": "文章标题",
+    "creators": [{"firstName": "First", "lastName": "Last", "creatorType": "author"}],
+    "publicationTitle": "期刊名",
+    "date": "2024",
+    "DOI": "10.xxxx/xxxxx",
+    "tags": [{"tag": "tag1", "type": 1}],
+    "abstractNote": "摘要"
+  }
+]
+```
+
+### 集合管理
+```bash
+# 创建新集合
+python3 scripts/zotero_tool.py collection-create -n "新集合名称"
+
+# 创建子集合
+python3 scripts/zotero_tool.py collection-create -n "子集合" -p PARENT_KEY
+
+# 重命名集合
+python3 scripts/zotero_tool.py collection-rename COLLECTION_KEY -n "新名称"
+
+# 删除集合（需要确认）
+python3 scripts/zotero_tool.py collection-delete COLLECTION_KEY
+python3 scripts/zotero_tool.py collection-delete COLLECTION_KEY -y  # 跳过确认
+
+# 添加项目到集合
+python3 scripts/zotero_tool.py collection-add-item ITEM_KEY -c COLLECTION_KEY
+
+# 从集合移除项目
+python3 scripts/zotero_tool.py collection-remove-item ITEM_KEY -c COLLECTION_KEY
+
+# 列出集合中的项目
+python3 scripts/zotero_tool.py collection-list COLLECTION_KEY
+python3 scripts/zotero_tool.py collection-list COLLECTION_KEY -l 50  # 显示 50 个
 ```
 
 ## 输出格式

@@ -3,13 +3,13 @@ name: omg-payment
 description: OMG金流(AioCheckOut V5)定期定額支付整合。用於建立訂單、計算CheckMacValue(SHA256)、處理定期定額流程。包含環境變數參數(key/iv/merchantID)、參數驗證、錯誤處理、定期定額流程(ReturnURL & PeriodReturnURL)。當需要處理omg支付、建立定期定額訂單、計算SHA256簽名時使用。
 ---
 
-# OMG Payment (法商MacroWell OMG Digital Entertainment Co., Ltd.)
+# OMG Payment (FunPoint) - 茂為歐買尬數位科技股份有限公司
 
 ## 基本資訊
 
 | 項目 |說明|
 |------|------|
-| **收款對象** | OMG 金流（法商 MacroWell OMG Digital Entertainment Co., Ltd.）|
+| **收款對象** | 茂為歐買尬數位科技股份有限公司（TWSE: 3687）|
 | **API 版本** | AioCheckOut V5 |
 | **環境** | 生產環境 `/Cashier/AioCheckOut/V5` | 測試環境 `https://payment-stage.funpoint.com.tw/Cashier/AioCheckOut/V5` |
 | **傳輸方式** | HTTP POST (form-urlencoded) |

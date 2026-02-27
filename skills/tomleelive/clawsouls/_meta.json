@@ -3,11 +3,16 @@
   "slug": "clawsouls",
   "displayName": "ClawSouls",
   "latest": {
-    "version": "0.4.3",
-    "publishedAt": 1771675860337,
-    "commit": "https://github.com/openclaw/skills/commit/0860e6ec289afdec5fee7c3e1b89ce612fc41cf7"
+    "version": "0.6.1",
+    "publishedAt": 1772128451360,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.4.3",
+      "publishedAt": 1771675860337,
+      "commit": "https://github.com/openclaw/skills/commit/0860e6ec289afdec5fee7c3e1b89ce612fc41cf7"
+    },
     {
       "version": "0.4.1",
       "publishedAt": 1771511668128,

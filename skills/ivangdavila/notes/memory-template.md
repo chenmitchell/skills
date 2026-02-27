@@ -5,9 +5,76 @@
 Create directory structure on first use:
 
 ```bash
-mkdir -p ~/notes/{meetings,decisions,projects,journal}
+mkdir -p ~/notes/{meetings,decisions,projects,journal,quick}
 touch ~/notes/index.md
 touch ~/notes/actions.md
+touch ~/notes/config.md
+```
+
+---
+
+## config.md Template
+
+Copy to `~/notes/config.md`:
+
+```markdown
+# Notes Platform Configuration
+
+**Last updated:** YYYY-MM-DD
+
+## Platform Routing
+
+Which platform to use for each note type. Options: local, apple-notes, bear, obsidian, notion
+
+| Note Type | Platform | Fallback |
+|-----------|----------|----------|
+| meetings | local | — |
+| decisions | local | — |
+| projects | local | — |
+| journal | local | — |
+| quick | local | — |
+
+## Platform Status
+
+### Local (always available)
+- **Status:** ✅ Available
+- **Path:** ~/notes/
+
+### Apple Notes (macOS only)
+- **Status:** ⬜ Not configured
+- **CLI:** memo
+- **Install:** `brew tap antoniorodr/memo && brew install memo`
+
+### Bear (macOS only)
+- **Status:** ⬜ Not configured
+- **CLI:** grizzly
+- **Install:** `go install github.com/tylerwince/grizzly/cmd/grizzly@latest`
+- **Token:** ⬜ Not set (needed for some operations)
+- **Token path:** ~/.config/grizzly/token
+
+### Obsidian
+- **Status:** ⬜ Not configured
+- **CLI:** obsidian-cli
+- **Install:** `brew install yakitrak/yakitrak/obsidian-cli`
+- **Default vault:** Not set
+
+### Notion
+- **Status:** ⬜ Not configured
+- **API Key:** ⬜ Not set
+- **Key path:** ~/.config/notion/api_key
+- **Setup:** https://notion.so/my-integrations
+
+### Evernote
+- **Status:** ⬜ Not configured
+- **CLI:** clinote
+- **Install:** `go install github.com/TcM1911/clinote@latest`
+- **Auth:** `clinote login`
+
+## Notes
+
+- Change routing anytime by editing this file
+- If a platform becomes unavailable, notes fall back to local
+- Action items always sync to ~/notes/actions.md regardless of platform
 ```
 
 ---
@@ -25,39 +92,36 @@ Copy to `~/notes/index.md`:
 
 ```
 ~/notes/
+├── config.md       # Platform routing
 ├── index.md        # This file
-├── actions.md      # Active action items
+├── actions.md      # Action items (all platforms)
 ├── meetings/       # Meeting notes
 ├── decisions/      # Decision log
 ├── projects/       # Project updates
-└── journal/        # Daily notes
+├── journal/        # Daily notes
+└── quick/          # Quick captures
 ```
 
 ## 🏷️ Tags Index
 
-| Tag | Count | Recent |
-|-----|-------|--------|
-| #product | 5 | [[2026-02-19_roadmap]] |
-| #engineering | 3 | [[2026-02-18_sprint]] |
-| #1on1 | 8 | [[2026-02-17_alice-1on1]] |
+| Tag | Count | Recent | Platform |
+|-----|-------|--------|----------|
+| #product | 0 | — | — |
+| #engineering | 0 | — | — |
 
 ## 👥 People Index
 
 | Person | Notes | Last |
 |--------|-------|------|
-| @alice | 12 | [[2026-02-19_product-sync]] |
-| @bob | 8 | [[2026-02-15_design-review]] |
+| — | 0 | — |
 
 ## 📅 Recent Notes
 
 ### This Week
-- [[2026-02-19_product-sync]] — meeting, #product
-- [[2026-02-18_sprint-planning]] — meeting, #engineering
-- [[2026-02-17_alice-1on1]] — 1on1, @alice
+*No notes yet*
 
-### Last Week
-- [[2026-02-12_quarterly-review]] — meeting, #leadership
-- [[2026-02-10_decision-pricing]] — decision, #product
+### External Platforms
+*Configure platforms in config.md to see notes from Apple Notes, Bear, Obsidian, or Notion*
 
 ## 🔍 Quick Search
 
@@ -65,6 +129,7 @@ Common queries:
 - Meetings with @alice: `type:meeting attendees:alice`
 - Product decisions: `type:decision tags:product`
 - This month's journals: `type:journal date:2026-02`
+- Cross-platform: `platform:notion type:project`
 
 ---
 *Update this index when adding notes with new tags or people.*
@@ -113,13 +178,22 @@ Copy to `~/notes/actions.md`:
 - **Overdue:** 0
 - **Completion rate (7d):** —%
 
+## Source Format
+
+Sources indicate where the original note lives:
+- `local:[[filename]]` — Local markdown file
+- `apple-notes:Note Title` — Apple Notes
+- `bear:#tag/Note Title` — Bear
+- `obsidian:[[Note]]` — Obsidian vault
+- `notion:Page Name` — Notion
+
 ---
-*Synced from all notes. Run "update actions" to refresh.*
+*Synced from all platforms. Action items always tracked here regardless of note location.*
 ```
 
 ---
 
-## Sample Meeting Note
+## Sample Meeting Note (Local)
 
 Example file `~/notes/meetings/2026-02-19_product-sync.md`:
 
@@ -131,6 +205,7 @@ title: Product Sync
 tags: [product, roadmap]
 attendees: [alice, bob, carol]
 duration: 30 min
+platform: local
 ---
 
 # Meeting: Product Sync — 2026-02-19
@@ -149,17 +224,12 @@ Align on Q1 priorities and blockers.
 
 ## ✅ Decisions Made
 - [DECISION] **Feature X scope:** Cut advanced mode for v1 — *Owner:* @alice | *Effective:* 2026-02-19
-- [DECISION] **Launch date:** Move to Feb 28 — *Owner:* @bob | *Effective:* 2026-02-19
 
 ## ⚡ Action Items
 | # | Task | Owner | Due | Status |
 |---|------|-------|-----|--------|
 | 1 | Update roadmap doc | @alice | 2026-02-20 | ⬜ |
-| 2 | Notify stakeholders of date change | @bob | 2026-02-20 | ⬜ |
-| 3 | Draft launch comms | @carol | 2026-02-25 | ⬜ |
-
-## ❓ Open Questions
-- How to handle existing beta users? — *Needs input from:* @support
+| 2 | Notify stakeholders | @bob | 2026-02-20 | ⬜ |
 
 ## 📊 Meeting Effectiveness: 8/10
 ☑ Clear agenda beforehand
@@ -167,63 +237,4 @@ Align on Q1 priorities and blockers.
 ☑ Decisions were made
 ☑ Actions have owners + deadlines
 ☑ Could NOT have been an email
-```
-
----
-
-## Sample Decision Entry
-
-Example file `~/notes/decisions/2026-02-19_pricing-model.md`:
-
-```markdown
----
-date: 2026-02-19
-type: decision
-title: Pricing Model for v2
-tags: [product, pricing, strategy]
-status: active
----
-
-# [DECISION] Pricing Model for v2 — 2026-02-19
-
-## Context
-Current flat pricing doesn't capture value from high-usage customers. Need to decide on v2 pricing before March launch.
-
-## Options Considered
-
-### Option A: Usage-Based
-- ✅ Aligns cost with value
-- ✅ Lower barrier to entry
-- ❌ Unpredictable revenue
-- ❌ Complex to communicate
-
-### Option B: Tiered Plans
-- ✅ Predictable revenue
-- ✅ Easy to understand
-- ❌ May leave money on table
-- ❌ Upgrade friction
-
-### Option C: Hybrid (Base + Usage)
-- ✅ Predictable base + upside
-- ✅ Fair for all segments
-- ❌ More complex billing
-- ❌ Harder to forecast
-
-## Decision
-**Chosen:** Option C — Hybrid model
-
-## Rationale
-Combines predictability of tiers with fairness of usage. Competitors moving this direction. Customer interviews showed preference for "pay for what you use" with a floor.
-
-## Implementation
-- **Owner:** @finance
-- **Effective Date:** 2026-03-01
-- **Review Date:** 2026-06-01
-
-## Dependencies
-- Requires: billing system upgrade [[2026-02-10_billing-update]]
-- Blocks: launch communications
-
-## Reversal
-- [REVERSES] [[2025-06-15_flat-pricing]] — Original flat pricing decision
 ```

@@ -3,9 +3,15 @@
   "slug": "agentmesh",
   "displayName": "AgentMesh",
   "latest": {
-    "version": "0.1.0",
-    "publishedAt": 1770913707604,
-    "commit": "https://github.com/openclaw/skills/commit/c51a7aa3d3f023fed6384575bbff998f4154d072"
+    "version": "0.1.1",
+    "publishedAt": 1772131138950,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.0",
+      "publishedAt": 1770913707604,
+      "commit": "https://github.com/openclaw/skills/commit/c51a7aa3d3f023fed6384575bbff998f4154d072"
+    }
+  ]
 }

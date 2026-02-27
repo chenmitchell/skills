@@ -1,14 +1,17 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name            = "agentmesh"
-version         = "1.0.0"
+version         = "1.1.0"
 description     = "WhatsApp-style encrypted messaging for AI agents"
 readme          = "README.md"
 license         = {text = "MIT"}
-authors         = [{name = "cerbug45", url = "https://github.com/cerbug45"}]
+authors         = [
+    {name = "cerbug45"},
+    {name = "Zeki"},
+]
 requires-python = ">=3.10"
 keywords        = ["ai", "agents", "encryption", "messaging", "cryptography", "llm"]
 classifiers = [
@@ -45,5 +48,5 @@ testpaths = ["tests"]
 addopts   = "-v --tb=short"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["agentmesh*"]

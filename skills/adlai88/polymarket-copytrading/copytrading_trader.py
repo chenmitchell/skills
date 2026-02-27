@@ -29,8 +29,6 @@ import json
 import argparse
 from typing import Optional
 from datetime import datetime
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError, URLError
 
 # Force line-buffered stdout so output is visible in non-TTY environments (cron, Docker, OpenClaw)
 sys.stdout.reconfigure(line_buffering=True)
@@ -51,6 +49,7 @@ except ImportError:
 
 # Source tag for tracking
 TRADE_SOURCE = "sdk:copytrading"
+SKILL_SLUG = "polymarket-copytrading"
 _automaton_reported = False
 
 
@@ -58,57 +57,7 @@ _automaton_reported = False
 # Configuration (config.json > env vars > defaults)
 # =============================================================================
 
-def _load_config(schema, skill_file, config_filename="config.json"):
-    """Load config with priority: config.json > env vars > defaults."""
-    from pathlib import Path
-    config_path = Path(skill_file).parent / config_filename
-    file_cfg = {}
-    if config_path.exists():
-        try:
-            with open(config_path) as f:
-                file_cfg = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
-    result = {}
-    for key, spec in schema.items():
-        if key in file_cfg:
-            result[key] = file_cfg[key]
-        elif spec.get("env") and os.environ.get(spec["env"]):
-            val = os.environ.get(spec["env"])
-            type_fn = spec.get("type", str)
-            try:
-                result[key] = type_fn(val) if type_fn != str else val
-            except (ValueError, TypeError):
-                result[key] = spec.get("default")
-        else:
-            result[key] = spec.get("default")
-    return result
-
-def _get_config_path(skill_file, config_filename="config.json"):
-    """Get path to config file."""
-    from pathlib import Path
-    return Path(skill_file).parent / config_filename
-
-def _update_config(updates, skill_file, config_filename="config.json"):
-    """Update config values and save to file."""
-    from pathlib import Path
-    config_path = Path(skill_file).parent / config_filename
-    existing = {}
-    if config_path.exists():
-        try:
-            with open(config_path) as f:
-                existing = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
-    existing.update(updates)
-    with open(config_path, "w") as f:
-        json.dump(existing, f, indent=2)
-    return existing
-
-# Aliases for compatibility
-load_config = _load_config
-get_config_path = _get_config_path
-update_config = _update_config
+from simmer_sdk.skill import load_config, update_config, get_config_path
 
 # Configuration schema
 CONFIG_SCHEMA = {
@@ -120,12 +69,12 @@ CONFIG_SCHEMA = {
 }
 
 # Load configuration
-_config = load_config(CONFIG_SCHEMA, __file__)
+_config = load_config(CONFIG_SCHEMA, __file__, slug="polymarket-copytrading")
 
 # SimmerClient singleton
 _client = None
 
-def get_client(live=True):
+def get_client():
     """Lazy-init SimmerClient singleton."""
     global _client
     if _client is None:
@@ -140,7 +89,7 @@ def get_client(live=True):
             print("Get your API key from: simmer.markets/dashboard -> SDK tab")
             sys.exit(1)
         venue = os.environ.get("TRADING_VENUE", "polymarket")
-        _client = SimmerClient(api_key=api_key, venue=venue, live=live)
+        _client = SimmerClient(api_key=api_key, venue=venue)
     return _client
 
 # Polymarket constraints
@@ -250,7 +199,7 @@ def execute_trade(market_id: str, side: str, action: str, amount_usd: float = No
         result = get_client().trade(
             market_id=market_id, side=side, action=action,
             amount=amount_usd or 0, shares=shares or 0,
-            source=TRADE_SOURCE,
+            source=TRADE_SOURCE, skill_slug=SKILL_SLUG,
         )
         return {
             "success": result.success, "trade_id": result.trade_id,
@@ -264,19 +213,6 @@ def execute_trade(market_id: str, side: str, action: str, amount_usd: float = No
 # Copytrading Logic
 # =============================================================================
 
-def fetch_wallet_positions(wallet: str) -> list:
-    """
-    Fetch positions for a wallet via Simmer API.
-
-    Note: This uses the positions endpoint. For full copytrading logic,
-    the actual implementation uses the copytrading_strategy module server-side.
-    """
-    # This is a simplified version - the full logic runs server-side
-    # via the trading agent with strategy_type='copytrading'
-
-    # For now, we use the SDK to trigger a copytrading cycle
-    # rather than reimplementing all the wallet fetching logic
-    return []
 
 
 def execute_copytrading(wallets: list, top_n: int = None, max_usd: float = 50.0, dry_run: bool = True, buy_only: bool = True, detect_whale_exits: bool = False, max_trades: int = None, venue: str = None) -> dict:
@@ -442,7 +378,7 @@ def run_copytrading(wallets: list, top_n: int = None, max_usd: float = 50.0, dry
                 if trade_id and JOURNAL_AVAILABLE:
                     log_trade(
                         trade_id=trade_id,
-                        source=TRADE_SOURCE,
+                        source=TRADE_SOURCE, skill_slug=SKILL_SLUG,
                         thesis=f"Copytrading: {action.upper()} {shares:.1f} {side.upper()} "
                                f"@ ${price:.3f} to mirror whale positions",
                         action=action,
@@ -629,11 +565,15 @@ def main():
             print(f"✅ Config updated: {updates}")
             print(f"   Saved to: {get_config_path(__file__)}")
             # Reload config into module-level _config
-            reloaded = load_config(CONFIG_SCHEMA, __file__)
+            reloaded = load_config(CONFIG_SCHEMA, __file__, slug="polymarket-copytrading")
             globals()["_config"] = reloaded
             globals()["COPYTRADING_WALLETS"] = reloaded["wallets"]
             globals()["COPYTRADING_TOP_N"] = reloaded["top_n"]
-            globals()["COPYTRADING_MAX_USD"] = reloaded["max_usd"]
+            reloaded_max_usd = reloaded["max_usd"]
+            _automaton_max = os.environ.get("AUTOMATON_MAX_BET")
+            if _automaton_max:
+                reloaded_max_usd = min(reloaded_max_usd, float(_automaton_max))
+            globals()["COPYTRADING_MAX_USD"] = reloaded_max_usd
             globals()["MAX_TRADES_PER_RUN"] = reloaded["max_trades_per_run"]
 
     # Show config
@@ -650,7 +590,7 @@ def main():
     dry_run = not args.live
 
     # Validate API key by initializing client
-    get_client(live=not dry_run)
+    get_client()
 
     # Get wallets (from args or env)
     if args.wallets:

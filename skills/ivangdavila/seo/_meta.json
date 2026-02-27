@@ -1,13 +1,18 @@
 {
   "owner": "ivangdavila",
   "slug": "seo",
-  "displayName": "SEO / Search Engine Optimization",
+  "displayName": "SEO (Site Audit + Content Writer + Competitor Analysis)",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1772020679329,
-    "commit": "https://github.com/openclaw/skills/commit/126d0566baefaec4822bb4d8204a59f1ad3536bd"
+    "version": "1.0.3",
+    "publishedAt": 1772021873390,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1772020679329,
+      "commit": "https://github.com/openclaw/skills/commit/126d0566baefaec4822bb4d8204a59f1ad3536bd"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1771104379371,
